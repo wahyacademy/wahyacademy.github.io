@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>أكاديمية وحي</title>
+<meta name="description" content="أكاديمية وحي — تعليم شرعي وعلمي أصيل بمنهجية معاصرة.">
+<!-- الأمان والخصوصية: لا سكربتات خارجية، لا تتبّع، لا نماذج تجمع بيانات -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="icon" href="assets/logo-blue.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --wahy-blue:#0F588C; --wahy-blue-bg:#235587; --wahy-gold:#F7B717; --wahy-gold-logo:#FBB431;
+  --wahy-grey:#959796; --berkeley-blue:#003262; --bay-fog:#DDD5C7; --bay-fog-light:#F4F1EB;
+  --lap-lane:#00A598; --pacific:#46535E; --text:#1F2937;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:"IBM Plex Sans Arabic",Tahoma,sans-serif;color:var(--text);line-height:1.9;background:#fff}
+h1,h2,h3{font-family:"Amiri",serif;color:var(--berkeley-blue);line-height:1.4}
+a{color:var(--wahy-blue)}
+.container{width:min(1140px,92%);margin-inline:auto}
+.placeholder{background:#FFF7DD;outline:1px dashed var(--wahy-gold);border-radius:4px;padding:0 4px}
+
+/* Header */
+header{position:sticky;top:0;z-index:50;background:#fff;box-shadow:0 1px 0 #e5e7eb}
+.nav{display:flex;align-items:center;justify-content:space-between;height:76px;gap:16px}
+.logo-slot{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-slot img{height:52px;width:auto}
+.logo-slot .logo-text{font-family:"Amiri",serif;font-weight:700;font-size:1.5rem;color:var(--wahy-blue)}
+nav ul{display:flex;gap:28px;list-style:none}
+nav ul a{text-decoration:none;font-weight:500;color:var(--wahy-blue)}
+nav ul a:hover{color:var(--berkeley-blue);text-decoration:underline;text-underline-offset:6px;text-decoration-color:var(--wahy-gold)}
+.btn{display:inline-block;padding:12px 26px;border-radius:999px;font-weight:700;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.15)}
+.btn-gold{background:var(--wahy-gold);color:var(--berkeley-blue)}
+.btn-outline{border:2px solid #fff;color:#fff}
+.menu-btn{display:none;background:none;border:0;font-size:1.8rem;color:var(--wahy-blue);cursor:pointer}
+
+/* Hero */
+.hero{position:relative;color:#fff;overflow:hidden;padding:130px 0 170px;
+  background:linear-gradient(270deg,rgba(0,50,98,.92) 0%,rgba(15,88,140,.75) 40%,rgba(15,88,140,.15) 75%,rgba(15,88,140,0) 100%),url(assets/hero.jpg) center/cover no-repeat var(--wahy-blue-bg)}
+.hero h1,.hero p{text-shadow:0 2px 12px rgba(0,30,60,.35)}
+.pattern{width:100%;height:100%}
+.hero .pattern{position:absolute;inset:0;opacity:.13}
+.hero .placeholder,.featured .placeholder{background:rgba(247,183,23,.18);color:#fff;outline-color:var(--wahy-gold-logo)}
+.hero .container{position:relative}
+.hero h1{color:#fff;font-size:clamp(2.2rem,5vw,3.8rem);max-width:760px}
+.hero h1 span{color:var(--wahy-gold-logo)}
+.hero p{font-size:1.2rem;max-width:620px;margin:18px 0 34px;opacity:.95}
+.hero .actions{display:flex;gap:14px;flex-wrap:wrap}
+
+/* Sections */
+section{padding:90px 0}
+.alt{background:var(--bay-fog-light)}
+.eyebrow{display:inline-block;color:var(--wahy-blue);font-weight:700;letter-spacing:.5px;margin-bottom:6px}
+.eyebrow::before{content:"";display:inline-block;width:28px;height:3px;background:var(--wahy-gold);vertical-align:middle;margin-left:10px}
+.section-title{font-size:clamp(1.8rem,3.5vw,2.6rem);margin-bottom:14px}
+.lead{max-width:720px;font-size:1.1rem;color:#374151}
+.grid{display:grid;gap:24px;margin-top:44px}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:#fff;border-top:4px solid var(--wahy-gold);border-radius:12px;padding:30px 26px;box-shadow:0 4px 18px rgba(0,50,98,.08)}
+.card h3{font-size:1.45rem;margin-bottom:8px}
+.icon{width:50px;height:50px;border-radius:12px;background:#E8F0F7;display:grid;place-items:center;margin-bottom:16px}
+.icon svg{width:26px;height:26px;stroke:var(--wahy-blue);fill:none;stroke-width:1.8}
+
+.about{display:grid;grid-template-columns:1.1fr .9fr;gap:56px;align-items:center}
+.about-art{aspect-ratio:1;border-radius:20px;background:var(--wahy-blue-bg);position:relative;overflow:hidden}
+.about-art .pattern{position:absolute;inset:0;opacity:.18}
+.about-art .quote{position:absolute;inset:auto 28px 28px 28px;color:#fff;font-family:"Amiri",serif;font-size:1.6rem;line-height:1.6}
+.about-art .quote small{display:block;font-family:"IBM Plex Sans Arabic";font-size:.9rem;color:var(--wahy-gold-logo);margin-top:8px}
+
+/* Featured blue section */
+.featured{background:var(--wahy-blue-bg);color:#fff;position:relative;overflow:hidden}
+.featured h2,.featured h3{color:#fff}
+.featured .eyebrow{color:var(--wahy-gold-logo)}
+.featured .lead{color:#E5EDF5}
+.feature{border-right:3px solid var(--wahy-gold);padding:6px 20px 6px 0}
+.feature h3{font-size:1.35rem;margin-bottom:6px}
+.feature p{color:#E5EDF5}
+
+.steps{counter-reset:s}
+.step{position:relative;padding-top:56px}
+.step::before{counter-increment:s;content:counter(s);position:absolute;top:0;right:0;width:42px;height:42px;border-radius:50%;background:var(--wahy-gold);color:var(--berkeley-blue);font-weight:700;display:grid;place-items:center;font-size:1.1rem}
+
+.more{display:inline-block;margin-top:12px;font-weight:700;text-decoration:none}
+.more:hover{text-decoration:underline}
+.teachers{gap:16px}
+.t{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:14px 16px;font-weight:500;color:var(--berkeley-blue)}
+.av{flex:none;width:42px;height:42px;border-radius:50%;background:var(--wahy-blue);color:var(--wahy-gold-logo);display:grid;place-items:center;font-family:"Amiri",serif;font-weight:700;font-size:1.2rem}
+@media (max-width:720px){.teachers{grid-template-columns:1fr 1fr}.t{font-size:.9rem;padding:10px}.av{width:34px;height:34px}}
+/* CTA / contact */
+.contact{text-align:center}
+.contact .lead{margin-inline:auto}
+.socials{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:34px}
+.socials a{display:flex;align-items:center;gap:8px;padding:12px 22px;border-radius:999px;background:#fff;border:1.5px solid var(--wahy-blue);text-decoration:none;font-weight:500}
+.socials a:hover{background:var(--wahy-blue);color:#fff}
+
+footer{background:var(--berkeley-blue);color:#fff;padding:48px 0 28px}
+.foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
+footer .logo-slot .logo-text{color:#fff}
+footer a{color:#fff;opacity:.85;text-decoration:none;margin-inline-start:20px}
+footer a:hover{opacity:1;text-decoration:underline}
+.copy{border-top:1px solid rgba(255,255,255,.15);margin-top:28px;padding-top:20px;font-size:.9rem;opacity:.75;text-align:center}
+
+@media (max-width:900px){
+  .g3,.g4{grid-template-columns:1fr 1fr}
+  .about{grid-template-columns:1fr}
+  .about-art{aspect-ratio:16/10}
+}
+@media (max-width:720px){
+  nav ul{display:none;position:absolute;top:76px;inset-inline:0;background:#fff;flex-direction:column;gap:0;box-shadow:0 8px 16px rgba(0,0,0,.08)}
+  nav ul.open{display:flex}
+  nav ul li a{display:block;padding:14px 5%}
+  .menu-btn{display:block}
+  .nav .btn-gold{display:none}
+  .g3,.g4{grid-template-columns:1fr}
+  section{padding:64px 0}
+  .hero{padding:80px 0 120px;background:linear-gradient(180deg,rgba(0,50,98,.88),rgba(15,88,140,.7) 70%,rgba(15,88,140,.35)),url(assets/hero-sm.jpg) center/cover no-repeat var(--wahy-blue-bg)}
+}
+</style>
+</head>
+<body>
+
+<!-- نقش النجمة الثمانية (يُعاد استخدامه) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="star8" width="80" height="80" patternUnits="userSpaceOnUse">
+      <g fill="none" stroke="#fff" stroke-width="1.4">
+        <rect x="22" y="22" width="36" height="36"/>
+        <rect x="22" y="22" width="36" height="36" transform="rotate(45 40 40)"/>
+        <circle cx="40" cy="40" r="7"/>
+        <path d="M0 0L14 14M80 0L66 14M0 80L14 66M80 80L66 66"/>
+      </g>
+    </pattern>
+  </defs>
+</svg>
+
+<header>
+  <div class="container nav">
+    <a href="#top" class="logo-slot" aria-label="أكاديمية وحي - الرئيسية">
+      <img src="assets/logo-blue.png" alt="شعار أكاديمية وحي" width="42" height="52">
+      <span class="logo-text">أكاديمية وحي</span>
+    </a>
+    <nav aria-label="القائمة الرئيسية">
+      <button class="menu-btn" aria-label="فتح القائمة" aria-expanded="false" onclick="toggleMenu(this)">☰</button>
+      <ul id="menu">
+        <li><a href="#about">من نحن</a></li>
+        <li><a href="#programs">مساراتنا</a></li>
+        <li><a href="#teachers">محاضرونا</a></li>
+        <li><a href="#why">لماذا وحي</a></li>
+        <li><a href="#how">كيف تبدأ</a></li>
+        <li><a href="#contact">تواصل معنا</a></li>
+      </ul>
+    </nav>
+    <a href="https://www.wahyacademy.com/student-register" class="btn btn-gold" target="_blank" rel="noopener noreferrer">سجّل الآن</a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="container">
+      <h1>علمٌ شرعيٌّ أصيل <span>بأدواتٍ</span> معاصرة</h1>
+      <p>نموذجٌ متميز في تعليم العلوم الإسلامية، يصلها بسائر العلوم ويستعين بالأدوات الحديثة، على أيدي نخبة من المتخصصين.</p>
+      <div class="actions">
+        <a href="#programs" class="btn btn-gold">تعرّف على مساراتنا</a>
+        <a href="#about" class="btn btn-outline">من نحن</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="container about">
+      <div>
+        <span class="eyebrow">من نحن</span>
+        <h2 class="section-title">نموذجٌ فريد في تعليم العلوم الإسلامية</h2>
+        <p class="lead">تقدّم أكاديمية وحي العلوم الإسلامية في صورة متكاملة تربطها بغيرها من العلوم، وتوظّف الوسائل الحديثة في التعليم، مع الحرص على توقير العلماء والتأدب في طلب العلم.</p>
+        <div class="grid g3" style="margin-top:32px;gap:16px">
+          <div class="card" style="padding:20px"><h3 style="font-size:1.2rem">برامج متينة</h3><p>مناهج مدروسة في العقيدة والفقه وعلوم القرآن.</p></div>
+          <div class="card" style="padding:20px"><h3 style="font-size:1.2rem">محاضرون متخصصون</h3><p>نخبة من أهل العلم والاختصاص.</p></div>
+          <div class="card" style="padding:20px"><h3 style="font-size:1.2rem">معلومة موثّقة</h3><p>علمٌ منقول عن المتخصصين بأمانة وتحقيق.</p></div>
+        </div>
+      </div>
+      <div class="about-art">
+        <svg class="pattern" aria-hidden="true"><rect width="100%" height="100%" fill="url(#star8)"/></svg>
+        <p class="quote">﴿وَقُل رَّبِّ زِدْنِي عِلْمًا﴾<small>سورة طه — ١١٤</small></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="programs" class="alt">
+    <div class="container">
+      <span class="eyebrow">مساراتنا</span>
+      <h2 class="section-title">مسارات تعليمية تناسب كل طالب</h2>
+      <p class="lead">من الدورات المجانية المفتوحة إلى الدراسة النظامية المتدرجة، في العقيدة وعلم الكلام والفقه الإسلامي وعلوم القرآن.</p>
+      <div class="grid g3">
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M6 10v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg></div>
+          <h3>الدراسة النظامية</h3>
+          <p>دراسة منهجية متدرجة بخطة واضحة ومتابعة واختبارات، لمن أراد التأسيس العلمي المتين.</p>
+          <a class="more" href="https://www.wahyacademy.com/tracks/aldras-alnthamy?track_id=5" target="_blank" rel="noopener noreferrer">تفاصيل المسار ←</a>
+        </article>
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7"/></svg></div>
+          <h3>مسار التعليم الحر</h3>
+          <p>دورات متخصصة تختار منها ما يناسب اهتمامك ووقتك في مختلف العلوم الشرعية.</p>
+          <a class="more" href="https://www.wahyacademy.com/tracks/msar-altaalym-alhr?track_id=3" target="_blank" rel="noopener noreferrer">تفاصيل المسار ←</a>
+        </article>
+        <article class="card">
+          <div class="icon"><svg viewBox="0 0 24 24"><path d="M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H8a2.5 2.5 0 1 1 0-5c3 0 4 5 4 5zM12 7h4a2.5 2.5 0 1 0 0-5c-3 0-4 5-4 5z"/></svg></div>
+          <h3>المسار المجاني</h3>
+          <p>دورات مجانية مفتوحة للجميع، مثل: فقه المعاملات على المذهب الشافعي، وفقه الصلاة على المذهب الحنفي، وقانون التأويل للغزالي.</p>
+          <a class="more" href="https://www.wahyacademy.com/tracks/almsar-almgany-alhr?track_id=6" target="_blank" rel="noopener noreferrer">تفاصيل المسار ←</a>
+        </article>
+      </div>
+      <p style="text-align:center;margin-top:36px"><a href="https://www.wahyacademy.com/courses" class="btn btn-gold" target="_blank" rel="noopener noreferrer">تصفّح جميع الدورات</a></p>
+    </div>
+  </section>
+
+  <section id="teachers">
+    <div class="container">
+      <span class="eyebrow">محاضرونا</span>
+      <h2 class="section-title">نخبة من أهل العلم والاختصاص</h2>
+      <div class="grid g4 teachers">
+        <div class="t"><span class="av">ع</span>د. عمرو الشال</div>
+        <div class="t"><span class="av">م</span>د. محمد هنداوي</div>
+        <div class="t"><span class="av">ع</span>الشيخ عماد الدين صلاح الأزهري</div>
+        <div class="t"><span class="av">م</span>د. محمد أمين عيسى</div>
+        <div class="t"><span class="av">أ</span>الشيخ أحمد بهاء الدين</div>
+        <div class="t"><span class="av">ر</span>د. رانيا السيد</div>
+        <div class="t"><span class="av">إ</span>د. إبراهيم شعيب</div>
+        <div class="t"><span class="av">إ</span>الشيخ إيهاب صالح</div>
+        <div class="t"><span class="av">م</span>الشيخ مختار جميل</div>
+        <div class="t"><span class="av">م</span>الشيخ محمد الأزهري</div>
+      </div>
+      <p style="text-align:center;margin-top:30px"><a href="https://www.wahyacademy.com/instructors" target="_blank" rel="noopener noreferrer">تعرّف على المحاضرين ←</a></p>
+    </div>
+  </section>
+
+  <section id="why" class="featured">
+    <div class="container">
+      <span class="eyebrow">لماذا وحي</span>
+      <h2 class="section-title">تعليمٌ يُبنى على أساس متين</h2>
+      <p class="lead">نجمع بين أصالة المنهج ووضوح الطرح وسهولة الوصول.</p>
+      <div class="grid g4">
+        <div class="feature"><h3>منهج متدرج</h3><p>من التأسيس إلى التخصص، بخطة واضحة لكل مرحلة.</p></div>
+        <div class="feature"><h3>نخبة من المحاضرين</h3><p>متخصصون يجمعون بين العلم الراسخ وحسن البيان.</p></div>
+        <div class="feature"><h3>تعلّم من أي مكان</h3><p>محاضرات مباشرة وتسجيلات متاحة للطلاب المسجلين.</p></div>
+        <div class="feature"><h3>متابعة مستمرة</h3><p>تذكيرات واختبارات ومتابعة من شؤون الطلاب.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="container">
+      <span class="eyebrow">كيف تبدأ</span>
+      <h2 class="section-title">ثلاث خطوات للانضمام</h2>
+      <div class="grid g3 steps">
+        <div class="step"><h3>اختر برنامجك</h3><p>تصفّح البرامج المتاحة واختر ما يناسب مستواك.</p></div>
+        <div class="step"><h3>أنشئ حسابك</h3><p>سجّل حساب طالب على منصة الأكاديمية.</p></div>
+        <div class="step"><h3>ابدأ التعلّم</h3><p>احضر المحاضرات وتابع الدروس والاختبارات من حسابك.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" class="alt contact">
+    <div class="container">
+      <span class="eyebrow">تواصل معنا</span>
+      <h2 class="section-title">يسعدنا تواصلك</h2>
+      <p class="lead">لأي استفسار عن البرامج أو التسجيل، تواصل معنا عبر قنواتنا الرسمية.</p>
+      <div class="socials">
+        <a href="https://t.me/wahy_academy" target="_blank" rel="noopener noreferrer">تيليجرام</a>
+        <a href="https://wa.me/201099744228" target="_blank" rel="noopener noreferrer">واتساب</a>
+        <a href="https://www.facebook.com/Wahy.for.learning" target="_blank" rel="noopener noreferrer">فيسبوك</a>
+        <a href="tel:+201099744228" dir="ltr">0109 974 4228</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="foot">
+      <span class="logo-slot"><img src="assets/logo-white.png" alt="شعار أكاديمية وحي" width="56" height="70" style="height:70px"><span class="logo-text">أكاديمية وحي</span></span>
+      <div><a href="#about">من نحن</a><a href="#programs">مساراتنا</a><a href="#contact">تواصل معنا</a><a href="https://www.wahyacademy.com/student-login" target="_blank" rel="noopener noreferrer">دخول الطلاب</a></div>
+    </div>
+    <p class="copy">© <span id="y"></span> أكاديمية وحي. جميع الحقوق محفوظة.</p>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('y').textContent = new Date().getFullYear();
+  function toggleMenu(b){
+    const m=document.getElementById('menu');
+    const open=m.classList.toggle('open');
+    b.setAttribute('aria-expanded',open);
+  }
+  document.querySelectorAll('#menu a').forEach(a=>a.addEventListener('click',()=>{
+    document.getElementById('menu').classList.remove('open');
+  }));
+</script>
+</body>
+</html>
