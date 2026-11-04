@@ -129,7 +129,7 @@ const GOAL = {attend:90, done:95, weekly:5, before:30, grace:5, since:"2026-11-0
 const okLabel = r => REQ[r.kind]+(r.kind==="leave"?" معتمدة":" معتمد"); // أهداف ثابتة من «سجل دوام المشرفين»
 const MONTHS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
-const S = {session:null, me:null, members:[], tasks:[], slots:[], checkins:[], shifts:[], requests:[], lectures:[], view:"today", day:null, month:null, phase:"boot", msg:""};
+const S = {session:null, me:null, members:[], tasks:[], slots:[], checkins:[], shifts:[], requests:[], lectures:[], evals:[], showInactive:false, view:"today", day:null, month:null, phase:"boot", msg:""};
 
 // ---------- أدوات ----------
 const $ = s => document.querySelector(s);
@@ -161,7 +161,7 @@ function team(){ // من أتابعهم
 }
 
 // ---------- بيانات اليوم ----------
-const slotsOf = (mid, date) => S.slots.filter(s => s.owner===mid && s.kind!=="flex" && Number(s.day)===dayIdx(parse(date))).sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")||(a.label||"").localeCompare(b.label||""));
+const slotsOf = (mid, date) => S.slots.filter(s => s.owner===mid && s.kind!=="flex" && (s.date ? s.date===date : Number(s.day)===dayIdx(parse(date)))).sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")||(a.label||"").localeCompare(b.label||""));
 const slotDoneId = (date, sid) => "sch_"+date+"_"+sid;
 const slotTask = (date, sid) => S.tasks.find(t => t.id===slotDoneId(date,sid));
 const memberOf = id => S.members.find(m=>m.id===id) || {};
@@ -171,10 +171,22 @@ const marksOf = (date, sid) => (slotTask(date,sid)||{}).marks || {};
 const markCount = (date, sid) => { const m=marksOf(date,sid); return MARKS.filter(([k])=>m[k]).length; };
 const isSlotDone = (date, sid) => { const t=slotTask(date,sid); if(!t) return false; const s=S.slots.find(x=>x.id===sid);
   return isLecture(s) && t.marks ? MARKS.every(([k])=>t.marks[k]) : t.status==="done"; };
+// البديل: محاضرات الطلب التي ستحتاج من يغطيها
+function reqDates(r){ const out=[]; let d=r.date; const end=r.kind==="leave"?(r.dateTo||r.date):r.date; for(let i=0;i<31 && d<=end;i++){ out.push(d); d=addDays(d,1); } return out; }
+function reqLectures(r){ if(r.kind==="fix") return [];
+  return reqDates(r).flatMap(d=>slotsOf(r.member,d).filter(s=>isLecture(s) && (r.kind!=="lecture" || s.id===r.slot)).map(s=>({d,s}))); }
+function coverSelect(r){ const ls=reqLectures(r); if(!ls.length) return "";
+  const ppl=S.members.filter(m=>m.active!==false && m.role!=="committee" && m.id!==r.member && (isAdmin() || m.dept===S.me.dept));
+  return `<select id="cv_${esc(r.id)}" style="width:auto" title="من يغطي ${ls.length} محاضرة"><option value="">بلا بديل (${ls.length} محاضرة)</option>${ppl.map(m=>`<option value="${esc(m.id)}">البديل: ${esc(m.name)}</option>`).join("")}</select>`; }
+async function makeCovers(r, sub){ let n=0;
+  for(const {d,s} of reqLectures(r)){ const doc={owner:sub, date:d, day:dayIdx(parse(d)), start:s.start||"", end:s.end||"", kind:"fixed", label:s.label, lecture:true, cover:r.member}; if(s.lec) doc.lec=s.lec;
+    if(await save("slots", "cov_"+d+"_"+s.id, doc, false)) n++; }
+  return n; }
+
 // جدول الأكاديمية
 const lecOf = s => s && s.lec ? S.lectures.find(l=>l.id===s.lec) : null;
 const safeUrl = u => /^https:\/\/[^\s"'<>]+$/.test(String(u||"")) ? u : "";
-const lecSlots = lid => S.slots.filter(s=>s.lec===lid && memberOf(s.owner).active!==false);
+const lecSlots = lid => S.slots.filter(s=>s.lec===lid && !s.date && memberOf(s.owner).active!==false);
 const unassigned = () => S.lectures.filter(l=>l.active!==false && !lecSlots(l.id).length);
 function linksHtml(l){ if(!l) return ""; const z=safeUrl(l.zoom), sh=safeUrl(l.sheet);
   if(!z && !sh && !l.account) return "";
@@ -209,7 +221,7 @@ async function api(action, payload={}){
     return d;
   } catch(e){ if(e && e.reason) throw e; throw {reason:"network"}; } finally { clearTimeout(tm); }
 }
-function apply(d){ S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures"].forEach(k => S[k]=d[k]||[]); S.phase="app"; }
+function apply(d){ S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals"].forEach(k => S[k]=d[k]||[]); S.phase="app"; }
 async function refresh(quiet){
   const f=document.activeElement; if(quiet && f && /INPUT|TEXTAREA|SELECT/.test(f.tagName) && f.value) return; // لا نمسح ما يكتبه
   try { const d = await api("load"); if(d.ok){ apply(d); render(); } else if(d.reason==="not_registered") logout("حسابك ليس ضمن الفريق النشط. راجع مسئول اللجنة."); }
@@ -271,12 +283,14 @@ function viewMine(){
   const me=S.me.id, d=today(), sl=slotsOf(me,d), tk=openTasks(me), pr=problemsOf(me,d);
   const exp=sl.filter(s=>!slotOff(me,d,s.id)), done=exp.filter(s=>isSlotDone(d,s.id)).length;
   return `<div><h1>${esc(fmtDay(d))}</h1><p class="sub">${exp.length ? `أنجزت ${done} من ${exp.length} من شغل اليوم` : sl.length ? "شغل اليوم معتذر عنه بموافقة المسئول" : "لا يوجد شغل مجدول لك اليوم"}</p></div>
+  ${S.evals.some(e=>e.member===me&&!e.ack)?myEvalCards(me):""}
   ${dutyCard(me)}
   <div class="card"><h2>شغل اليوم</h2>${sl.length ? sl.map(s=>slotRow(d,s,me,true)).join("") : `<div class="empty">لا توجد محاضرات أو متابعات في جدولك اليوم.</div>`}</div>
   ${tk.length ? `<div class="card"><h2>مهام مطلوبة منك</h2>${tk.map(t=>taskRow(t,true)).join("")}</div>` : ""}
   <div class="row"><button class="btn ghost" data-a="problem" data-slot="">⚠️ عندي مشكلة أو استفسار</button><button class="btn ghost" data-a="newReq">📝 طلب اعتذار أو إجازة</button></div>
   ${pr.filter(p=>!p.slot).map(probHtml).join("")}
-  ${myReqs(me)}`;
+  ${myReqs(me)}
+  ${S.evals.some(e=>e.member===me&&!e.ack)?"":myEvalCards(me)}`;
 }
 // بطاقة الدوام: بدء ← استراحة ← إنهاء (الوقت يُختم من الخادم)
 function dutyCard(mid){
@@ -294,7 +308,7 @@ function slotRow(d,s,mid,mine){
   if(off) return `<div class="item done"><span class="chk" aria-hidden="true" style="color:var(--muted)">—</span><div class="what"><b>${esc(s.label)}</b><small>${when} · <span class="pill">${esc(okLabel(off))}</span></small></div></div>`;
   if(isLecture(s)){ const mk=marksOf(d,s.id), n=markCount(d,s.id);
     return `<div class="item lec ${done?"done":""}"><span class="cnt ${done?"on":""}" title="العلامات المكتملة">${done?"✓":n+"/4"}</span>
-    <div class="what"><b>${esc(s.label)}</b><small>${when}</small>${linksHtml(lecOf(s))}<div class="marks">${MARKS.map(([k,l])=> mine
+    <div class="what"><b>${esc(s.label)}${s.cover?` <span class="pill gold">بديل عن ${esc(nameOf(s.cover))}</span>`:""}</b><small>${when}</small>${linksHtml(lecOf(s))}<div class="marks">${MARKS.map(([k,l])=> mine
       ? `<button class="mk ${mk[k]?"on":""}" data-a="mark" data-id="${esc(s.id)}" data-k="${k}" aria-pressed="${!!mk[k]}">${mk[k]?"✓ ":""}${l}</button>`
       : `<span class="mk ${mk[k]?"on":""}">${mk[k]?"✓ ":""}${l}</span>`).join("")}</div>${pr.map(probHtml).join("")}</div>
     ${mine && !done?`<button class="flag" data-a="problem" data-slot="${esc(s.id)}">مشكلة؟</button>`:""}</div>`; }
@@ -356,6 +370,18 @@ function dutyPill(mid, d){
   if(st==="open") return `<span class="pill bad">دوام بلا نهاية</span>`+lt;
   return `<span class="pill">دوام ${dur(shMin(sh))}</span>`+lt;
 }
+// محاضرات اليوم المعرّضة للخطر: تبدأ خلال 30 دقيقة (أو بدأت) ومنظّمها لم يبدأ الدوام، أو بلا منظّم أصلًا
+function riskCard(){
+  const d=today(), now=toMin(cairoNow().hm), items=[];
+  team().concat(isMgr()?[S.me]:[]).forEach(m=>{ if(activeShift(m.id)) return;
+    slotsOf(m.id,d).filter(s=>isLecture(s) && s.start && !slotOff(m.id,d,s.id)).forEach(s=>{ const st=toMin(s.start), en=s.end?toMin(s.end):st+90;
+      if(now>=st-GOAL.before && now<en) items.push({t:st, html:`<b>${esc(s.label)}</b><small>${esc(t12(s.start))} · ${esc(m.name)} <span class="late">${now>=st?"بدأت المحاضرة ولم يبدأ الدوام":"لم يبدأ الدوام بعد"}</span></small>`}); }); });
+  if(isAdmin()) S.lectures.filter(l=>l.active!==false && l.start && Number(l.day)===dayIdx(parse(d)) && !lecSlots(l.id).length && !S.slots.some(s=>s.lec===l.id && s.date===d)).forEach(l=>{ const st=toMin(l.start);
+    if(now>=st-60 && now<st+30) items.push({t:st, html:`<b>${esc(l.name)}</b><small>${esc(t12(l.start))} · <span class="late">بلا منظّم</span></small>`, lid:l.id}); });
+  if(!items.length) return "";
+  items.sort((a,b)=>a.t-b.t);
+  return `<div class="card" style="border-color:var(--bad);background:var(--bad-soft)"><h2 style="color:var(--bad)">⚠️ محاضرات تحتاج تدخّلك الآن (${items.length})</h2>${items.map(x=>`<div class="item"><div class="what">${x.html}</div>${x.lid?`<button class="btn sm" data-a="coverLec" data-id="${esc(x.lid)}">تكليف لليوم</button>`:""}</div>`).join("")}</div>`;
+}
 function viewTeamToday(){
   const d=S.day||today(); const ppl=team();
   const mineSl=slotsOf(S.me.id,d);
@@ -364,7 +390,8 @@ function viewTeamToday(){
   const needReply = rows.flatMap(r=>r.pr.filter(p=>!p.reply).map(p=>({p,m:r.m})));
   const reqs = pendingReqs().sort((a,b)=>(a.date||"").localeCompare(b.date||""));
   return `<div class="row"><div class="grow"><h1>${esc(fmtDay(d))}</h1><p class="sub">من أنجز شغله، ومن يحتاج ردك</p></div><input type="date" data-a="day" value="${esc(d)}" style="width:auto"></div>
-  ${reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px"><input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button></div></div></div>`).join("")}</div>`:""}
+  ${d===today()?riskCard():""}
+  ${reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button></div></div></div>`).join("")}</div>`:""}
   ${needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>`<div class="item"><div class="what"><b>${esc(m.name)}</b><div class="prob">${esc(p.note)}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button></div></div></div>`).join("")}</div>`:""}
   ${mineSl.length && d===today()?dutyCard(S.me.id):""}
   ${mineSl.length?`<div class="card"><h2>شغلي اليوم</h2>${mineSl.map(s=>slotRow(d,s,S.me.id,d===today())).join("")}</div>`:""}
@@ -412,14 +439,14 @@ function viewReport(){
   const month=S.month||today().slice(0,7);
   const rows=team().map(m=>({m,...monthStats(m.id,month)}));
   return `<div class="row"><div class="grow"><h1>التقرير الشهري</h1><p class="sub">محسوب تلقائيًا من زر الدوام والعلامات والمهام</p></div><input type="month" data-a="month" value="${esc(month)}" style="width:auto"></div>
-  <div class="card" style="overflow-x:auto"><table><thead><tr><th>المشرف</th><th class="c">حضور الدوام<br><small>الهدف ${GOAL.attend}%</small></th><th class="c">إنجاز الجدول<br><small>الهدف ${GOAL.done}%</small></th><th class="c">محاضرات منظّمة<br><small>الهدف ${GOAL.weekly} أسبوعيًا</small></th><th class="c">ساعات الدوام</th><th class="c">المهام في موعدها</th><th class="c">مشكلات رُفعت</th></tr></thead><tbody>${rows.map(r=>{ const at=pc(r.present,r.work), a=pc(r.dn,r.exp), b=pc(r.onTime,r.tk);
+  <div class="card" style="overflow-x:auto"><table><thead><tr><th>المشرف</th><th class="c">حضور الدوام<br><small>الهدف ${GOAL.attend}%</small></th><th class="c">إنجاز الجدول<br><small>الهدف ${GOAL.done}%</small></th><th class="c">محاضرات منظّمة<br><small>الهدف ${GOAL.weekly} أسبوعيًا</small></th><th class="c">ساعات الدوام</th><th class="c">المهام في موعدها</th><th class="c">مشكلات رُفعت</th><th class="c">التقييم</th></tr></thead><tbody>${rows.map(r=>{ const at=pc(r.present,r.work), a=pc(r.dn,r.exp), b=pc(r.onTime,r.tk);
     const notes=[r.lates?`تأخر ${r.lates}`:"", r.noEnd?`بلا نهاية ${r.noEnd}`:""].filter(Boolean).join(" · ");
     return `<tr><td><b>${esc(r.m.name)}</b></td>
     <td class="c">${r.work?`<span class="pill ${tone(at,GOAL.attend)}">${at}%</span> <small class="sub">${r.present}/${r.work}</small>${notes?`<br><small class="late">${notes}</small>`:""}`:"—"}</td>
     <td class="c">${r.exp?`<span class="pill ${tone(a,GOAL.done)}">${a}%</span> <small class="sub">${r.dn}/${r.exp}</small>`:"—"}</td>
     <td class="c">${r.weekly!=null?`<span class="pill ${r.weekly>=GOAL.weekly?"ok":r.weekly>=GOAL.weekly-1?"gold":"bad"}">${r.weekly}</span> <small class="sub">${r.lecDone} في الشهر</small>`:"—"}</td>
     <td class="c">${r.mins?dur(r.mins):"—"}</td>
-    <td class="c">${r.tk?`<span class="pill ${tone(b,90)}">${b}%</span> <small class="sub">${r.onTime}/${r.tk}</small>`:"—"}</td><td class="c">${r.pr||"—"}</td></tr>`; }).join("")}</tbody></table>
+    <td class="c">${r.tk?`<span class="pill ${tone(b,90)}">${b}%</span> <small class="sub">${r.onTime}/${r.tk}</small>`:"—"}</td><td class="c">${r.pr||"—"}</td><td class="c">${(()=>{ const e=evalOf(r.m.id,month); return e?`<button class="btn sm ghost" data-a="evalM" data-id="${esc(r.m.id)}">${e.ack?"✓ اطّلع":"✓ قُيّم"}</button>`:`<button class="btn sm" data-a="evalM" data-id="${esc(r.m.id)}">تقييم</button>`; })()}</td></tr>`; }).join("")}</tbody></table>
   <p class="sub" style="font-size:13px;margin-top:10px">الأخضر = بلغ الهدف · الذهبي = قريب منه · الأحمر = بعيد عنه. المحاضرة لا تُحسب منجزة إلا بعلاماتها الأربع، والأيام والمحاضرات المقبول فيها اعتذار أو إجازة لا تُحسب على المشرف.</p></div>`;
 }
 
@@ -451,17 +478,56 @@ function assignForm(l){
   const cur=lecSlots(l.id).map(s=>s.owner);
   const ppl=S.members.filter(m=>m.active!==false && m.role!=="committee").sort((a,b)=>(b.dept==="org")-(a.dept==="org")||(a.name||"").localeCompare(b.name||""));
   return `<h2>تكليف: ${esc(l.name)}</h2><p class="sub" style="font-size:14px">${DAYS[Number(l.day)]}${l.start?" · "+esc(t12(l.start))+(l.end?" – "+esc(t12(l.end)):""):""}. اختر من ينظّمها؛ تُضاف لجدوله بعلاماتها الأربع.</p>
-  <div>${ppl.map(m=>{ const busy=S.slots.filter(s=>s.owner===m.id && s.lec && s.lec!==l.id && Number(s.day)===Number(l.day) && s.start && l.start && s.start<(l.end||"99") && (s.end||"99")>l.start);
+  <div>${ppl.map(m=>{ const busy=S.slots.filter(s=>s.owner===m.id && s.lec && !s.date && s.lec!==l.id && Number(s.day)===Number(l.day) && s.start && l.start && s.start<(l.end||"99") && (s.end||"99")>l.start);
     return `<label class="chkl"><input type="checkbox" class="as_m" value="${esc(m.id)}" ${cur.includes(m.id)?"checked":""}> ${esc(m.name)} <small class="sub">${esc(DEPTS[m.dept]||"")}</small>${busy.length?` <span class="pill gold">عنده في نفس الوقت: ${esc(busy[0].label)}</span>`:""}</label>`; }).join("")}</div>
   <div class="row"><button class="btn" data-a="saveAssign" data-id="${esc(l.id)}">حفظ</button><button class="btn ghost" data-a="close">إلغاء</button></div>`;
 }
 const lecSlotData = (l, mid) => ({owner:mid, day:Number(l.day), start:l.start||"", end:l.end||"", kind:"fixed", label:l.name, lecture:true, lec:l.id});
 
+// التقييم الشهري والتطوير
+const evalId = (mid, month) => "ev_"+mid+"_"+month;
+const evalOf = (mid, month) => S.evals.find(e=>e.id===evalId(mid,month));
+const prevMonth = m => { const [y,mo]=m.split("-").map(Number); const d=new Date(y,mo-2,1); return d.getFullYear()+"-"+pad(d.getMonth()+1); };
+const monthName = m => { const [y,mo]=m.split("-").map(Number); return MONTHS[mo-1]+" "+y; };
+const SCORE = ["","ضعيف","يحتاج تحسين","جيد","جيد جدًا","ممتاز"];
+const MET = {yes:["تحقق","ok"], partly:["تحقق جزئيًا","gold"], no:["لم يتحقق","bad"]};
+function metricsHtml(x){ if(!x) return "";
+  const cell=(l,v,g)=>`<div class="card" style="padding:10px;text-align:center"><small class="sub">${l}</small><div style="font-weight:700;font-size:18px">${v}</div>${g?`<small class="sub">${g}</small>`:""}</div>`;
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px">${[
+    x.attend!=null?cell("حضور الدوام",x.attend+"%","الهدف "+GOAL.attend+"%"):"", x.done!=null?cell("إنجاز الجدول",x.done+"%","الهدف "+GOAL.done+"%"):"",
+    x.weekly!=null?cell("محاضرات أسبوعيًا",x.weekly,"الهدف "+GOAL.weekly):"", x.hours?cell("ساعات الدوام",dur(x.hours)):"", x.onTime!=null?cell("المهام في موعدها",x.onTime+"%"):""].join("")}</div>`; }
+function snapMetrics(mid, month){ const r=monthStats(mid,month); return {attend:pc(r.present,r.work), done:pc(r.dn,r.exp), weekly:r.weekly, hours:r.mins, onTime:pc(r.onTime,r.tk), lates:r.lates}; }
+function evalForm(mid, month){
+  const e=evalOf(mid,month)||{}, prev=evalOf(mid,prevMonth(month)), m=snapMetrics(mid,month);
+  const sel=(id,v)=>`<select id="${id}">${SCORE.map((l,i)=>`<option value="${i||""}" ${Number(v)===i&&i?"selected":""}>${i?i+" — "+l:"اختر…"}</option>`).join("")}</select>`;
+  return `<h2>تقييم ${esc(nameOf(mid))} — ${esc(monthName(month))}</h2>
+  <p class="sub" style="font-size:13px">الأرقام محسوبة تلقائيًا من المنظومة.</p>${metricsHtml(m)}
+  ${prev&&prev.goal&&prev.goal.text?`<div class="banner"><b>هدف الشهر الماضي:</b> ${esc(prev.goal.text)}<label style="margin-top:6px">هل تحقق؟<select id="ev_met"><option value="">اختر…</option>${Object.entries(MET).map(([k,[l]])=>`<option value="${k}" ${e.goalMet===k?"selected":""}>${l}</option>`).join("")}</select></label></div>`:""}
+  <div class="form"><label>جودة العمل${sel("ev_q",e.quality)}</label><label>التعاون والالتزام${sel("ev_c",e.coop)}</label>
+  <label class="full">ملاحظتك له<textarea id="ev_note" placeholder="نقاط القوة، وما يحتاج تحسينًا">${esc(e.headNote||"")}</textarea></label>
+  <label class="full">هدف الشهر القادم (للتطوير)<input id="ev_goal" value="${esc((e.goal||{}).text||"")}" placeholder="مثال: البدء قبل كل محاضرة بنصف ساعة دون تأخير"></label></div>
+  ${e.ack?`<div class="banner">✓ اطّلع على التقييم${e.ackNote?`: «${esc(e.ackNote)}»`:""}</div>`:""}
+  <div class="row"><button class="btn" data-a="saveEval" data-id="${esc(mid)}" data-month="${esc(month)}">حفظ وإرسال له</button><button class="btn ghost" data-a="close">إلغاء</button></div>`;
+}
+function myEvalCards(me){
+  const mine=S.evals.filter(e=>e.member===me).sort((a,b)=>(b.month||"").localeCompare(a.month||""));
+  const pend=mine.find(e=>!e.ack), last=mine[0];
+  let h="";
+  if(pend) h+=`<div class="card" style="border-color:var(--gold)"><h2>📊 تقييمك لشهر ${esc(monthName(pend.month))}</h2>${metricsHtml(pend.metrics)}
+    <div class="row" style="margin-top:8px">${pend.quality?`<span class="pill">جودة العمل: ${esc(SCORE[pend.quality])}</span>`:""}${pend.coop?`<span class="pill">التعاون والالتزام: ${esc(SCORE[pend.coop])}</span>`:""}${MET[pend.goalMet]?`<span class="pill ${MET[pend.goalMet][1]}">هدف الشهر الماضي: ${MET[pend.goalMet][0]}</span>`:""}</div>
+    ${pend.headNote?`<p style="margin:8px 0 0"><b>ملاحظة المسئول:</b> ${esc(pend.headNote)}</p>`:""}${pend.goal&&pend.goal.text?`<p style="margin:6px 0 0"><b>هدفك للشهر القادم:</b> ${esc(pend.goal.text)}</p>`:""}
+    <label style="margin-top:8px">تعليقك (اختياري)<input id="ack_note"></label><div class="row" style="margin-top:6px"><button class="btn" data-a="ackEval" data-id="${esc(pend.id)}">اطّلعت</button></div></div>`;
+  else if(last && last.goal && last.goal.text) h+=`<div class="banner">🎯 <b>هدفك هذا الشهر:</b> ${esc(last.goal.text)}</div>`;
+  return h;
+}
+
 // الفريق والجداول (لمسئول اللجنة)
 function viewTeam(){
-  const list=[...S.members].sort((a,b)=>(a.dept||"").localeCompare(b.dept||"")||(a.name||"").localeCompare(b.name||""));
+  const off=S.members.filter(m=>m.active===false).length;
+  const list=S.members.filter(m=>S.showInactive||m.active!==false).sort((a,b)=>(a.dept||"").localeCompare(b.dept||"")||(a.name||"").localeCompare(b.name||""));
   return `<div class="row"><div class="grow"><h1>الفريق والجداول</h1><p class="sub">كل عضو يدخل بإيميل جوجل المكتوب هنا</p></div><button class="btn" data-a="newMember">+ عضو</button></div>
-  <div class="card" style="overflow-x:auto"><table><thead><tr><th>الاسم</th><th>الدور</th><th>الإيميل</th><th class="c">جدوله</th><th></th></tr></thead><tbody>${list.map(m=>`<tr><td><b>${esc(m.name)}</b>${m.active===false?` <span class="pill bad">موقوف</span>`:""}</td><td>${esc(ROLES[m.role]||"")}</td><td dir="ltr" style="font-size:13px">${m.email?esc(m.email):`<span class="pill gold">بلا إيميل</span>`}</td><td class="c">${S.slots.filter(s=>s.owner===m.id&&s.kind!=="flex").length}</td><td><div class="row" style="flex-wrap:nowrap"><button class="btn sm ghost" data-a="editMember" data-id="${esc(m.id)}">بياناته</button><button class="btn sm ghost" data-a="sched" data-id="${esc(m.id)}">جدوله</button></div></td></tr>`).join("")}</tbody></table></div>`;
+  ${off?`<div class="row"><button class="flag" data-a="toggleInactive">${S.showInactive?"إخفاء الموقوفين":`إظهار الموقوفين (${off})`}</button></div>`:""}
+  <div class="card" style="overflow-x:auto"><table><thead><tr><th>الاسم</th><th>الدور</th><th>الإيميل</th><th class="c">جدوله</th><th></th></tr></thead><tbody>${list.map(m=>`<tr><td><b>${esc(m.name)}</b>${m.active===false?` <span class="pill bad">موقوف</span>`:""}</td><td>${esc(ROLES[m.role]||"")}</td><td dir="ltr" style="font-size:13px">${m.email?esc(m.email):`<span class="pill gold">بلا إيميل</span>`}</td><td class="c">${S.slots.filter(s=>s.owner===m.id&&s.kind!=="flex"&&!s.date).length}</td><td><div class="row" style="flex-wrap:nowrap"><button class="btn sm ghost" data-a="editMember" data-id="${esc(m.id)}">بياناته</button><button class="btn sm ghost" data-a="sched" data-id="${esc(m.id)}">جدوله</button></div></td></tr>`).join("")}</tbody></table></div>`;
 }
 function memberForm(m){
   const isNew=!m; m=m||{role:"sa",dept:"sa",active:true};
@@ -471,10 +537,29 @@ function memberForm(m){
     <label>الدور<select id="m_role">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${m.role===k?"selected":""}>${v}</option>`).join("")}</select></label>
     <label>القسم<select id="m_dept">${Object.entries(DEPTS).map(([k,v])=>`<option value="${k}" ${m.dept===k?"selected":""}>${v}</option>`).join("")}</select></label>
     <label class="full" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" id="m_active" style="width:auto" ${m.active!==false?"checked":""}> نشط (يستطيع الدخول)</label></div>
-    <div class="row"><button class="btn" data-a="saveMember" data-id="${esc(isNew?"":m.id)}">حفظ</button><button class="btn ghost" data-a="close">إلغاء</button></div>`;
+    <div class="row"><button class="btn" data-a="saveMember" data-id="${esc(isNew?"":m.id)}">حفظ</button><button class="btn ghost" data-a="close">إلغاء</button><span class="grow"></span>
+    ${!isNew&&m.email?`<button class="btn sm ghost" data-a="invite" data-id="${esc(m.id)}">📋 نسخ رسالة الدعوة</button>`:""}
+    ${!isNew&&m.id!==S.me.id?(hasHistory(m.id)?`<span class="sub" style="font-size:12.5px">له سجل؛ يُوقَف ولا يُحذف</span>`:`<button class="btn sm danger" data-a="delMember" data-id="${esc(m.id)}">حذف نهائي</button>`):""}</div>`;
+}
+const hasHistory = mid => S.tasks.some(t=>t.assignee===mid) || S.shifts.some(x=>x.member===mid) || S.checkins.some(x=>x.member===mid) || S.requests.some(x=>x.member===mid) || S.evals.some(x=>x.member===mid);
+const weeklyLecs = mid => S.slots.filter(s=>s.owner===mid && s.lec && !s.date);
+function inviteText(m){ return `السلام عليكم ${m.name}،
+تمت إضافتك في منظومة الإشراف — أكاديمية وحي.
+الرابط: https://wahyacademy.github.io/supervision/
+ادخل بحساب جوجل: ${m.email}
+• ابدأ الدوام من الزر أعلى الصفحة قبل أول محاضرة بنصف ساعة.
+• ضع العلامات الأربع لكل محاضرة (زووم، يوتيوب، شيت الحضور، التقرير) قبل إنهاء الدوام.
+• للاعتذار أو الإجازة استخدم زر «طلب اعتذار أو إجازة».`; }
+function transferForm(mid){
+  const ls=weeklyLecs(mid).sort((a,b)=>(Number(a.day)-Number(b.day))||(a.start||"").localeCompare(b.start||""));
+  const ppl=S.members.filter(m=>m.active!==false && m.role!=="committee" && m.id!==mid);
+  return `<h2>نقل تكليفات ${esc(nameOf(mid))}</h2><p class="sub" style="font-size:14px">${ls.length} محاضرة في جدوله. اختر لمن تنتقل، أو اتركها بلا منظّم لتكلّفها لاحقًا من «جدول الأكاديمية».</p>
+  <div class="mini">${ls.map(s=>`<span class="u">○ ${DAYS[Number(s.day)]} ${s.start?esc(t12(s.start))+" — ":""}${esc(s.label)}</span>`).join("")}</div>
+  <label>تنتقل إلى<select id="tr_to"><option value="">اتركها بلا منظّم</option>${ppl.map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}</select></label>
+  <div class="row"><button class="btn" data-a="doTransfer" data-id="${esc(mid)}">تنفيذ</button><button class="btn ghost" data-a="close">لاحقًا</button></div>`;
 }
 function schedForm(mid, editId){
-  const sl=S.slots.filter(s=>s.owner===mid && s.kind!=="flex").sort((a,b)=>(Number(a.day)-Number(b.day))||(a.start||"99").localeCompare(b.start||"99"));
+  const sl=S.slots.filter(s=>s.owner===mid && s.kind!=="flex" && !s.date).sort((a,b)=>(Number(a.day)-Number(b.day))||(a.start||"99").localeCompare(b.start||"99"));
   const ed=S.slots.find(s=>s.id===editId); const lec = ed ? isLecture(ed) : memberOf(mid).dept==="org";
   return `<h2>جدول ${esc(nameOf(mid))}</h2><p class="sub" style="font-size:14px">الشغل الأسبوعي الثابت الذي يظهر له كل يوم. المحاضرات تُكلَّف من «جدول الأكاديمية»؛ وهنا الشغل الآخر (متابعة، تليجرام…).</p>
   <div>${sl.length?sl.map(s=>`<div class="item"><div class="what"><b>${esc(s.label)} ${s.lec?`<span class="pill ok">من جدول الأكاديمية</span>`:isLecture(s)?`<span class="pill">محاضرة</span>`:""}</b><small>${DAYS[Number(s.day)]}${s.start?" · "+esc(t12(s.start))+" – "+esc(t12(s.end)):` · <span class="late">بلا موعد</span>`}</small></div>${s.lec?"":`<button class="btn sm ghost" data-a="editSlot" data-id="${esc(s.id)}" data-m="${esc(mid)}">تعديل</button>`}<button class="btn sm danger" data-a="delSlot" data-id="${esc(s.id)}" data-m="${esc(mid)}">${s.lec?"إلغاء التكليف":"حذف"}</button></div>`).join(""):`<div class="empty">لا يوجد شغل في جدوله بعد.</div>`}</div>
@@ -483,6 +568,8 @@ function schedForm(mid, editId){
     <label>اليوم<select id="s_day">${DAYS.map((d,i)=>`<option value="${i}" ${ed&&Number(ed.day)===i?"selected":""}>${d}</option>`).join("")}</select></label>
     <div class="row"><label class="grow">من (اختياري)<input type="time" id="s_from" value="${esc(ed?ed.start||"":"")}"></label><label class="grow">إلى<input type="time" id="s_to" value="${esc(ed?ed.end||"":"")}"></label></div>
     <label class="full" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" id="s_lec" style="width:auto" ${lec?"checked":""}> محاضرة تحتاج تنظيمًا (زووم، يوتيوب، شيت الحضور، التقرير)</label></div>
+  ${(()=>{ const cv=S.slots.filter(s=>s.owner===mid && s.date && s.date>=today()).sort((a,b)=>a.date.localeCompare(b.date)); return cv.length?`<div style="border-top:1px solid var(--line);padding-top:10px"><b style="font-size:14px">بديل في أيام محددة</b>${cv.map(s=>`<div class="item"><div class="what"><b>${esc(s.label)}</b><small>${esc(fmtDay(s.date))}${s.cover?" · بدل "+esc(nameOf(s.cover)):""}</small></div><button class="btn sm danger" data-a="delSlot" data-id="${esc(s.id)}" data-m="${esc(mid)}">إلغاء</button></div>`).join("")}</div>`:""; })()}
+  ${weeklyLecs(mid).length?`<div class="row"><button class="btn sm ghost" data-a="transfer" data-id="${esc(mid)}">نقل كل محاضراته (${weeklyLecs(mid).length}) إلى منظّم آخر</button></div>`:""}
   <div class="row"><button class="btn" data-a="addSlot" data-m="${esc(mid)}" data-id="${esc(ed?ed.id:"")}">${ed?"حفظ التعديل":"إضافة"}</button>${ed?`<button class="btn ghost" data-a="sched" data-id="${esc(mid)}">إلغاء التعديل</button>`:""}<button class="btn ghost" data-a="close">إغلاق</button></div>`;
 }
 
@@ -535,7 +622,9 @@ document.addEventListener("click", async e=>{
     if(st==="accepted" && r.kind==="fix" && r.start){
       const sh=await save("shifts", "sh_"+r.member+"_"+r.date, {member:r.member, date:r.date, start:r.start, end:r.end||"", startAt:null, endAt:null, breakAt:null, fixedBy:me}, true);
       if(!sh){ el.disabled=false; return; } }
-    if(await save("requests", id, {status:st, reply, decidedBy:me, decidedAt:Date.now()})) toast(st==="accepted"?"قُبل الطلب.":"رُفض الطلب.");
+    const sub=v("cv_"+id); let nc=0;
+    if(st==="accepted" && sub) nc=await makeCovers(r, sub);
+    if(await save("requests", id, {status:st, reply, decidedBy:me, decidedAt:Date.now()})) toast(st==="accepted"?(nc?`قُبل الطلب، و${nameOf(sub)} بديل في ${nc} محاضرة.`:"قُبل الطلب."):"رُفض الطلب.");
     return; }
   if(a==="task"){ el.disabled=true; await save("tasks", id, {status:"done", doneAt:d}); toast("أحسنت، سُجّلت المهمة كمنجزة."); return; }
   if(a==="problem"){ const sid=el.dataset.slot; const s=S.slots.find(x=>x.id===sid);
@@ -557,7 +646,31 @@ document.addEventListener("click", async e=>{
     if(!data.name) return toast("اكتب الاسم."); if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return toast("الإيميل غير صحيح.");
     if(email && S.members.some(m=>m.id!==id && (m.email||"").toLowerCase()===email)) return toast("هذا الإيميل مسجّل لعضو آخر.");
     if(id===me && (data.role!=="committee"||!data.active)) return toast("لا يمكنك إزالة صلاحيتك أنت.");
-    if(await save("members", id||null, data, !!id)) close(); return; }
+    const wasActive = id && memberOf(id).active!==false;
+    if(await save("members", id||null, data, !!id)){ close();
+      if(wasActive && !data.active && weeklyLecs(id).length) open(transferForm(id)); }
+    return; }
+  if(a==="toggleInactive"){ S.showInactive=!S.showInactive; render(); return; }
+  if(a==="invite"){ const m=memberOf(id); try{ await navigator.clipboard.writeText(inviteText(m)); toast("نُسخت رسالة الدعوة؛ الصقها له في واتساب أو تيليجرام."); } catch(err){ open(`<h2>رسالة الدعوة</h2><textarea style="min-height:200px">${esc(inviteText(m))}</textarea><div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`); } return; }
+  if(a==="delMember"){ if(hasHistory(id)) return toast("له سجل عمل؛ أوقفه بدل الحذف.");
+    if(!el.dataset.sure){ el.dataset.sure="1"; el.textContent="اضغط مرة أخرى للحذف النهائي"; return; }
+    el.disabled=true; for(const s of S.slots.filter(x=>x.owner===id)) await remove("slots", s.id); await remove("members", id); close(); toast("حُذف العضو."); return; }
+  if(a==="transfer") return open(transferForm(id));
+  if(a==="doTransfer"){ const to=v("tr_to"); el.disabled=true; let n=0;
+    for(const s of weeklyLecs(id)){ const l=S.lectures.find(x=>x.id===s.lec); await remove("slots", s.id);
+      if(to && l && !S.slots.some(x=>x.owner===to && x.lec===l.id && !x.date)){ await save("slots", "lec_"+l.id+"_"+to, lecSlotData(l,to), false); n++; } }
+    close(); toast(to?`انتقلت ${n} محاضرة إلى ${nameOf(to)}.`:"أصبحت محاضراته بلا منظّم؛ كلّفها من «جدول الأكاديمية»."); return; }
+  if(a==="coverLec"){ const l=S.lectures.find(x=>x.id===id); const ppl=S.members.filter(m=>m.active!==false && m.role!=="committee");
+    return open(`<h2>تكليف لليوم فقط: ${esc(l.name)}</h2><p class="sub" style="font-size:14px">${esc(fmtDay(today()))} · ${esc(t12(l.start))}. للتكليف الدائم استخدم «جدول الأكاديمية».</p><label>المنظّم<select id="cl_who">${ppl.map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("")}</select></label><div class="row"><button class="btn" data-a="saveCoverLec" data-id="${esc(id)}">تكليف</button><button class="btn ghost" data-a="close">إلغاء</button></div>`); }
+  if(a==="saveCoverLec"){ const l=S.lectures.find(x=>x.id===id), who=v("cl_who"), d=today(); el.disabled=true;
+    if(await save("slots", "cov_"+d+"_"+l.id, {...lecSlotData(l,who), date:d}, false)){ close(); toast("كُلِّف "+nameOf(who)+" بها اليوم."); } else el.disabled=false; return; }
+  if(a==="evalM") return open(evalForm(id, S.month||today().slice(0,7)));
+  if(a==="saveEval"){ const month=el.dataset.month, mid=id;
+    const data={member:mid, month, quality:Number(v("ev_q"))||null, coop:Number(v("ev_c"))||null, headNote:v("ev_note"), goal:{text:v("ev_goal")}, evaluator:me, metrics:snapMetrics(mid,month)};
+    const met=document.getElementById("ev_met"); if(met) data.goalMet=met.value;
+    if(!data.quality||!data.coop) return toast("اختر تقدير الجودة والتعاون.");
+    el.disabled=true; if(await save("evals", evalId(mid,month), data, true)){ close(); toast("حُفظ التقييم، وسيظهر له في صفحته."); } else el.disabled=false; return; }
+  if(a==="ackEval"){ el.disabled=true; await save("evals", id, {ack:true, ackAt:today(), ackNote:v("ack_note")}); toast("شكرًا، سُجّل اطّلاعك."); return; }
   if(a==="sched") return open(schedForm(id));
   if(a==="addSlot"){ const m=el.dataset.m; const data={owner:m, day:Number(v("s_day")), start:v("s_from"), end:v("s_to"), kind:"fixed", label:v("s_label"), lecture:document.getElementById("s_lec").checked};
     if(!data.label) return toast("اكتب الشغل."); if(data.end && !data.start) return toast("اكتب وقت البداية."); if(data.start && data.end && toMin(data.end)<=toMin(data.start) && toMin(data.end)>180) return toast("وقت النهاية بعد البداية.");
