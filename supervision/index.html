@@ -56,6 +56,17 @@ h2{font-size:18px;margin:0 0 10px;color:var(--brand-deep)}
 .cd{display:inline-block;background:var(--gold-soft);color:var(--gold-ink);border-radius:10px;padding:2px 10px;font-weight:700;font-variant-numeric:tabular-nums}
 .cd.late{background:var(--bad-soft);color:var(--bad)}
 .links button.lk{border:1px dashed var(--brand);background:#fff;color:var(--brand);border-radius:8px;padding:2px 10px;font-weight:600;font-size:13px;cursor:pointer}
+.steps{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.stp{display:flex;align-items:center;gap:10px;width:100%;text-align:start;background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:7px 10px;font-size:14px;cursor:pointer}
+span.stp{cursor:default}
+.stp .bx{flex:none;width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;font-size:14px;font-weight:700;color:#fff}
+.stp .tx{flex:1;min-width:0}
+.stp .tm{flex:none;color:var(--muted);font-size:12.5px;font-variant-numeric:tabular-nums}
+.stp.now{border-color:var(--gold);background:var(--gold-soft)}
+.stp.late{border-color:#f0b5ab;background:var(--bad-soft)}
+.stp.done,.stp.lateDone{background:var(--ok-soft);border-color:#a9dcd5}
+.stp.done .bx,.stp.lateDone .bx{background:var(--ok);border-color:var(--ok)}
+.stp.done .tx,.stp.lateDone .tx{color:var(--muted)}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .stat{background:var(--fog);border-radius:10px;padding:12px;text-align:center}.stat b{font-size:22px;color:var(--brand);display:block}.stat small{color:var(--muted);font-size:12.5px}
 @media(max-width:760px){.week{grid-template-columns:1fr}.wday{min-height:0}.wday.empty:not(.today){display:none}.stats{grid-template-columns:repeat(2,1fr)}header img{height:44px}header .t b{font-size:22px}}
@@ -145,7 +156,20 @@ const CONFIG = {
 const ROLES = {committee:"مسئول اللجنة", head:"مسئول قسم", sa:"مشرف شئون الطلاب", org:"منظّم"};
 const DEPTS = {sa:"شئون الطلاب", org:"التنظيم", all:"اللجنة كلها"};
 const DAYS = ["السبت","الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة"];
-const MARKS = [["zoom","تسجيل زووم"],["yt","بث يوتيوب"],["sheet","شيت الحضور"],["report","تقرير المحاضرة"]];
+const MARKS = [["zoom","تسجيل زووم"],["yt","بث يوتيوب"],["sheet","شيت الحضور"],["report","تقرير المحاضرة"]]; // قبل 6 نوفمبر 2026
+// قواعد التنظيم بالوقت (اعتمدها المستخدم 5 نوفمبر): [المفتاح، الخطوة، تبدأ من (s بداية/e نهاية، دقائق)، موعدها النهائي (s/e، دقائق)]
+const STEPS_SINCE = "2026-11-06", STEP_GRACE = 5;
+const STEPS = [
+  ["open","بدء الدوام وفتح غرفة زووم من الحساب المحدد","s",-45,"s",-30],
+  ["tg","نزول تذكير المحاضرة ورابطها في جروب تيليجرام","s",-45,"s",-30],
+  ["sheikh","التأكد من دخول الشيخ وتجربة الصوت والشاشة","s",-20,"s",-10],
+  ["zoom","بدء تسجيل زووم","s",-5,"s",0],
+  ["yt","بدء بث يوتيوب","s",-5,"s",0],
+  ["chat","متابعة الغرفة والرد على الطلاب في الشات","s",0,"e",0],
+  ["share","رفع التسجيل ونشره (الشير)","e",0,"e",60],
+  ["sheet","تسجيل الحضور والغياب في الشيت","e",0,"e",60],
+  ["report","كتابة تقرير المحاضرة","e",0,"e",120]];
+const stepsFor = date => date>=STEPS_SINCE ? STEPS : MARKS;
 const REQ = {lecture:"اعتذار عن محاضرة", day:"اعتذار عن يوم", leave:"إجازة", fix:"تصحيح يوم سابق"};
 const REQ_ST = {pending:["ينتظر الرد","gold"], accepted:["مقبول","ok"], rejected:["مرفوض","bad"], cancelled:["ملغى",""]};
 const GOAL = {attend:90, done:95, weekly:5, before:30, grace:5, since:"2026-11-04"}; // since: أول يوم يُحسب فيه حضور الدوام
@@ -199,9 +223,20 @@ const memberOf = id => S.members.find(m=>m.id===id) || {};
 // المحاضرة التي تحتاج تنظيمًا لها 4 علامات؛ افتراضيًا كل شغل المنظمين، ويمكن تفعيلها لشغل أي مشرف من صفحة الجدول
 const isLecture = s => !!s && (s.lecture===true || (s.lecture===undefined && memberOf(s.owner).dept==="org"));
 const marksOf = (date, sid) => (slotTask(date,sid)||{}).marks || {};
-const markCount = (date, sid) => { const m=marksOf(date,sid); return MARKS.filter(([k])=>m[k]).length; };
+const markCount = (date, sid) => { const m=marksOf(date,sid); return stepsFor(date).filter(([k])=>m[k]).length; };
+// موعد الخطوة بدقائق اليوم (قد يتجاوز 1440 بعد منتصف الليل)
+function stepWin(s, st){ if(!s.start || st.length<6) return null; const a=toMin(s.start); let e=s.end?toMin(s.end):a+90; if(e<=a) e+=1440;
+  const at=(r,o)=>(r==="s"?a:e)+o; return {from:at(st[2],st[3]), due:at(st[4],st[5])}; }
+// وقت الإتمام (بختم الخادم) بدقائق اليوم نسبةً لتاريخ المحاضرة
+function cairoMinOf(epoch, ds){ const o={}; new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Cairo",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date(epoch)).forEach(x=>o[x.type]=x.value);
+  const d=o.year+"-"+o.month+"-"+o.day; const days=Math.round((parse(d)-parse(ds))/864e5); return days*1440+(+o.hour)*60+(+o.minute); }
+// حالة الخطوة: done / late-done / now / late / soon
+function stepState(ds, s, st, v){ const w=stepWin(s,st);
+  if(v){ if(w && typeof v==="number" && cairoMinOf(v,ds)>w.due+STEP_GRACE) return "lateDone"; return "done"; }
+  if(!w) return "soon"; const t=today(); if(ds<t) return "late"; if(ds>t) return "soon";
+  const now=toMin(cairoNow().hm); return now>w.due+STEP_GRACE ? "late" : now>=w.from ? "now" : "soon"; }
 const isSlotDone = (date, sid) => { const t=slotTask(date,sid); if(!t) return false; const s=S.slots.find(x=>x.id===sid);
-  return isLecture(s) && t.marks ? MARKS.every(([k])=>t.marks[k]) : t.status==="done"; };
+  return isLecture(s) && t.marks ? stepsFor(date).every(([k])=>t.marks[k]) : t.status==="done"; };
 // البديل: محاضرات الطلب التي ستحتاج من يغطيها
 function reqDates(r){ const out=[]; let d=r.date; const end=r.kind==="leave"?(r.dateTo||r.date):r.date; for(let i=0;i<31 && d<=end;i++){ out.push(d); d=addDays(d,1); } return out; }
 function reqLectures(r){ if(r.kind==="fix") return [];
@@ -376,10 +411,12 @@ function slotRow(d,s,mid,mine){
   const when = s.start ? esc(t12(s.start))+" – "+esc(t12(s.end)) : DAYS[Number(s.day)];
   if(off) return `<div class="item done"><span class="chk" aria-hidden="true" style="color:var(--muted)">—</span><div class="what"><b>${esc(s.label)}</b><small>${when} · <span class="pill">${esc(okLabel(off))}</span></small></div></div>`;
   if(isLecture(s)){ const mk=marksOf(d,s.id), n=markCount(d,s.id);
-    return `<div class="item lec ${done?"done":""}"><span class="cnt ${done?"on":""}" title="العلامات المكتملة">${done?"✓":n+"/4"}</span>
-    <div class="what"><b>${esc(s.label)}${s.cover?` <span class="pill gold">بديل عن ${esc(nameOf(s.cover))}</span>`:""}</b><small>${when}</small>${linksHtml(lecOf(s))}<div class="marks">${MARKS.map(([k,l])=> mine
-      ? `<button class="mk ${mk[k]?"on":""}" data-a="mark" data-id="${esc(s.id)}" data-k="${k}" aria-pressed="${!!mk[k]}">${mk[k]?"✓ ":""}${l}</button>`
-      : `<span class="mk ${mk[k]?"on":""}">${mk[k]?"✓ ":""}${l}</span>`).join("")}</div>${pr.map(probHtml).join("")}</div>
+    return `<div class="item lec ${done?"done":""}"><span class="cnt ${done?"on":""}" title="الخطوات المكتملة">${done?"✓":n+"/"+stepsFor(d).length}</span>
+    <div class="what"><b>${esc(s.label)}${s.cover?` <span class="pill gold">بديل عن ${esc(nameOf(s.cover))}</span>`:""}</b><small>${when}</small>${linksHtml(lecOf(s))}<div class="steps">${stepsFor(d).map(st=>{ const [k,l]=st, v=mk[k], ss=stepState(d,s,st,v), w=stepWin(s,st);
+      const tm = v ? (typeof v==="number" ? "✓ "+t12(fromMin(cairoMinOf(v,d))) : "✓") : w ? (k==="chat" ? "أثناء المحاضرة" : "⏰ "+t12(fromMin(w.due))) : "";
+      const tag = ss==="now" ? ` <span class="pill gold">الآن</span>` : ss==="late" ? ` <span class="pill bad">متأخرة</span>` : ss==="lateDone" ? ` <span class="pill bad">تمت متأخرة</span>` : "";
+      const inner = `<span class="bx">${v?"✓":""}</span><span class="tx">${l}${tag}</span><span class="tm">${esc(tm)}</span>`;
+      return mine ? `<button class="stp ${ss}" data-a="mark" data-id="${esc(s.id)}" data-k="${k}" aria-pressed="${!!v}">${inner}</button>` : `<span class="stp ${ss}">${inner}</span>`; }).join("")}</div>${pr.map(probHtml).join("")}</div>
     ${mine && !done?`<button class="flag" data-a="problem" data-slot="${esc(s.id)}">مشكلة؟</button>`:""}</div>`; }
   return `<div class="item ${done?"done":""}">
     ${mine?`<button class="chk ${done?"on":""}" data-a="slot" data-id="${esc(s.id)}" aria-label="تم">✓</button>`:`<span class="chk ${done?"on":""}" aria-hidden="true">✓</span>`}
@@ -466,7 +503,7 @@ function viewTeamToday(){
   ${mineSl.length?`<div class="card"><h2>شغلي اليوم</h2>${mineSl.map(s=>slotRow(d,s,S.me.id,d===today())).join("")}</div>`:""}
   <div class="card"><h2>الفريق</h2>${rows.length? rows.map(({m,sl,exp,dn,pr,late})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${esc(DEPTS[m.dept]||"")}</small></span>${dutyPill(m.id,d)}${pr.length?`<span class="pill gold">⚠️ ${pr.length}</span>`:""}${late?`<span class="pill bad">${late} متأخرة</span>`:""}${exp.length?`<span class="pill ${dn===exp.length?"ok":""}">${dn} من ${exp.length}</span>`:""}</summary>
     <div class="mini">${sl.map(s=>{ const off=slotOff(m.id,d,s.id), ok=isSlotDone(d,s.id), lec=isLecture(s);
-      return `<span class="${ok?"d":"u"}">${off?"—":ok?"✓":"○"} ${s.start?esc(t12(s.start))+" — ":""}${esc(s.label)}${off?" (معتذر)":lec&&!ok?` (${markCount(d,s.id)} من 4: ${MARKS.filter(([k])=>!marksOf(d,s.id)[k]).map(x=>x[1]).join("، ")} ناقص)`:""}</span>`; }).join("")}${pr.map(probHtml).join("")}</div></details>`).join("") : `<div class="empty">لا يوجد شغل مجدول للفريق في هذا اليوم.</div>`}</div>`;
+      return `<span class="${ok?"d":"u"}">${off?"—":ok?"✓":"○"} ${s.start?esc(t12(s.start))+" — ":""}${esc(s.label)}${off?" (معتذر)":lec&&!ok?` (${markCount(d,s.id)} من ${stepsFor(d).length}: ${stepsFor(d).filter(([k])=>!marksOf(d,s.id)[k]).map(x=>x[1]).join("، ")} ناقص)`:""}</span>`; }).join("")}${pr.map(probHtml).join("")}</div></details>`).join("") : `<div class="empty">لا يوجد شغل مجدول للفريق في هذا اليوم.</div>`}</div>`;
 }
 
 // المهام
@@ -490,17 +527,18 @@ function taskForm(t){
 // التقرير الشهري
 function monthStats(mid, month){
   const [y,mo]=month.split("-").map(Number); const last=new Date(y,mo,0).getDate(); const t0=today();
-  let exp=0, dn=0, work=0, present=0, lates=0, noEnd=0, mins=0, lec=0, lecDone=0, days=0;
+  let exp=0, dn=0, work=0, present=0, lates=0, noEnd=0, mins=0, lec=0, lecDone=0, days=0, stepAll=0, stepOn=0, stepLate=0;
   for(let d=1; d<=last; d++){ const ds=y+"-"+pad(mo)+"-"+pad(d); if(ds>t0) break; days++;
     const sh=shiftOf(mid,ds); mins+=shMin(sh); if(shState(sh)==="open") noEnd++;
     const es=slotsOf(mid,ds).filter(s=>!slotOff(mid,ds,s.id));
     if(es.length && ds>=GOAL.since && !(ds===t0 && !sh)){ work++; if(sh){ present++; if(lateBy(mid,ds)) lates++; } }
-    es.forEach(s=>{ exp++; const ok=isSlotDone(ds,s.id); if(ok) dn++; if(isLecture(s)){ lec++; if(ok) lecDone++; } }); }
+    es.forEach(s=>{ exp++; const ok=isSlotDone(ds,s.id); if(ok) dn++; if(isLecture(s)){ lec++; if(ok) lecDone++;
+      if(ds>=STEPS_SINCE && ds<t0 && s.start){ const mk=marksOf(ds,s.id); STEPS.forEach(st=>{ stepAll++; const v=mk[st[0]]; if(v && stepState(ds,s,st,v)==="done") stepOn++; else if(v) stepLate++; }); } } }); }
   const tk=S.tasks.filter(t=>t.type!=="scheduled" && t.assignee===mid && (t.due||"").slice(0,7)===month && t.due<=t0);
   const onTime=tk.filter(t=>t.status==="done" && (t.doneAt||"")<=t.due).length;
   const pr=S.checkins.filter(c=>c.member===mid && c.mark==="warn" && (c.date||"").slice(0,7)===month).length;
   const weekly = lec ? Math.round(lecDone*10/Math.max(1,days/7))/10 : null;
-  return {exp,dn,tk:tk.length,onTime,pr,work,present,lates,noEnd,mins,lec,lecDone,weekly};
+  return {exp,dn,tk:tk.length,onTime,pr,work,present,lates,noEnd,mins,lec,lecDone,weekly,stepAll,stepOn,stepLate};
 }
 const pc = (a,b) => b ? Math.round(a*100/b) : null;
 const tone = (v,goal) => v>=goal ? "ok" : v>=goal-15 ? "gold" : "bad";
@@ -508,15 +546,16 @@ function viewReport(){
   const month=S.month||today().slice(0,7);
   const rows=team().map(m=>({m,...monthStats(m.id,month)}));
   return `<div class="row"><div class="grow"><h1>التقرير الشهري</h1><p class="sub">محسوب تلقائيًا من زر الدوام والعلامات والمهام</p></div><input type="month" data-a="month" value="${esc(month)}" style="width:auto"></div>
-  <div class="card" style="overflow-x:auto"><table><thead><tr><th>المشرف</th><th class="c">حضور الدوام<br><small>الهدف ${GOAL.attend}%</small></th><th class="c">إنجاز الجدول<br><small>الهدف ${GOAL.done}%</small></th><th class="c">محاضرات منظّمة<br><small>الهدف ${GOAL.weekly} أسبوعيًا</small></th><th class="c">ساعات الدوام</th><th class="c">المهام في موعدها</th><th class="c">مشكلات رُفعت</th><th class="c">التقييم</th></tr></thead><tbody>${rows.map(r=>{ const at=pc(r.present,r.work), a=pc(r.dn,r.exp), b=pc(r.onTime,r.tk);
+  <div class="card" style="overflow-x:auto"><table><thead><tr><th>المشرف</th><th class="c">حضور الدوام<br><small>الهدف ${GOAL.attend}%</small></th><th class="c">إنجاز الجدول<br><small>الهدف ${GOAL.done}%</small></th><th class="c">محاضرات منظّمة<br><small>الهدف ${GOAL.weekly} أسبوعيًا</small></th><th class="c">الخطوات في موعدها<br><small>الهدف ${GOAL.done}%</small></th><th class="c">ساعات الدوام</th><th class="c">المهام في موعدها</th><th class="c">مشكلات رُفعت</th><th class="c">التقييم</th></tr></thead><tbody>${rows.map(r=>{ const at=pc(r.present,r.work), a=pc(r.dn,r.exp), b=pc(r.onTime,r.tk);
     const notes=[r.lates?`تأخر ${r.lates}`:"", r.noEnd?`بلا نهاية ${r.noEnd}`:""].filter(Boolean).join(" · ");
     return `<tr><td><b>${esc(r.m.name)}</b></td>
     <td class="c">${r.work?`<span class="pill ${tone(at,GOAL.attend)}">${at}%</span> <small class="sub">${r.present}/${r.work}</small>${notes?`<br><small class="late">${notes}</small>`:""}`:"—"}</td>
     <td class="c">${r.exp?`<span class="pill ${tone(a,GOAL.done)}">${a}%</span> <small class="sub">${r.dn}/${r.exp}</small>`:"—"}</td>
     <td class="c">${r.weekly!=null?`<span class="pill ${r.weekly>=GOAL.weekly?"ok":r.weekly>=GOAL.weekly-1?"gold":"bad"}">${r.weekly}</span> <small class="sub">${r.lecDone} في الشهر</small>`:"—"}</td>
+    <td class="c">${r.stepAll?`<span class="pill ${tone(pc(r.stepOn,r.stepAll),GOAL.done)}">${pc(r.stepOn,r.stepAll)}%</span> <small class="sub">${r.stepOn}/${r.stepAll}</small>${r.stepLate?`<br><small class="late">متأخرة ${r.stepLate}</small>`:""}`:"—"}</td>
     <td class="c">${r.mins?dur(r.mins):"—"}</td>
     <td class="c">${r.tk?`<span class="pill ${tone(b,90)}">${b}%</span> <small class="sub">${r.onTime}/${r.tk}</small>`:"—"}</td><td class="c">${r.pr||"—"}</td><td class="c">${(()=>{ const e=evalOf(r.m.id,month); return e?`<button class="btn sm ghost" data-a="evalM" data-id="${esc(r.m.id)}">${e.ack?"✓ اطّلع":"✓ قُيّم"}</button>`:`<button class="btn sm" data-a="evalM" data-id="${esc(r.m.id)}">تقييم</button>`; })()}</td></tr>`; }).join("")}</tbody></table>
-  <p class="sub" style="font-size:13px;margin-top:10px">الأخضر = بلغ الهدف · الذهبي = قريب منه · الأحمر = بعيد عنه. المحاضرة لا تُحسب منجزة إلا بعلاماتها الأربع، والأيام والمحاضرات المقبول فيها اعتذار أو إجازة لا تُحسب على المشرف.</p></div>`;
+  <p class="sub" style="font-size:13px;margin-top:10px">الأخضر = بلغ الهدف · الذهبي = قريب منه · الأحمر = بعيد عنه. المحاضرة لا تُحسب منجزة إلا بإتمام خطوات تنظيمها كلها، والخطوة بعد موعدها تُحسب متأخرة، والأيام والمحاضرات المقبول فيها اعتذار أو إجازة لا تُحسب على المشرف.</p></div>`;
 }
 
 // جدول الأكاديمية (لمسئول اللجنة): كل المحاضرات ومن ينظّمها
@@ -564,8 +603,8 @@ function metricsHtml(x){ if(!x) return "";
   const cell=(l,v,g)=>`<div class="card" style="padding:10px;text-align:center"><small class="sub">${l}</small><div style="font-weight:700;font-size:18px">${v}</div>${g?`<small class="sub">${g}</small>`:""}</div>`;
   return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px">${[
     x.attend!=null?cell("حضور الدوام",x.attend+"%","الهدف "+GOAL.attend+"%"):"", x.done!=null?cell("إنجاز الجدول",x.done+"%","الهدف "+GOAL.done+"%"):"",
-    x.weekly!=null?cell("محاضرات أسبوعيًا",x.weekly,"الهدف "+GOAL.weekly):"", x.hours?cell("ساعات الدوام",dur(x.hours)):"", x.onTime!=null?cell("المهام في موعدها",x.onTime+"%"):""].join("")}</div>`; }
-function snapMetrics(mid, month){ const r=monthStats(mid,month); return {attend:pc(r.present,r.work), done:pc(r.dn,r.exp), weekly:r.weekly, hours:r.mins, onTime:pc(r.onTime,r.tk), lates:r.lates}; }
+    x.weekly!=null?cell("محاضرات أسبوعيًا",x.weekly,"الهدف "+GOAL.weekly):"", x.steps!=null?cell("الخطوات في موعدها",x.steps+"%","الهدف "+GOAL.done+"%"):"", x.hours?cell("ساعات الدوام",dur(x.hours)):"", x.onTime!=null?cell("المهام في موعدها",x.onTime+"%"):""].join("")}</div>`; }
+function snapMetrics(mid, month){ const r=monthStats(mid,month); return {attend:pc(r.present,r.work), done:pc(r.dn,r.exp), weekly:r.weekly, hours:r.mins, onTime:pc(r.onTime,r.tk), lates:r.lates, steps:pc(r.stepOn,r.stepAll)}; }
 function evalForm(mid, month){
   const e=evalOf(mid,month)||{}, prev=evalOf(mid,prevMonth(month)), m=snapMetrics(mid,month);
   const sel=(id,v)=>`<select id="${id}">${SCORE.map((l,i)=>`<option value="${i||""}" ${Number(v)===i&&i?"selected":""}>${i?i+" — "+l:"اختر…"}</option>`).join("")}</select>`;
@@ -617,7 +656,7 @@ function inviteText(m){ return `السلام عليكم ${m.name}،
 الرابط: https://wahyacademy.github.io/supervision/
 ادخل بحساب جوجل: ${m.email}
 • ابدأ الدوام من الزر أعلى الصفحة قبل أول محاضرة بنصف ساعة.
-• ضع العلامات الأربع لكل محاضرة (زووم، يوتيوب، شيت الحضور، التقرير) قبل إنهاء الدوام.
+• اتبع خطوات تنظيم كل محاضرة في مواعيدها، وضع ✓ على كل خطوة عند إتمامها؛ لا يُنهى الدوام قبل إتمامها كلها.
 • للاعتذار أو الإجازة استخدم زر «طلب اعتذار أو إجازة».`; }
 function transferForm(mid){
   const ls=weeklyLecs(mid).sort((a,b)=>(Number(a.day)-Number(b.day))||(a.start||"").localeCompare(b.start||""));
@@ -636,7 +675,7 @@ function schedForm(mid, editId){
     <label class="full">${ed?"تعديل الشغل":"إضافة شغل"}<input id="s_label" value="${esc(ed?ed.label:"")}" placeholder="مثال: تنظيم مساق السبت س3 د2 / متابعة غياب مجلس الشفا"></label>
     <label>اليوم<select id="s_day">${DAYS.map((d,i)=>`<option value="${i}" ${ed&&Number(ed.day)===i?"selected":""}>${d}</option>`).join("")}</select></label>
     <div class="row"><label class="grow">من (اختياري)<input type="time" id="s_from" value="${esc(ed?ed.start||"":"")}"></label><label class="grow">إلى<input type="time" id="s_to" value="${esc(ed?ed.end||"":"")}"></label></div>
-    <label class="full" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" id="s_lec" style="width:auto" ${lec?"checked":""}> محاضرة تحتاج تنظيمًا (زووم، يوتيوب، شيت الحضور، التقرير)</label></div>
+    <label class="full" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" id="s_lec" style="width:auto" ${lec?"checked":""}> محاضرة تحتاج تنظيمًا (خطوات التنظيم بمواعيدها)</label></div>
   ${(()=>{ const cv=S.slots.filter(s=>s.owner===mid && s.date && s.date>=today()).sort((a,b)=>a.date.localeCompare(b.date)); return cv.length?`<div style="border-top:1px solid var(--line);padding-top:10px"><b style="font-size:14px">بديل في أيام محددة</b>${cv.map(s=>`<div class="item"><div class="what"><b>${esc(s.label)}</b><small>${esc(fmtDay(s.date))}${s.cover?" · بدل "+esc(nameOf(s.cover)):""}</small></div><button class="btn sm danger" data-a="delSlot" data-id="${esc(s.id)}" data-m="${esc(mid)}">إلغاء</button></div>`).join("")}</div>`:""; })()}
   ${weeklyLecs(mid).length?`<div class="row"><button class="btn sm ghost" data-a="transfer" data-id="${esc(mid)}">نقل كل محاضراته (${weeklyLecs(mid).length}) إلى منظّم آخر</button></div>`:""}
   <div class="row"><button class="btn" data-a="addSlot" data-m="${esc(mid)}" data-id="${esc(ed?ed.id:"")}">${ed?"حفظ التعديل":"إضافة"}</button>${ed?`<button class="btn ghost" data-a="sched" data-id="${esc(mid)}">إلغاء التعديل</button>`:""}<button class="btn ghost" data-a="close">إغلاق</button></div>`;
@@ -659,22 +698,22 @@ document.addEventListener("click", async e=>{
     if(isSlotDone(d,id)){ el.disabled=true; await save("tasks", tid, {status:"todo", doneAt:null}); return; }
     el.disabled=true; await save("tasks", tid, {title:s.label, type:"scheduled", assignee:me, due:d, status:"done", doneAt:d, slot:id}, false); return; }
   if(a==="clock"){ const op=el.dataset.op;
-    if(op==="end"){ const sh=activeShift(me), miss=sh?slotsOf(me,sh.date).filter(x=>isLecture(x) && !slotOff(me,sh.date,x.id) && markCount(sh.date,x.id)<4):[];
-      if(miss.length) return open(`<h2>لا يمكن إنهاء الدوام بعد</h2><p class="sub">أكمل العلامات الأربع لهذه المحاضرات أولًا:</p><div class="mini">${miss.map(x=>`<span class="u">○ ${esc(x.label)} — ناقص: ${MARKS.filter(([k])=>!marksOf(sh.date,x.id)[k]).map(m=>m[1]).join("، ")}</span>`).join("")}</div><p class="sub" style="font-size:13px">إن تعذّر شيء منها، ارفع «مشكلة» على المحاضرة أو اطلب اعتذارًا عنها.</p><div class="row"><button class="btn" data-a="close">حسنًا</button></div>`); }
+    if(op==="end"){ const sh=activeShift(me), miss=sh?slotsOf(me,sh.date).filter(x=>isLecture(x) && !slotOff(me,sh.date,x.id) && markCount(sh.date,x.id)<stepsFor(sh.date).length):[];
+      if(miss.length) return open(`<h2>لا يمكن إنهاء الدوام بعد</h2><p class="sub">أكمل خطوات التنظيم لهذه المحاضرات أولًا:</p><div class="mini">${miss.map(x=>`<span class="u">○ ${esc(x.label)} — ناقص: ${stepsFor(sh.date).filter(([k])=>!marksOf(sh.date,x.id)[k]).map(m=>m[1]).join("، ")}</span>`).join("")}</div><p class="sub" style="font-size:13px">إن تعذّر شيء منها، ارفع «مشكلة» على المحاضرة أو اطلب اعتذارًا عنها.</p><div class="row"><button class="btn" data-a="close">حسنًا</button></div>`); }
     if(op==="end" && !el.dataset.sure) return open(`<h2>إنهاء الدوام الآن؟</h2><p class="sub">يُسجَّل وقت الإنهاء الآن، ولا يمكن الرجوع إلا بطلب تصحيح.</p><div class="row"><button class="btn" data-a="clock" data-op="end" data-sure="1">نعم، إنهاء الدوام</button><button class="btn ghost" data-a="close">إلغاء</button></div>`);
     el.disabled=true;
     try { const r=await api("clock",{op});
       if(r.ok){ const i=S.shifts.findIndex(x=>x.id===r.doc.id); if(i>=0) S.shifts[i]=r.doc; else S.shifts.push(r.doc); close(); render();
         toast({start:"بدأ دوامك، بالتوفيق.", break:"استراحة سعيدة.", resume:"أهلًا بعودتك.", end:"انتهى دوامك، جزاك الله خيرًا."}[op]); }
-      else { toast({already_started:"الدوام بدأ بالفعل.", already_ended:"الدوام انتهى بالفعل.", not_started:"لم تبدأ الدوام بعد.", in_break:"أنت في استراحة بالفعل.", not_in_break:"لست في استراحة.", marks_missing:"أكمل العلامات الأربع أولًا: "+(r.missing||[]).join("، ")}[r.reason]||"لم يُسجَّل، حاول مرة أخرى."); close(); refresh(true); }
+      else { toast({already_started:"الدوام بدأ بالفعل.", already_ended:"الدوام انتهى بالفعل.", not_started:"لم تبدأ الدوام بعد.", in_break:"أنت في استراحة بالفعل.", not_in_break:"لست في استراحة.", marks_missing:"أكمل خطوات التنظيم أولًا: "+(r.missing||[]).join("، ")}[r.reason]||"لم يُسجَّل، حاول مرة أخرى."); close(); refresh(true); }
     } catch(err){ if(err.reason==="network") toast("لا يوجد اتصال؛ لم يُسجَّل."); el.disabled=false; }
     return; }
   if(a==="mark"){ const s=S.slots.find(x=>x.id===id); const k=el.dataset.k;
     if(!activeShift(me)) return toast("ابدأ الدوام أولًا من زر «بدء الدوام».");
-    const marks=Object.assign({}, marksOf(d,id)); marks[k]=!marks[k]; const all=MARKS.every(([x])=>marks[x]);
+    const marks=Object.assign({}, marksOf(d,id)); if(marks[k]) delete marks[k]; else marks[k]=true; const all=stepsFor(d).every(([x])=>marks[x]);
     el.disabled=true;
     await save("tasks", slotDoneId(d,id), {title:s.label, type:"scheduled", assignee:me, due:d, slot:id, marks, status:all?"done":"todo", doneAt:all?d:null}, true);
-    if(all) toast("اكتملت علامات المحاضرة الأربع، أحسنت.");
+    if(all) toast("اكتملت خطوات تنظيم المحاضرة، أحسنت.");
     return; }
   if(a==="newReq") return open(reqForm("lecture"));
   if(a==="sendReq"){ const k=el.dataset.k, note=v("q_note"); const data={kind:k, note, status:"pending", at:Date.now()};
