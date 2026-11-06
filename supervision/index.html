@@ -136,6 +136,8 @@ span.stp{cursor:default}
 @media(max-width:760px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.lh{flex-wrap:wrap}.lact{width:100%;justify-content:stretch}.lact .btn{flex:1}}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 /* ملخص اليوم */
+.otpq{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);text-align:start}
+.otpq .btn.ghost{width:100%}
 .seg{display:flex;gap:6px;background:#EEF3F9;border-radius:12px;padding:4px;margin-bottom:14px}
 .seg button{flex:1;border:0;background:none;padding:9px 10px;border-radius:9px;font:inherit;font-weight:700;color:var(--brand);cursor:pointer}
 .seg button.on{background:#fff;color:var(--brand-deep);box-shadow:0 2px 6px rgba(0,50,98,.12);border-bottom:3px solid var(--gold)}
@@ -454,13 +456,14 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 
 // ---------- الدخول بجوجل ----------
 let gsiBusy=false;
-function loadGsi(cb){ if(window.google && google.accounts) return cb(); if(gsiBusy) return setTimeout(()=>loadGsi(cb),300); gsiBusy=true;
+let gsiFailed=false; // لا نعيد المحاولة في حلقة إن فشل زر جوجل (متصفحات قديمة)
+function loadGsi(cb){ if(window.google && google.accounts) return cb(); if(gsiFailed) return; if(gsiBusy) return setTimeout(()=>loadGsi(cb),300); gsiBusy=true;
   const s=document.createElement("script"); s.src="https://accounts.google.com/gsi/client"; s.async=true;
-  s.onload=()=>{gsiBusy=false; cb();}; s.onerror=()=>{gsiBusy=false; S.msg="تعذّر تحميل زر جوجل. افتح الموقع في Chrome أو Safari."; render();}; document.head.appendChild(s); }
+  s.onload=()=>{gsiBusy=false; cb();}; s.onerror=()=>{gsiBusy=false; gsiFailed=true; S.msg="تعذّر تحميل زر جوجل في هذا المتصفح — ادخل بالكود على الإيميل."; render();}; document.head.appendChild(s); }
 function mountGoogle(){ const box=$("#gbtn"); if(!box) return; loadGsi(()=>{ try{
   google.accounts.id.initialize({client_id:CONFIG.googleClientId, callback:onGoogle, ux_mode:"popup", auto_select:false, itp_support:true, use_fedcm_for_button:true, use_fedcm_for_prompt:true});
   box.innerHTML=""; google.accounts.id.renderButton(box,{theme:"filled_blue",size:"large",text:"signin_with",shape:"pill",locale:"ar",width:280});
-} catch(e){ S.msg="تعذّر تشغيل زر جوجل في هذا المتصفح."; render(); } }); }
+} catch(e){ gsiFailed=true; S.msg="تعذّر تشغيل زر جوجل في هذا المتصفح — ادخل بالكود على الإيميل."; render(); } }); }
 async function onGoogle(resp){
   S.msg="جارٍ التحقق…"; render();
   try { const d = await api("login",{idtoken:resp.credential});
@@ -470,13 +473,18 @@ async function onGoogle(resp){
   } catch(e){ S.msg="تعذّر الاتصال بالخادم، حاول بعد قليل."; render(); }
 }
 
+// الدخول بكود على الإيميل (للأجهزة والمتصفحات التي لا تعمل فيها نافذة جوجل)
+function otpBox(){ const o=S.otp||{};
+  if(!o.open) return `<div class="otpq"><button class="btn ghost" data-a="otpOpen">✉️ الدخول بكود على الإيميل</button></div>`;
+  if(!o.sent) return `<div class="otpq"><label>إيميلك المسجّل لدى مسئول اللجنة<input id="otp_e" type="email" dir="ltr" autocomplete="email" value="${esc(o.email||"")}"></label><div class="row"><button class="btn" data-a="otpSend">أرسل الكود</button></div></div>`;
+  return `<div class="otpq"><p class="sub" style="margin:0">أرسلنا كودًا من 6 أرقام إلى <b dir="ltr">${esc(o.email)}</b> (راجع الرسائل غير المرغوب فيها أيضًا).</p><label>الكود<input id="otp_c" inputmode="numeric" maxlength="6" dir="ltr" autocomplete="one-time-code" style="letter-spacing:6px;text-align:center;font-size:20px"></label><div class="row"><button class="btn" data-a="otpVerify">دخول</button><button class="btn ghost" data-a="otpSend" data-again="1">إرسال كود جديد</button></div></div>`; }
 // ---------- العرض ----------
 function render(){ renderInner(); tick(); }
 function renderInner(){
   const app=$("#app"), nav=$("#nav");
   $("#outBox").innerHTML = S.me ? `<button class="out" data-a="logout">خروج</button>` : "";
   if(S.phase==="login"){ nav.hidden=true; $("#hday").hidden=true; $("#hd").textContent="أكاديمية وحي · لجنة شئون الطلاب والتنظيم";
-    app.innerHTML = `<div class="card login"><h1>أهلًا بك</h1><p class="sub">ادخل بحساب جوجل المسجّل لدى مسئول اللجنة.</p><div id="gbtn"></div><button class="flag" data-a="gprompt">لم تظهر نافذة الدخول؟</button>${S.msg?`<div class="banner">${esc(S.msg)}</div>`:""}</div>`; mountGoogle(); return; }
+    app.innerHTML = `<div class="card login"><h1>أهلًا بك</h1><p class="sub">ادخل بحساب جوجل المسجّل لدى مسئول اللجنة.</p><div id="gbtn"></div><button class="flag" data-a="gprompt">لم تظهر نافذة الدخول؟</button>${otpBox()}${S.msg?`<div class="banner">${esc(S.msg)}</div>`:""}</div>`; mountGoogle(); return; }
   if(!S.me){ app.innerHTML = `<div class="card empty">جارٍ التحميل…</div>`; return; }
   $("#hd").textContent = S.me.name + " · " + (ROLES[S.me.role]||"");
   const td=today(), hday=$("#hday"); hday.hidden=false;
@@ -1077,6 +1085,18 @@ document.addEventListener("click", async e=>{
   if(a==="toggleLec"){ const k=id, [mid,dd,sid]=k.split("|"), s=S.slots.find(x=>x.id===sid); if(!s) return;
     if(lecExpanded(mid,dd,s)){ LOPEN.delete(k); LCLOSED.add(k); } else { LCLOSED.delete(k); LOPEN.add(k); }
     render(); return; }
+  if(a==="otpOpen"){ S.otp={open:true}; S.msg=""; render(); return; }
+  if(a==="otpSend"){ const em=(el.dataset.again?(S.otp||{}).email:v("otp_e")||"").trim().toLowerCase(); if(!/^\S+@\S+\.\S+$/.test(em)) return toast("اكتب إيميلك صحيحًا.");
+    el.disabled=true; try { const r=await api("otpSend",{email:em});
+      if(r.ok){ S.otp={open:true,sent:true,email:em}; S.msg=""; render(); toast("لو الإيميل مسجّل هيوصلك الكود خلال دقيقة."); }
+      else { toast({wait:"استنى دقيقة قبل ما تطلب كود جديد.", too_many:"طلبات كتير؛ حاول بعد ساعة.", bad_email:"الإيميل غير صحيح."}[r.reason]||"تعذّر الإرسال، حاول مرة أخرى."); el.disabled=false; } }
+    catch(e){ toast("تعذّر الاتصال بالخادم."); el.disabled=false; } return; }
+  if(a==="otpVerify"){ const o=S.otp||{}, code=v("otp_c").replace(/\D/g,""); if(code.length!==6) return toast("اكتب الكود (6 أرقام).");
+    el.disabled=true; try { const d=await api("otpVerify",{email:o.email, code});
+      if(d.ok){ S.session=d.session; store.set("wahy_sup_session",d.session); S.otp=null; apply(d); S.msg=""; render(); }
+      else if(d.reason==="not_registered"){ S.msg="الحساب "+(d.email||"")+" غير مسجّل في الفريق. اطلب من مسئول اللجنة إضافته."; render(); }
+      else { toast("الكود غير صحيح أو انتهت صلاحيته."); el.disabled=false; } }
+    catch(e){ toast("تعذّر الاتصال بالخادم."); el.disabled=false; } return; }
   if(a==="print"){ window.print(); return; }
   if(a==="impOpen"||a==="impLoad"){ const tab=a==="impLoad"?v("imp_tab"):"";
     if(a==="impOpen") open(`<h2>⟳ تحديث من شيت اللينكات</h2><div class="empty">جارٍ قراءة الشيت…</div>`); else el.disabled=true;
