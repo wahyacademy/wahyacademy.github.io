@@ -866,23 +866,37 @@ function viewLecReports(){
 // استيراد جدول الشهر: مقارنة صفوف الشيت بالمحاضرات الحالية (لا يُطبَّق شيء إلا باختيار المسئول)
 const nrm = t => String(t||"").replace(/[\u064B-\u0652]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/^(ش|د|أ|ا)\.\s*/,"").replace(/\s+/g,"");
 const IMP_F = [["start","البداية"],["end","النهاية"],["sheikh","الشيخ"],["zoom","رابط زووم"],["sheet","شيت الحضور"],["account","حساب زووم"]];
+// المنظّمون من عمود H في الشيت ← أعضاء الفريق (بالاسم)
+const nrmName = t => nrm(String(t||"").replace(/^\s*(أ|ا|د|ش|م)\s*\.\s*/,""));
+function orgFromCell(cell){ const ppl=S.members.filter(m=>m.role!=="committee"), ids=[], unknown=[]; // الموقوفون يُتعرّف عليهم ويُتجاهلون
+  const k2=x=>x.replace(/ي/g,"");
+  String(cell||"").split(/[،,\/+\n]|\s-\s|\sو\s(?=[أاد]\.)/).map(x=>x.trim()).filter(x=>x && x.length>2 && !/^(بلا|لا يوجد|-+$)/.test(x)).forEach(tok=>{ const t=nrmName(tok);
+    const m1=(t,n)=>n.length>=4 && (t.includes(n) || (t.length>=4 && n.includes(t)));
+    let hit=ppl.filter(m=>m1(t,nrmName(m.name))); if(!hit.length) hit=ppl.filter(m=>m1(k2(t),k2(nrmName(m.name))));
+    if(hit.length===1){ if(hit[0].active!==false && !ids.includes(hit[0].id)) ids.push(hit[0].id); } else unknown.push(tok); });
+  return {ids, unknown}; }
 function importOps(){ const rows=(S.imp||{}).rows||[], used=new Set(), ops=[];
   rows.forEach(x=>{ const cands=S.lectures.filter(l=>Number(l.day)===Number(x.day) && !used.has(l.id));
     const sc=l=>(l.start&&l.start===x.start?3:0)+(nrm(l.sheikh)&&nrm(l.sheikh)===nrm(x.sheikh)?2:0)+(nrm(l.name)===nrm(x.name)?3:0)+(l.zoom&&x.zoom&&l.zoom===x.zoom?3:0);
     const best=cands.map(l=>[l,sc(l)]).sort((a,b)=>b[1]-a[1])[0];
-    if(best && best[1]>=3){ used.add(best[0].id); const diff=IMP_F.filter(([k])=>x[k] && String(x[k])!==String(best[0][k]||"")); if(diff.length) ops.push({kind:"chg",row:x,lec:best[0],diff}); else ops.push({kind:"same",row:x,lec:best[0]}); }
-    else ops.push({kind:"new",row:x}); });
+    if(best && best[1]>=3){ used.add(best[0].id); const sq=v=>String(v||"").replace(/\s+/g,"").replace(/[٠-٩]/g,c=>"٠١٢٣٤٥٦٧٨٩".indexOf(c)); const diff=IMP_F.filter(([k])=>x[k] && sq(x[k])!==sq(best[0][k])); if(diff.length) ops.push({kind:"chg",row:x,lec:best[0],diff}); else ops.push({kind:"same",row:x,lec:best[0]});
+      if(x.org!==undefined){ const o=orgFromCell(x.org), cur=lecSlots(best[0].id).map(s=>s.owner), add=o.ids.filter(i=>!cur.includes(i)), rem=cur.filter(i=>!o.ids.includes(i));
+        if(add.length||rem.length||o.unknown.length) ops.push({kind:"org",row:x,lec:best[0],add,rem,unknown:o.unknown,empty:!o.ids.length&&!o.unknown.length}); } }
+    else ops.push({kind:"new",row:x,org:orgFromCell(x.org)}); });
   S.lectures.filter(l=>!used.has(l.id)).forEach(l=>ops.push({kind:"gone",lec:l}));
   return ops; }
 function importForm(){ const I=S.imp||{tabs:[],rows:[]}, ops=I.tab?importOps():[];
   const guess=(()=>{ const m=MONTHS[new Date().getMonth()]; return I.tabs.find(t=>t.replace(/\s/g,"").startsWith(m))||I.tabs[0]||""; })();
-  const sel=I.tab||guess, cnt=k=>ops.filter(o=>o.kind===k).length;
+  const sel=I.tab||guess, cnt=k=>ops.filter(o=>o.kind===k||(k==="chg"&&o.kind==="org")).length;
+  const pplOpts=S.members.filter(m=>m.active!==false && m.role!=="committee").map(m=>`<option value="${esc(m.id)}">${esc(m.name)}</option>`).join("");
+  const unk=(i,o)=>o.unknown.map((u,j)=>`<span class="late">اسم غير معروف: «${esc(u)}»</span> <select class="imp_u" data-i="${i}" style="width:auto;display:inline-block;padding:2px 6px"><option value="">— اختر هو مين —</option>${pplOpts}</select>`).join(" · ");
   const val=(k,x)=>k==="start"||k==="end"?(x?t12(x):"—"):k==="zoom"||k==="sheet"?(x?"رابط جديد":"—"):esc(x||"—");
-  return `<h2>⟳ تحديث جدول الأكاديمية من شيت اللينكات</h2><p class="sub">لا يتغيّر شيء إلا ما تختاره أنت. التكليفات الحالية تبقى كما هي.</p>
+  return `<h2>⟳ تحديث جدول الأكاديمية من شيت اللينكات</h2><p class="sub">لا يتغيّر شيء إلا ما تختاره أنت، بما فيه تغيّر المنظّم من عمود «المنظّم» في الشيت.</p>
   <div class="row"><label class="grow">ورقة الشهر<select id="imp_tab">${I.tabs.map(t=>`<option ${t===sel?"selected":""}>${esc(t)}</option>`).join("")}</select></label><button class="btn" data-a="impLoad" style="align-self:flex-end">عرض المقارنة</button></div>
   ${I.tab?`<div class="kpis">${[["new","جديدة","ok"],["chg","تغيّرت","gold"],["same","بلا تغيير",""],["gone","ليست في الورقة","gray"]].map(([k,l,c])=>`<div class="kpi ${c}"><b>${cnt(k)}</b><small>${l}</small></div>`).join("")}</div>
-  <div class="implist">${ops.map((o,i)=>o.kind==="new"?`<label class="imp"><input type="checkbox" class="imp_c" value="${i}" checked><span><b>جديدة: ${esc(o.row.name)}</b><small>${DAYS[o.row.day]} ${o.row.start?esc(t12(o.row.start))+(o.row.end?" – "+esc(t12(o.row.end)):""):"بلا موعد"} · ${esc(o.row.sheikh||"")}${o.row.amb?` · <span class="late">راجع ص/م: «${esc(o.row.raw)}»</span>`:""}</small></span></label>`
+  <div class="implist">${ops.map((o,i)=>o.kind==="new"?`<label class="imp"><input type="checkbox" class="imp_c" value="${i}" checked><span><b>جديدة: ${esc(o.row.name)}</b><small>${DAYS[o.row.day]} ${o.row.start?esc(t12(o.row.start))+(o.row.end?" – "+esc(t12(o.row.end)):""):"بلا موعد"} · ${esc(o.row.sheikh||"")}${o.org&&o.org.ids.length?` · المنظّم: ${o.org.ids.map(x=>esc(nameOf(x))).join("، ")}`:""}${o.org&&o.org.unknown.length?" · "+unk(i,o.org):""}${o.row.amb?` · <span class="late">راجع ص/م: «${esc(o.row.raw)}»</span>`:""}</small></span></label>`
     :o.kind==="chg"?`<label class="imp"><input type="checkbox" class="imp_c" value="${i}" checked><span><b>تغيّرت: ${esc(o.lec.name)}</b><small>${o.diff.map(([k,l])=>`${l}: ${val(k,o.lec[k])} ← ${val(k,o.row[k])}`).join(" · ")}${o.row.amb?` · <span class="late">راجع ص/م: «${esc(o.row.raw)}»</span>`:""}</small></span></label>`
+    :o.kind==="org"?`<label class="imp"><input type="checkbox" class="imp_c" value="${i}" ${o.empty?"":"checked"}><span><b>المنظّم تغيّر: ${esc(o.lec.name)}</b><small>${DAYS[Number(o.lec.day)]||""}${o.empty?` · <span class="sub">خانة المنظّم فاضية في الشيت — علّم عليها لو عايز تلغي التكليف</span>`:""}${o.rem.length?` · <span class="late">اتشال: ${o.rem.map(x=>esc(nameOf(x))).join("، ")}</span>`:""}${o.add.length?` · <span style="color:var(--ok)">اتضاف: ${o.add.map(x=>esc(nameOf(x))).join("، ")}</span>`:""}${o.unknown.length?" · "+unk(i,o):""}</small></span></label>`
     :o.kind==="gone"?`<div class="imp gone"><span><b>ليست في الورقة: ${esc(o.lec.name)}</b><small>${DAYS[Number(o.lec.day)]||""} — إن انتهت احذفها من «تعديل».</small></span></div>`:"").join("")}</div>
   <div class="row"><button class="btn" data-a="impApply">تطبيق المحدد</button><button class="btn ghost" data-a="close">إغلاق</button></div>`:`<div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`}`; }
 const ptitle = t => `<div class="ponly ptitle"><b>أكاديمية وحي — منظومة الإشراف</b><span>${esc(t)}</span></div>`;
@@ -913,7 +927,7 @@ function lecForm(l){
 function assignForm(l){
   const cur=lecSlots(l.id).map(s=>s.owner);
   const ppl=S.members.filter(m=>m.active!==false && m.role!=="committee").sort((a,b)=>(b.dept==="org")-(a.dept==="org")||(a.name||"").localeCompare(b.name||""));
-  return `<h2>تكليف: ${esc(l.name)}</h2><p class="sub" style="font-size:14px">${DAYS[Number(l.day)]}${l.start?" · "+esc(t12(l.start))+(l.end?" – "+esc(t12(l.end)):""):""}. اختر من ينظّمها؛ تُضاف لجدوله بعلاماتها الأربع.</p>
+  return `<h2>تكليف: ${esc(l.name)}</h2><p class="sub" style="font-size:14px">${DAYS[Number(l.day)]}${l.start?" · "+esc(t12(l.start))+(l.end?" – "+esc(t12(l.end)):""):""}. اختر من ينظّمها؛ تُضاف لجدوله بخطواتها التسع.</p>
   <div>${ppl.map(m=>{ const busy=S.slots.filter(s=>s.owner===m.id && s.lec && !s.date && s.lec!==l.id && Number(s.day)===Number(l.day) && s.start && l.start && s.start<(l.end||"99") && (s.end||"99")>l.start);
     return `<label class="chkl"><input type="checkbox" class="as_m" value="${esc(m.id)}" ${cur.includes(m.id)?"checked":""}> ${esc(m.name)} <small class="sub">${esc(DEPTS[m.dept]||"")}</small>${busy.length?` <span class="pill gold">عنده في نفس الوقت: ${esc(busy[0].label)}</span>`:""}</label>`; }).join("")}</div>
   <div class="row"><button class="btn" data-a="saveAssign" data-id="${esc(l.id)}">حفظ</button><button class="btn ghost" data-a="close">إلغاء</button></div>`;
@@ -1070,9 +1084,15 @@ document.addEventListener("click", async e=>{
     catch(err){ open(`<h2>⟳ تحديث من شيت اللينكات</h2><div class="banner">${err.reason==="no_access"?"حساب المنظومة لا يملك صلاحية فتح شيت «لينكات المجالس والدورات». شاركه مع حساب شئون الطلاب (عرض فقط) ثم حاول مرة أخرى.":err.reason==="no_tab"?"لم أجد هذه الورقة في الشيت.":"تعذّرت قراءة الشيت، حاول مرة أخرى."}</div><div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`); }
     return; }
   if(a==="impApply"){ const ops=importOps(); const pick=[...document.querySelectorAll(".imp_c:checked")].map(x=>Number(x.value)); if(!pick.length) return toast("اختر ما تريد تطبيقه.");
+    const chosen={}; document.querySelectorAll(".imp_u").forEach(x=>{ if(x.value) (chosen[x.dataset.i]=chosen[x.dataset.i]||[]).push(x.value); });
     el.disabled=true; let n=0;
+    const assign=async(l, want)=>{ const have=S.slots.filter(s=>s.lec===l.id && !s.date);
+      for(const s of have) if(!want.includes(s.owner)) await remove("slots", s.id);
+      for(const mid of want) if(!have.some(s=>s.owner===mid)) await save("slots", "lec_"+l.id+"_"+mid, lecSlotData(l,mid), false); };
     for(const i of pick){ const o=ops[i]; if(!o) continue;
-      if(o.kind==="new"){ const x=o.row; if(await save("lectures","lc_"+rid(),{name:x.name, sheikh:x.sheikh, day:x.day, start:x.start, end:x.end, zoom:x.zoom, sheet:x.sheet, account:x.account, active:true},false)) n++; }
+      if(o.kind==="new"){ const x=o.row; const doc=await save("lectures","lc_"+rid(),{name:x.name, sheikh:x.sheikh, day:x.day, start:x.start, end:x.end, zoom:x.zoom, sheet:x.sheet, account:x.account, active:true},false);
+        if(doc){ n++; const want=[...new Set((o.org?o.org.ids:[]).concat(chosen[i]||[]))]; if(want.length) await assign(doc, want); } }
+      if(o.kind==="org"){ const cur=lecSlots(o.lec.id).map(s=>s.owner); const want=[...new Set(cur.filter(x=>!o.rem.includes(x)).concat(o.add, chosen[i]||[]))]; await assign(o.lec, want); n++; }
       if(o.kind==="chg"){ const data={}; o.diff.forEach(([k])=>data[k]=o.row[k]); const doc=await save("lectures",o.lec.id,data,true);
         if(doc){ n++; if(data.start!==undefined||data.end!==undefined) for(const s of lecSlots(doc.id)) await save("slots", s.id, {day:doc.day, start:doc.start||"", end:doc.end||"", label:doc.name}, true); } } }
     close(); toast(`تم تطبيق ${n} تعديل. راجع «بلا منظّم» لتكليف الجديد.`); return; }
