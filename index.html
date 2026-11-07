@@ -360,7 +360,7 @@ details[open] .chev{transform:rotate(180deg)}
 .rmiss legend,.rmiss>span{color:#a63d32!important}
 .rmiss .rpills span,.rmiss .rchips span,.rmiss textarea{border-color:#d9776b}
 .btn.rate.done{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
-.lec .acts .btn.rate{grid-column:1/-1}
+.lec .acts .btn.rate,.rec .acts .btn.rate,.rec .acts .btn.pri{grid-column:1/-1}
 </style>
 </head>
 <body>
@@ -593,7 +593,7 @@ function quick(){
   html+='<a class="tg'+(stu&&!u?" off":"")+(stu?"":" locked")+'" '+attrs+'><span class="i">✈</span><span><b>مجموعة التيليجرام الخاصة بالدورة</b><small>'+(stu?'رابط الحضور قبل كل محاضرة بنصف ساعة · التنبيهات والمتابعات · الأسئلة والنقاش':'متاحة للطلاب المشتركين فقط · ادخل بحساب جوجل من زر «مسجّل بالفعل؟»')+'</small></span>'+tail+'</a>';
   for(var i=L.length-1;i>=0;i--){ var l=L[i], e=start(l)+DUR;
     if(now>=e && now<e+3*864e5){
-      html+='<div class="recent"><span>✔ انتهت محاضرة <b>'+esc(l.field)+'</b> — شاهد التسجيل وشاركنا تقييمك</span><span class="acts">'+vidBtn(l,"▶ التسجيل")+rateBtn(l)+'</span></div>';
+      html+='<div class="recent"><span>✔ انتهت محاضرة <b>'+esc(l.field)+'</b> — شاهد التسجيل وشاركنا تقييمك</span><span class="acts">'+vidBtn(l,"▶ التسجيل")+rateBtn(l)+trBtn(l)+bookBtn(l)+'</span></div>';
       break; } }
   document.getElementById("quick").innerHTML=html;
 }
@@ -705,7 +705,7 @@ function recordings(){
   var now=Date.now();
   document.getElementById("recList").innerHTML=L.map(function(l){
     var st=state(l,now), d=new Date(l.date+"T12:00:00Z").toLocaleDateString("ar-EG",{day:"numeric",month:"long"});
-    var right = st==="done" ? '<div class="acts">'+vidBtn(l)+rateBtn(l)+'</div>'
+    var right = st==="done" ? '<div class="acts">'+vidBtn(l)+rateBtn(l)+trBtn(l)+bookBtn(l)+'</div>'
               : '<span class="soon">'+(st==="live"?"المحاضرة منعقدة الآن":"يُتاح بعد المحاضرة · "+esc(d))+'</span>';
     return '<div class="rec'+(st==="done"?" on":"")+'"><div class="rh"><span class="num">'+ar(l.n)+'</span><div class="sp"><span class="f">'+esc(l.field)+' · '+esc(d)+'</span><div class="ti">'+esc(l.title)+'</div><div class="who">'+esc(l.lect)+'</div></div></div>'+right+'</div>';
   }).join("");
