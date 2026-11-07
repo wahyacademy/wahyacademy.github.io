@@ -360,6 +360,7 @@ details[open] .chev{transform:rotate(180deg)}
 .rmiss legend,.rmiss>span{color:#a63d32!important}
 .rmiss .rpills span,.rmiss .rchips span,.rmiss textarea{border-color:#d9776b}
 .btn.rate.done{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.lec .acts .btn.rate{grid-column:1/-1}
 </style>
 </head>
 <body>
@@ -574,10 +575,10 @@ function ok(u){return /^https?:\/\//i.test(String(u||"").trim())?String(u).trim(
 function ar(n){return Number(n).toLocaleString("ar-EG");}
 function start(l){return Date.parse(l.date+"T18:00:00Z");} // ٨ م القاهرة (UTC+2)
 function fmt(l){return new Date(l.date+"T12:00:00Z").toLocaleDateString("ar-EG",{weekday:"long",day:"numeric",month:"long",year:"numeric"});}
-var STU={ok:false,tg:"",playlist:"",rec:{}};
+var STU={ok:false,tg:"",playlist:"",rec:{},books:{},tr:{}};
 function isStu(){return !!STU.ok;}
 function recOf(l){return STU.ok?ok(STU.rec&&STU.rec[l.id]):"";}
-function tgOf(){return STU.ok?ok(STU.tg):"";}
+function tgOf(){return STU.ok?ok(STU.tg):"";} function bookOf(l){return STU.ok?ok(STU.books&&STU.books[l.id]):"";} function bookBtn(l){var u=bookOf(l);return u?a(u,"📚 ترشيحات ومراجع",""):"";} function trOf(l){return STU.ok?ok(STU.tr&&STU.tr[l.id]):"";} function trBtn(l){var u=trOf(l);return u?a(u,"📝 تفريغ المحاضرة",""):"";}
 function lockBtn(label){return '<button type="button" class="btn lock" data-login>🔒 '+label+'</button>';}
 function vidBtn(l,label){label=label||"▶ مشاهدة التسجيل";if(!isStu())return lockBtn("التسجيل للمشتركين");return recOf(l)?'<button type="button" class="btn pri" data-vid="'+l.id+'">'+label+'</button>':'<span class="btn off">التسجيل يُرفع قريبًا</span>';}
 function tgBtn(label,cls){if(!isStu())return lockBtn("رابط الدخول للمشتركين");var u=tgOf();return u?a(u,label,cls||"pri"):'<span class="btn off">رابط المجموعة يُضاف قريبًا</span>';}
@@ -619,8 +620,8 @@ function list(){
   for(var i=0;i<L.length;i++){ if(state(L[i],now)!=="done"){ nextId=L[i].id; break; } }
   document.getElementById("list").innerHTML=L.map(function(l){
     var st=state(l,now), chip = st==="live"?'<span class="chip now">مباشر الآن</span>':st==="done"?'<span class="chip ok">انعقدت</span>':(l.id===nextId?'<span class="chip nx">القادمة</span>':'<span class="chip">قادمة</span>');
-    var acts = st==="done" ? vidBtn(l)+rateBtn(l)+(isStu()?tgBtn("؟ اسأل في تليجرام",""):"")
-             : tgBtn("رابط الدخول في تليجرام")+(st==="live"?rateBtn(l):calBtns(l));
+    var acts = (st==="done" ? vidBtn(l)+rateBtn(l)
+             : tgBtn("رابط الدخول في تليجرام")+(st==="live"?rateBtn(l):calBtns(l)))+trBtn(l)+bookBtn(l);
     return '<details class="lec" id="d-'+l.id+'"'+(l.id===nextId?" open":"")+'><summary>'+
       '<span class="num">'+ar(l.n)+'</span>'+
       '<span class="sp"><span class="f">'+esc(l.field)+'</span><div class="ti">'+esc(l.title)+'</div><div class="who">'+esc(l.lect)+'</div></span>'+
@@ -690,7 +691,7 @@ function faq(){
    ["لا تظهر لي التسجيلات أو رابط التيليجرام","هي متاحة للطلاب الذين اكتمل اشتراكهم فقط. اضغط «مسجّل بالفعل؟ ادخل من هنا» وادخل بنفس حساب جوجل الذي سجّلت به في استمارة التسجيل. إن ظهرت رسالة أن الحساب غير موجود ضمن المشتركين، فتأكد أنك اخترت الحساب الصحيح، أو راسل شئون الطلاب عبر زر «تواصل معنا»؛ فقد يكون اشتراكك لم يكتمل بعد."],
    ["هل أستطيع المشاهدة من الجوال؟","نعم. التسجيلات على يوتيوب، وتعمل داخل الموقع مباشرة على الجوال والكمبيوتر، ويمكنك أيضًا فتحها في تطبيق يوتيوب."],
    ["كيف أرسل سؤالًا للمحاضر؟","اكتبه في موضوع المحاضرة داخل مجموعة التيليجرام، أو في آخر خانة بنموذج التقييم. تُجمع الأسئلة وتُرسل للمحاضر، وتُنشر الإجابات في المجموعة."],
-   ["لماذا أملأ نموذج التقييم؟","تقييمك يستغرق أقل من دقيقتين، ويصل للمحاضر وإدارة الأكاديمية لتحسين المحاضرات القادمة. استخدم زر «قيّم المحاضرة» داخل المحاضرة نفسها ليكون التقييم مرتبطًا بها."],
+   ["لماذا أملأ نموذج التقييم؟","تقييمك يستغرق أقل من دقيقتين، ويصل للمحاضر وإدارة الأكاديمية لتحسين المحاضرات القادمة. استخدم زر «قيّم المحاضرة واسأل المحاضر» داخل المحاضرة نفسها ليكون التقييم مرتبطًا بها."],
    ["كيف أتذكر مواعيد المحاضرات؟","اضغط «أضف المحاضرات التسع لتقويمك» في تبويب المحاضرات، أو زر التقويم داخل كل محاضرة؛ ستصلك تذكرة قبل كل محاضرة."],
    ["المواعيد بأي توقيت؟","جميع المواعيد بتوقيت القاهرة. العدّ التنازلي في الصفحة يُحسب تلقائيًا حسب توقيت جهازك أينما كنت."],
    ["كيف أتواصل مع أكاديمية وحي؟","من زر «تواصل معنا» الموجود أسفل الصفحة في كل التبويبات؛ يفتح محادثة مباشرة مع حساب شئون الطلاب على تيليجرام. ولمتابعة كل دورات الأكاديمية ومجالسها تابع قناة أكاديمية وحي على تيليجرام."],
@@ -716,13 +717,13 @@ var ME_KEY="wahy_humanities_student", ME_CACHE="wahy_humanities_links", ME_SES="
 function lsGet(k){try{return localStorage.getItem(k)||"";}catch(e){return "";}}
 function lsSet(k,v){try{if(v)localStorage.setItem(k,v);else localStorage.removeItem(k);}catch(e){}}
 function meGet(){return lsGet(ME_KEY);}
-function meSave(d){lsSet(ME_KEY,d.email||"");lsSet(ME_SES,d.session||"");lsSet(ME_CACHE,JSON.stringify({ok:true,tg:d.tg||"",playlist:d.playlist||"",rec:d.rec||{},rated:(STU&&STU.rated)||[]}));}
+function meSave(d){lsSet(ME_KEY,d.email||"");lsSet(ME_SES,d.session||"");lsSet(ME_CACHE,JSON.stringify({ok:true,tg:d.tg||"",playlist:d.playlist||"",rec:d.rec||{},books:d.books||{},tr:d.tr||{},rated:(STU&&STU.rated)||[]}));}
 function meClear(){lsSet(ME_KEY,"");lsSet(ME_SES,"");lsSet(ME_CACHE,"");}
 function meCached(){try{var d=JSON.parse(lsGet(ME_CACHE)||"null");return d&&d.ok?d:null;}catch(e){return null;}}
-function setStu(d){STU=d&&d.ok?{ok:true,tg:d.tg||"",playlist:d.playlist||"",rec:d.rec||{},rated:d.rated||(STU&&STU.rated)||[]}:{ok:false,tg:"",playlist:"",rec:{},rated:[]};}
+function setStu(d){STU=d&&d.ok?{ok:true,tg:d.tg||"",playlist:d.playlist||"",rec:d.rec||{},books:d.books||{},tr:d.tr||{},rated:d.rated||(STU&&STU.rated)||[]}:{ok:false,tg:"",playlist:"",rec:{},books:{},tr:{},rated:[]};}
 function renderAll(){safe(quick,"quick");safe(list,"list");safe(next,"next");safe(recordings,"recordings");}
 function meApply(){var m=meGet();document.body.classList.toggle("student",!!m&&STU.ok);document.getElementById("me-mail").textContent=m;renderAll();}
-function rateBtn(l){if(!isStu())return lockBtn("التقييم للمشتركين");var dn=(STU.rated||[]).indexOf(l.id)>-1;return '<button type="button" class="btn rate'+(dn?' done':'')+'" data-rate="'+l.id+'">'+(dn?'✓ قيّمتها · تعديل':'★ قيّم المحاضرة')+'</button>';}
+function rateBtn(l){if(!isStu())return lockBtn("التقييم للمشتركين");var dn=(STU.rated||[]).indexOf(l.id)>-1;return '<button type="button" class="btn rate'+(dn?' done':'')+'" data-rate="'+l.id+'">'+(dn?'✓ قيّمتها · تعديل':'★ قيّم المحاضرة واسأل المحاضر')+'</button>';}
 function apiPost(url,o){return fetch(url,{method:"POST",body:new URLSearchParams(o)}).then(function(r){return r.json();});}
 function rateSync(){var url=ok(CONFIG.verifyUrl),ses=lsGet(ME_SES);if(!url||!ses)return;
   apiPost(url,{action:"list",session:ses}).then(function(d){if(d&&d.ok){STU.rated=d.rated||[];var c=meCached();if(c){c.rated=STU.rated;lsSet(ME_CACHE,JSON.stringify(c));}renderAll();}}).catch(function(){});}
