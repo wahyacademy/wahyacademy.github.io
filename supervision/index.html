@@ -983,13 +983,23 @@ function myEvalCards(me){
   return h;
 }
 
+// آخر دخول (قرار المستخدم 8 نوفمبر): يختمه الخادم، ويظهر لمسئول اللجنة فقط
+function seenCell(m){
+  if(!m.lastSeen) return `<span class="pill bad">لم يدخل بعد</span>`;
+  const t=new Date(Number(m.lastSeen)), dk=new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Cairo"}).format(t);
+  const hm=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit",hour12:false}).format(t);
+  const y=new Date(parse(today()).getTime()-864e5), yk=y.getFullYear()+"-"+String(y.getMonth()+1).padStart(2,"0")+"-"+String(y.getDate()).padStart(2,"0");
+  const day=dk===today()?"اليوم":dk===yk?"أمس":fmtDay(dk), via=m.loginVia==="code"?" · كود":m.loginVia==="google"?" · Google":"";
+  const old=(Date.now()-Number(m.lastSeen))>3*864e5;
+  return `<span class="${old?"late":""}" style="font-size:13px;white-space:nowrap">${esc(day)} ${esc(t12(hm))}${via}</span>`; }
 // الفريق والجداول (لمسئول اللجنة)
 function viewTeam(){
   const off=S.members.filter(m=>m.active===false).length;
   const list=S.members.filter(m=>S.showInactive||m.active!==false).sort((a,b)=>(a.dept||"").localeCompare(b.dept||"")||(a.name||"").localeCompare(b.name||""));
-  return `<div class="row"><div class="grow"><h1>الفريق والجداول</h1><p class="sub">كل عضو يدخل بإيميل جوجل المكتوب هنا</p></div><button class="btn" data-a="newMember">+ عضو</button></div>
+  const act=S.members.filter(m=>m.active!==false && m.role!=="committee"), inN=act.filter(m=>m.lastSeen).length;
+  return `<div class="row"><div class="grow"><h1>الفريق والجداول</h1><p class="sub">كل عضو يدخل بإيميل جوجل المكتوب هنا · دخل ${inN} من ${act.length}${act.length-inN?` · <span class="late">لم يدخل: ${act.length-inN}</span>`:""}</p></div><button class="btn" data-a="newMember">+ عضو</button></div>
   ${off?`<div class="row"><button class="flag" data-a="toggleInactive">${S.showInactive?"إخفاء الموقوفين":`إظهار الموقوفين (${off})`}</button></div>`:""}
-  <div class="card" style="overflow-x:auto"><table><thead><tr><th>الاسم</th><th>الدور</th><th>الإيميل</th><th class="c">جدوله</th><th></th></tr></thead><tbody>${list.map(m=>`<tr><td><b>${esc(m.name)}</b>${m.active===false?` <span class="pill bad">موقوف</span>`:""}</td><td>${esc(ROLES[m.role]||"")}</td><td dir="ltr" style="font-size:13px">${m.email?esc(m.email):`<span class="pill gold">بلا إيميل</span>`}</td><td class="c">${S.slots.filter(s=>s.owner===m.id&&s.kind!=="flex"&&!s.date).length}</td><td><div class="row" style="flex-wrap:nowrap"><button class="btn sm ghost" data-a="editMember" data-id="${esc(m.id)}">بياناته</button><button class="btn sm ghost" data-a="sched" data-id="${esc(m.id)}">جدوله</button></div></td></tr>`).join("")}</tbody></table></div>`;
+  <div class="card" style="overflow-x:auto"><table><thead><tr><th>الاسم</th><th>الدور</th><th>الإيميل</th><th>آخر دخول</th><th class="c">جدوله</th><th></th></tr></thead><tbody>${list.map(m=>`<tr><td><b>${esc(m.name)}</b>${m.active===false?` <span class="pill bad">موقوف</span>`:""}</td><td>${esc(ROLES[m.role]||"")}</td><td dir="ltr" style="font-size:13px">${m.email?esc(m.email):`<span class="pill gold">بلا إيميل</span>`}</td><td>${seenCell(m)}</td><td class="c">${S.slots.filter(s=>s.owner===m.id&&s.kind!=="flex"&&!s.date).length}</td><td><div class="row" style="flex-wrap:nowrap"><button class="btn sm ghost" data-a="editMember" data-id="${esc(m.id)}">بياناته</button><button class="btn sm ghost" data-a="sched" data-id="${esc(m.id)}">جدوله</button></div></td></tr>`).join("")}</tbody></table></div>`;
 }
 function memberForm(m){
   const isNew=!m; m=m||{role:"sa",dept:"sa",active:true};
