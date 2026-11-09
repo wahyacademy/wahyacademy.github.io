@@ -335,7 +335,7 @@ const stepsFor = date => date>=STEPS_SINCE ? STEPS : MARKS;
 const REQ = {lecture:"اعتذار عن محاضرة", day:"اعتذار عن يوم", leave:"إجازة", fix:"تصحيح يوم سابق", offer:"رغبة في تنظيم مجلس"};
 const REQ_ST = {pending:["ينتظر الرد","gold"], accepted:["مقبول","ok"], rejected:["مرفوض","bad"], cancelled:["ملغى",""]};
 const GOAL = {attend:90, done:95, weekly:5, before:30, grace:5, since:"2026-11-04"}; // since: أول يوم يُحسب فيه حضور الدوام
-const okLabel = r => r.kind==="sheikh" ? "اعتذر الشيخ" : REQ[r.kind]+(r.kind==="leave"?" معتمدة":" معتمد"); // أهداف ثابتة من «سجل دوام المشرفين»
+const okLabel = r => r.kind==="sheikh" ? "اعتذر الشيخ" : /^emg_/.test(r.id||"") ? "بديل طارئ" : REQ[r.kind]+(r.kind==="leave"?" معتمدة":" معتمد"); // أهداف ثابتة من «سجل دوام المشرفين»
 const MONTHS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
 const S = {session:null, me:null, members:[], tasks:[], slots:[], checkins:[], shifts:[], requests:[], lectures:[], evals:[], showInactive:false, wk:0, view:"today", day:null, month:null, phase:"boot", msg:""};
@@ -916,6 +916,17 @@ function riskCard(){
   items.sort((a,b)=>a.t-b.t);
   return `<div class="card" style="border-color:var(--bad);background:var(--bad-soft)"><h2 style="color:var(--bad)">⚠️ محاضرات تحتاج تدخّلك الآن (${items.length})</h2>${items.map(x=>`<div class="item"><div class="what">${x.html}</div>${x.lid?`<button class="btn sm" data-a="coverLec" data-id="${esc(x.lid)}">تكليف لليوم</button>`:""}</div>`).join("")}</div>`;
 }
+// «🚨 بديل طارئ» (قرار المستخدم 9 نوفمبر): مسئول اللجنة (والقسم لقسمه) يسجّل اعتذارًا إداريًا عن المنظّم ويوجّه المحاضرة لبديل أو لنفسه، وتُحسب للبديل
+const canEmg = mid => isMgr() && mid!==S.me.id && (isAdmin() || team().some(m=>m.id===mid));
+const ovl = (mid, ds, s) => slotsOf(mid,ds).some(x=>x.start && s.start && x.start<(s.end||"99") && (x.end||"99")>s.start && !slotOff(mid,ds,x.id));
+function emgForm(mid, sid, d){ const s=slotsOf(mid,d).find(x=>x.id===sid); if(!s) return "";
+  const ppl=(isAdmin()?S.members.filter(m=>m.active!==false && m.role!=="committee"):team()).filter(m=>m.id!==mid && m.id!==S.me.id);
+  return `<h2>🚨 بديل طارئ</h2><p class="sub" style="font-size:14px"><b>${esc(s.label)}</b> — ${esc(nameOf(mid))}<br>${esc(DAYS[dayIdx(parse(d))])} ${s.start?esc(t12(s.start))+" – "+esc(t12(s.end)):""}</p>
+  <div class="form"><div class="row"><label class="grow">من تاريخ<input type="date" id="e_date" value="${esc(d)}" min="${today()}"></label><label class="grow">عدد المرات<select id="e_n">${[1,2,3,4,5,6,7,8].map(n=>`<option value="${n}">${n===1?"هذه المرة فقط":n+" أسابيع"}</option>`).join("")}</select></label></div>
+  <label class="full">من ينظّمها<select id="e_sub"><option value="__me">🙋 أنا أنظّمها</option>${ppl.map(m=>`<option value="${esc(m.id)}">${esc(m.name)}${ovl(m.id,d,s)?" — ⚠️ مشغول في نفس الوقت":""}</option>`).join("")}</select></label>
+  <label class="full">السبب (اختياري، يظهر للمنظّم)<input id="e_note" placeholder="ظرف طارئ"></label>
+  <p class="sub" style="font-size:13px">تُسجَّل للمنظّم «اعتذار إداري» معتمد فلا تُحسب عليه ولا يُذكَّر بها، وتظهر للبديل بخطواتها وتُحسب له.</p>
+  <div class="row"><button class="btn" data-a="emgSave" data-id="${esc(sid)}" data-m="${esc(mid)}">تأكيد</button><button class="btn ghost" data-a="close">إلغاء</button></div></div>`; }
 function viewTeamToday(){
   const d=S.day||today(); const ppl=team();
   const mineSl=slotsOf(S.me.id,d);
@@ -932,7 +943,7 @@ function viewTeamToday(){
   ${mineSl.length?`<div class="card"><h2>شغلي اليوم</h2>${mineSl.map(s=>slotRow(d,s,S.me.id,d===today())).join("")}</div>`:""}
   <div class="card"><h2>الفريق</h2>${rows.length? rows.map(({m,sl,exp,dn,pr,late})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${esc(DEPTS[m.dept]||"")}</small></span>${asBtn(m.id)}${dutyPill(m.id,d)}${pr.length?`<span class="pill gold">⚠️ ${pr.length}</span>`:""}${late?`<span class="pill bad">${late} متأخرة</span>`:""}${exp.length?`<span class="pill ${dn===exp.length?"ok":""}">${dn} من ${exp.length}</span>`:""}</summary>
     <div class="mini">${sl.map(s=>{ const off=slotOff(m.id,d,s.id), ok=isSlotDone(d,s.id), lec=isLecture(s);
-      return `<span class="${ok?"d":"u"}">${off?"—":ok?"✓":"○"} ${s.start?esc(t12(s.start))+" — ":""}${esc(s.label)}${off?` (${off.kind==="sheikh"?"اعتذر الشيخ · "+(marksOf(d,s.id).tgx?"✓ أُبلغ الطلاب":"لم يُبلَّغ الطلاب بعد"):"معتذر"})`:lec&&!ok?` (${markCount(d,s.id)} من ${stepsFor(d).length}: ${stepsFor(d).filter(([k])=>!marksOf(d,s.id)[k]).map(x=>stepLabel(x,s)).join("، ")} ناقص)`:""}${repLine((slotTask(d,s.id)||{}).report)}</span>`; }).join("")}${pr.map(probHtml).join("")}</div></details>`).join("") : `<div class="empty">لا يوجد شغل مجدول للفريق في هذا اليوم.</div>`}</div>`;
+      return `<span class="${ok?"d":"u"}">${off?"—":ok?"✓":"○"} ${s.start?esc(t12(s.start))+" — ":""}${esc(s.label)}${off?` (${off.kind==="sheikh"?"اعتذر الشيخ · "+(marksOf(d,s.id).tgx?"✓ أُبلغ الطلاب":"لم يُبلَّغ الطلاب بعد"):"معتذر"})`:lec&&!ok?` (${markCount(d,s.id)} من ${stepsFor(d).length}: ${stepsFor(d).filter(([k])=>!marksOf(d,s.id)[k]).map(x=>stepLabel(x,s)).join("، ")} ناقص)`:""}${repLine((slotTask(d,s.id)||{}).report)}${lec && d>=today() && canEmg(m.id) ? (off && /^emg_/.test(off.id||"") ? ` <button class="btn sm ghost" data-a="emgUndo" data-id="${esc(off.id)}">↩ إلغاء البديل</button>` : !off && !ok ? ` <button class="btn sm ghost warn" data-a="emgOpen" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}">🚨 بديل طارئ</button>` : "") : ""}</span>`; }).join("")}${pr.map(probHtml).join("")}</div></details>`).join("") : `<div class="empty">لا يوجد شغل مجدول للفريق في هذا اليوم.</div>`}</div>`;
 }
 
 // ملخص اليوم للمسئول: محاضرات اليوم، تمت، متأخرة الآن، اعتذار الشيخ
@@ -1342,6 +1353,18 @@ document.addEventListener("click", async e=>{
   if(a==="wantLec"){ const l=S.lectures.find(x=>x.id===id); if(!l) return; el.disabled=true;
     if(await save("requests", null, {kind:"offer", slot:id, date:l.startFrom||d, note:"", status:"pending", at:Date.now()}, false)) toast("وصلت رغبتك لمسئول اللجنة."); else el.disabled=false; return; }
   if(a==="cancelReq"){ el.disabled=true; await save("requests", id, {status:"cancelled"}); return; }
+  if(a==="emgOpen"){ e.preventDefault(); if(!canEmg(el.dataset.m)) return; open(emgForm(el.dataset.m, id, el.dataset.d)); return; }
+  if(a==="emgSave"){ const mid=el.dataset.m; if(!canEmg(mid)) return; const ds=v("e_date"), n=Number(v("e_n"))||1, subV=v("e_sub"), note=v("e_note");
+    if(!ds || ds<today()) return toast("اختر تاريخًا من اليوم فصاعدًا.");
+    if(!slotsOf(mid,ds).some(x=>x.id===id)) return toast("هذه المحاضرة ليست في جدوله في هذا التاريخ.");
+    const sub = subV==="__me" ? S.me.id : subV; el.disabled=true;
+    const rq={member:mid, kind:"lecture", date:ds, dateTo:n>1?addDays(ds,7*(n-1)):"", slot:id, note:"اعتذار إداري — "+(note||"ظرف طارئ"), status:"accepted",
+      reply:"سجّله "+(ROLES[S.me.role]||"المسئول")+"، والبديل: "+(sub===S.me.id?S.me.name:nameOf(sub)), decidedBy:me, decidedAt:Date.now(), at:Date.now()};
+    const doc=await save("requests", "emg_"+Date.now().toString(36)+"_"+mid, rq, false); if(!doc){ el.disabled=false; return; }
+    const c=await makeCovers(doc, sub); close(); toast("تم: "+c+" "+(c===1?"محاضرة":"محاضرات")+" لـ "+(sub===S.me.id?"حضرتك":nameOf(sub))+"."); return; }
+  if(a==="emgUndo"){ const r=S.requests.find(x=>x.id===id); if(!r || !canEmg(r.member)) return; el.disabled=true;
+    for(const ds of reqDates(r)){ const cid="cov_"+ds+"_"+r.slot; if(S.slots.some(x=>x.id===cid)) await remove("slots", cid); }
+    await save("requests", id, {status:"cancelled", reply:"أُلغي البديل الطارئ ورجعت المحاضرة لصاحبها.", decidedBy:me, decidedAt:Date.now()}); toast("رجعت المحاضرة لصاحبها."); return; }
   if(a==="decide"){ const r=S.requests.find(x=>x.id===id); if(!r) return; const st=el.dataset.v, reply=v("q_"+id);
     el.disabled=true;
     if(st==="accepted" && r.kind==="fix" && r.start){
