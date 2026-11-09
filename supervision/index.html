@@ -819,7 +819,7 @@ function slotRow(d,s,mid,mine){
       const tm = v ? (typeof v==="number" ? "تمت "+t12(fromMin(cairoMinOf(v,d))) : "تمت") : w ? (w.due===Infinity ? "بدون موعد" : "حتى "+t12(fromMin(w.due))) : "";
       const tag = ss==="now" ? "الآن" : ss==="late" ? "متأخرة" : ss==="lateDone" ? "تمت متأخرة" : "";
       const lbl=stepLabel(st,s), q=(lbl.match(/«([^»]+)»/)||[])[1], cp=q||lbl;
-      const inner = `<span class="bx">${v?"✓":ix+1}</span><span class="tx">${esc(lbl)}</span><span class="tm">${esc(tm)}</span>${tag?`<span class="tg">${tag}</span>`:""}${svTag(s.id+":"+k)}<span class="cp" role="button" tabindex="0" data-a="copyStep" data-t="${esc(cp)}" title="${q?"نسخ نص التذكرة":"نسخ النص"}">📋 ${q?"نسخ التذكرة":"نسخ"}</span>`;
+      const inner = `<span class="bx">${v?"✓":ix+1}</span><span class="tx">${esc(lbl)}</span><span class="tm">${esc(tm)}</span>${tag?`<span class="tg">${tag}</span>`:""}${svTag(s.id+":"+k)}`;
       return mine ? `<div class="stp ${ss}" role="button" tabindex="0" data-a="${k==="report"?"report":"mark"}" data-id="${esc(s.id)}" data-k="${k}" aria-pressed="${!!v}">${inner}</div>` : `<span class="stp ${ss}">${inner}</span>`; }).join("")}</div>
     ${repLine((slotTask(d,s.id)||{}).report)}${pr.map(probHtml).join("")}</div>`; }
   const hasDuty = !!s.start && d>=SLOT_DUTY_SINCE;
