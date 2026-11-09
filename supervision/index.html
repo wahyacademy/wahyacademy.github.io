@@ -61,8 +61,42 @@ h2{font-size:18px;margin:0 0 10px;color:var(--brand-deep)}
 .wday h3{margin:0 0 6px;font-size:13.5px;color:var(--brand-deep);display:flex;justify-content:space-between;align-items:center;gap:4px}
 .wday h3 small{color:var(--muted);font-weight:500}
 .wev{background:#fff;border-radius:8px;padding:6px 8px;margin-bottom:6px;border-inline-start:4px solid var(--brand);font-size:12.5px;line-height:1.5}
-.card.newtk{border-top-color:var(--gold);background:#fffaf0;outline:2px solid var(--gold)}.tsched{overflow-x:auto;padding:12px}.tsched table{border-collapse:collapse;min-width:980px;width:100%}.tsched th,.tsched td{border:1px solid var(--line);vertical-align:top;padding:5px;font-size:12px}.tsched thead th{background:var(--fog);color:var(--brand-deep);font-size:13px}.tsched thead th small{display:block;color:var(--muted);font-weight:500}.tsched tbody th{background:var(--fog);white-space:nowrap;font-size:13px;color:var(--brand-deep)}.tsched .tdy{background:#fff8e6}.tsched tr.free th{color:var(--bad)}
-.ts{border-inline-start:3px solid var(--brand);background:#fff;border-radius:6px;padding:3px 6px;margin-bottom:4px;line-height:1.45}.ts small{display:block;color:var(--muted);font-variant-numeric:tabular-nums}.ts.task{border-color:#00A598}.ts.brk{border-color:#C9D2DC;color:var(--muted);background:#f4f6f8}.ts.conf{border-color:var(--bad);background:var(--bad-soft)}.ts.off{opacity:.5;text-decoration:line-through}.ts em{font-style:normal;color:var(--gold-ink);font-size:11px}
+.card.newtk{border-top-color:var(--gold);background:#fffaf0;outline:2px solid var(--gold)}.tshead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}.tsctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.seg.sm{margin:0;padding:3px}.seg.sm button{padding:6px 12px;font-size:13.5px}.wnav{display:flex;gap:4px}
+.dchips{display:grid;grid-template-columns:repeat(7,minmax(92px,1fr));gap:8px;overflow-x:auto;padding-bottom:2px}
+.dchip{position:relative;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center;cursor:pointer;font-family:inherit;color:var(--brand-deep);transition:.15s;box-shadow:0 1px 4px rgba(0,50,98,.05)}
+.dchip b{display:block;font-size:15px}.dchip small{display:block;color:var(--muted);font-size:12px}.dchip .dn{display:inline-block;margin-top:4px;font-size:11.5px;background:var(--fog);border-radius:999px;padding:1px 8px;color:var(--brand)}
+.dchip:hover{border-color:var(--brand);transform:translateY(-1px)}.dchip.tdy{border-color:var(--gold)}.dchip.on{background:linear-gradient(135deg,#003262,#0F588C);color:#fff;border-color:transparent;box-shadow:0 6px 16px rgba(0,50,98,.25)}.dchip.on small{color:#cfe0f0}.dchip.on .dn{background:rgba(255,255,255,.18);color:#fff}
+.dchip .dot{position:absolute;top:8px;inset-inline-start:8px;width:9px;height:9px;border-radius:50%}.dot.bad{background:var(--bad)}.dot.gold{background:var(--gold)}
+.av{flex:none;width:34px;height:34px;border-radius:50%;color:#fff;display:inline-grid;place-items:center;font-weight:700;font-size:15px;box-shadow:0 0 0 3px #fff,0 2px 6px rgba(0,0,0,.12)}
+.card.tl{padding:0;overflow:hidden}.tl-scroll{display:flex;overflow-x:auto;background:linear-gradient(#fff,#fff) padding-box}
+.tl-axis{flex:none;width:64px;position:sticky;inset-inline-start:0;background:#fff;z-index:3;border-inline-end:1px solid var(--line)}
+.tl-col{flex:1 0 180px;border-inline-end:1px solid #EEF2F7;min-width:180px;max-width:320px}.tl-col:nth-child(even) .tl-body{background:#FBFCFE}.tl-col.idle{flex-basis:120px;min-width:120px;opacity:.75}.tl-col.free .tl-body{background:repeating-linear-gradient(135deg,#fff,#fff 8px,#FFF5F5 8px,#FFF5F5 16px)}
+.tl-nm{min-width:0}.tl-nm b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tl-body{margin-bottom:14px}
+.nowl.ax{border-top-width:2px}.nowl.ax b{inset-inline-start:auto;inset-inline-end:2px}
+.tl-idle{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13.5px}.tl-idle .ip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 4px;color:var(--brand-deep)}.tl-idle .av{width:24px;height:24px;font-size:11px;box-shadow:none}
+.tl-h{height:64px;display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0}.tl-h b{display:block;font-size:14px;color:var(--brand-deep);line-height:1.3}.tl-h small{color:var(--muted);font-size:12px}
+.tl-body{position:relative}.tl-hours span{position:absolute;inset-inline-end:8px;transform:translateY(-50%);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}.tl-hours span:first-child{transform:none}
+.hl{position:absolute;inset-inline:0;border-top:1px dashed #E4EAF2}
+.nowl{position:absolute;inset-inline:0;border-top:2px solid var(--bad);z-index:2}.nowl b{position:absolute;top:-10px;inset-inline-start:4px;background:var(--bad);color:#fff;font-size:10.5px;border-radius:999px;padding:0 6px;font-weight:600}
+.blk{position:absolute;border-radius:10px;padding:6px 8px;overflow:hidden;font-size:12.5px;line-height:1.4;box-shadow:0 2px 6px rgba(0,50,98,.08);border:1px solid transparent;border-inline-start-width:4px;transition:.15s;z-index:1}
+.blk:hover{z-index:4;box-shadow:0 8px 20px rgba(0,50,98,.18);transform:scale(1.02)}
+.blk small{display:block;font-size:11px;opacity:.8;font-variant-numeric:tabular-nums}.blk b{display:block;font-weight:600;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}.blk em{display:block;font-style:normal;font-size:11px;opacity:.85}
+.blk.tiny{padding:2px 8px}.blk.tiny small{display:none}.blk.tiny b{-webkit-line-clamp:1}
+.blk.lec{background:linear-gradient(180deg,#EAF3FB,#DDEBF7);border-color:#C9DDF0;border-inline-start-color:#0F588C;color:#003262}
+.blk.task{background:linear-gradient(180deg,#E6F6F4,#D7F0EC);border-color:#C3E7E1;border-inline-start-color:#00A598;color:#0B4F48}
+.blk.brk{background:repeating-linear-gradient(135deg,#F4F6F8,#F4F6F8 6px,#ECEFF3 6px,#ECEFF3 12px);border-color:#E1E6EC;border-inline-start-color:#B8C2CE;color:#6B7785;box-shadow:none}
+.blk.freeb{background:#fff;border:1.5px dashed var(--bad);border-inline-start-width:4px;color:var(--bad)}
+.blk.conf{border-color:var(--bad)!important;box-shadow:0 0 0 2px rgba(237,78,51,.25)}.blk.off{opacity:.45;text-decoration:line-through}
+.tl-not{padding:8px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:4px}.tl-not span{background:var(--fog);border-radius:999px;padding:2px 10px;font-size:12px}
+.tslegend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}.tslegend span{display:inline-flex;align-items:center;gap:6px}.lg{width:14px;height:14px;border-radius:4px;display:inline-block}.lg.lec{background:#DDEBF7;border-inline-start:3px solid #0F588C}.lg.task{background:#D7F0EC;border-inline-start:3px solid #00A598}.lg.brk{background:#ECEFF3}.lg.conf{border:2px solid var(--bad)}.lg.free{border:1.5px dashed var(--bad)}
+.card.tsw{padding:0;overflow:hidden}.tsw-scroll{overflow-x:auto}.tsw table{border-collapse:separate;border-spacing:0;min-width:1050px;width:100%;table-layout:fixed}.tsw th.nm{width:170px}
+.tsw th,.tsw td{vertical-align:top;padding:8px;border-bottom:1px solid #EEF2F7;border-inline-start:1px solid #EEF2F7}
+.tsw thead th{background:linear-gradient(180deg,#F5F8FC,#EDF2F8);color:var(--brand-deep);font-size:14px;position:sticky;top:0}.tsw thead th small{display:block;color:var(--muted);font-weight:500;font-size:12px}.tsw thead th.tdy{background:linear-gradient(180deg,#FFF6DD,#FFEFC7)}
+.tsw th.nm{position:sticky;inset-inline-start:0;background:#fff;z-index:2;text-align:start;white-space:nowrap;min-width:150px}.tsw th.nm{display:table-cell}.tsw th.nm .av{margin-inline-end:8px;width:30px;height:30px;font-size:13px;vertical-align:middle}.tsw th.nm span:last-child{font-size:13.5px;color:var(--brand-deep);vertical-align:middle}
+.tsw tbody tr:nth-child(even) td{background:#FBFCFE}.tsw td.tdy{background:#FFFBF0!important}.tsw .none{color:#C5CED8}
+.wc{border-radius:8px;padding:5px 7px;margin-bottom:5px;font-size:12px;line-height:1.4;border-inline-start:3px solid}.wc small{display:block;color:inherit;opacity:.75;font-variant-numeric:tabular-nums;font-size:11px}.wc b{font-weight:600}.wc em{font-style:normal;font-size:11px;color:var(--gold-ink);display:block}
+.wc.lec{background:#EAF3FB;border-color:#0F588C;color:#003262}.wc.task{background:#E6F6F4;border-color:#00A598;color:#0B4F48}.wc.brk{background:#F2F4F7;border-color:#C9D2DC;color:#7A8592}.wc.freeb{background:#fff;border:1.5px dashed var(--bad);color:var(--bad)}.wc.conf{box-shadow:0 0 0 2px rgba(237,78,51,.35)}.wc.off{opacity:.45;text-decoration:line-through}
+@media print{.tl-scroll,.tsw-scroll{overflow:visible}.tsw table{min-width:0}.tl-col{min-width:0}}
 .wev.task{border-color:#00A598}.wev.brk{border-color:#C9D2DC;background:#f4f6f8;color:var(--muted)}.item.brk{opacity:.7}.item.brk .chk{border:0;background:none}.wev.cover{border-color:var(--gold)}.wev.off{opacity:.55;text-decoration:line-through}
 .wev b{display:block;font-weight:600}.wev small{color:var(--muted)}.wev .ok{color:var(--ok);font-weight:700}
 .clk{font-variant-numeric:tabular-nums;color:var(--brand);background:var(--gold-soft);border:1px solid var(--gold);border-radius:8px;padding:0 10px;font-weight:700;white-space:nowrap}
@@ -538,29 +572,66 @@ function renderInner(){
   app.innerHTML = banner + ({today:viewTeamToday, tasks:viewTasks, report:viewReport, lreps:viewLecReports, academy:viewAcademy, team:viewTeam, sched:viewTeamSched}[S.view])();
 }
 
-// جداول الفريق (قرار المستخدم 9 نوفمبر): أسبوع كامل لكل المنظمين أو كل المشرفين؛ للمسئول، ولمسئول القسم لقسمه فقط
+// جداول الفريق (قرار المستخدم 9 نوفمبر): للمسئول، ولمسئول القسم لقسمه فقط — عرض «يوم» (خط زمني) و«أسبوع»
+function tsPeople(dp){ return team().filter(m=>m.dept===dp).sort((a,b)=>(a.name||"").localeCompare(b.name||"")); }
+function tsConflicts(mid, ds){ const tm=allSlotsOf(mid,ds).filter(x=>!isBreak(x) && x.start && x.end && !slotOff(mid,ds,x.id)), bad=new Set();
+  tm.forEach((a,i)=>tm.slice(i+1).forEach(b=>{ const a1=toMin(a.start), a2=toMin(a.end), b1=toMin(b.start), b2=toMin(b.end); if(a2>a1 && b2>b1 && a1<b2 && b1<a2){ bad.add(a.id); bad.add(b.id); } })); return bad; }
+const tsKind = x => isBreak(x)?"brk":isLecture(x)?"lec":"task";
+const AV=["#0F588C","#00A598","#C4820E","#2D637F","#ED4E33","#6C3302","#9DAD33","#46535E"];
+const avatar = (m,i) => `<span class="av" style="background:${AV[i%AV.length]}">${esc((m.name||"؟").replace(/^أ\.\s*/,"").trim().charAt(0))}</span>`;
 function viewTeamSched(){
   const depts=isAdmin()?["org","sa"]:[S.me.dept]; if(!depts.includes(S.sdept)) S.sdept=depts[0];
-  const dp=S.sdept, DN={org:"المنظمون",sa:"مشرفو شئون الطلاب"};
+  const dp=S.sdept, DN={org:"المنظّمون",sa:"المشرفون"}, mode=S.smode||"day";
   const t=today(), start=addDays(addDays(t,-dayIdx(parse(t))), 7*(S.swk||0)), days=[...Array(7)].map((_,i)=>addDays(start,i));
-  const ppl=team().filter(m=>m.dept===dp).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
-  let conf=0;
-  const cell=(m,ds)=>{ const sl=allSlotsOf(m.id,ds), mn=x=>x.start?toMin(x.start):null;
-    const bad=new Set(); const tm=sl.filter(x=>!isBreak(x) && x.start && x.end && !slotOff(m.id,ds,x.id));
-    tm.forEach((a,i)=>tm.slice(i+1).forEach(b=>{ const a1=mn(a), a2=toMin(a.end), b1=mn(b), b2=toMin(b.end); if(a2>a1 && b2>b1 && a1<b2 && b1<a2){ bad.add(a.id); bad.add(b.id); } }));
-    conf+=bad.size?1:0;
-    return sl.map(x=>{ const off=slotOff(m.id,ds,x.id), cls=isBreak(x)?"brk":isLecture(x)?"lec":"task";
-      return `<div class="ts ${cls} ${bad.has(x.id)?"conf":""} ${off?"off":""}" title="${esc(x.label)}"><small>${x.start?esc(t12(x.start))+(x.end?"–"+esc(t12(x.end)):""):"بلا موعد"}</small>${esc(x.label.length>48?x.label.slice(0,48)+"…":x.label)}${x.cover?` <em>بديل</em>`:""}${off?` <em>${esc(okLabel(off))}</em>`:""}</div>`; }).join("") || `<span class="sub">—</span>`; };
-  const rows=ppl.map(m=>`<tr><th>${esc(m.name)}</th>${days.map(ds=>`<td class="${ds===t?"tdy":""}">${cell(m,ds)}</td>`).join("")}</tr>`).join("");
-  const free = isAdmin() && dp==="org" ? `<tr class="free"><th>بلا منظّم</th>${days.map(ds=>{ const ls=S.lectures.filter(l=>l.active!==false && !l.noOrg && !lecPaused(l,ds) && Number(l.day)===dayIdx(parse(ds)) && !lecSlots(l.id).length);
-      return `<td>${ls.map(l=>`<div class="ts conf"><small>${esc(t12(l.start||""))}</small>${esc(l.name)}</div>`).join("")||`<span class="sub">—</span>`}</td>`; }).join("")}</tr>` : "";
-  const head=`<tr><th></th>${days.map((ds,i)=>{ const d=parse(ds); return `<th class="${ds===t?"tdy":""}">${DAYS[i]}<small>${d.getDate()} ${MONTHS[d.getMonth()]}</small></th>`; }).join("")}</tr>`;
-  return ptitle("جدول "+DN[dp]+" — أسبوع "+fmtDay(start))+`<div class="row noprint"><div class="grow"><h1>جداول الفريق</h1><p class="sub">أسبوع ${esc(fmtDay(start))} · ${ppl.length} ${dp==="org"?"منظّم":"مشرف"}${conf?` · <span class="late">تعارض في ${conf} يوم</span>`:""}</p></div>
-    ${depts.length>1?`<div class="seg">${depts.map(k=>`<button class="${k===dp?"on":""}" data-a="sdept" data-v="${k}">${DN[k]}</button>`).join("")}</div>`:""}
-    <button class="btn sm ghost" data-a="swk" data-v="-1">‹ السابق</button>${S.swk?`<button class="btn sm ghost" data-a="swk" data-v="0">هذا الأسبوع</button>`:""}<button class="btn sm ghost" data-a="swk" data-v="1">التالي ›</button><button class="btn ghost" data-a="print">🖨️ طباعة / PDF</button></div>
-  <div class="card tsched"><table><thead>${head}</thead><tbody>${rows}${free}</tbody></table>
-  <p class="sub noprint" style="font-size:13px;margin-top:8px"><span class="ts lec" style="display:inline-block">محاضرة</span> <span class="ts task" style="display:inline-block">مهمة</span> <span class="ts brk" style="display:inline-block">استراحة</span> <span class="ts conf" style="display:inline-block">تعارض / بلا منظّم</span></p></div>`;
+  if(!S.sday || !days.includes(S.sday)) S.sday = days.includes(t)?t:days[0];
+  const ppl=tsPeople(dp), cf=days.map(ds=>ppl.some(m=>tsConflicts(m.id,ds).size)), nconf=cf.filter(Boolean).length;
+  const free=ds=> isAdmin() && dp==="org" ? S.lectures.filter(l=>l.active!==false && !l.noOrg && !lecPaused(l,ds) && Number(l.day)===dayIdx(parse(ds)) && !lecSlots(l.id).length) : [];
+  const chips=days.map((ds,i)=>{ const d=parse(ds), n=ppl.reduce((k,m)=>k+allSlotsOf(m.id,ds).filter(x=>!isBreak(x)).length,0), fr=free(ds).length;
+    return `<button class="dchip ${ds===S.sday&&mode==="day"?"on":""} ${ds===t?"tdy":""}" data-a="sday" data-v="${ds}"><b>${DAYS[i]}</b><small>${d.getDate()} ${MONTHS[d.getMonth()]}</small><span class="dn">${n} ${n===1?"بند":"بنود"}</span>${cf[i]?`<i class="dot bad" title="تعارض"></i>`:fr?`<i class="dot gold" title="بلا منظّم"></i>`:""}</button>`; }).join("");
+  const top = ptitle("جدول "+DN[dp]+" — "+(mode==="day"?fmtDay(S.sday):"أسبوع "+fmtDay(start)))+`
+  <div class="tshead noprint"><div><h1>جداول الفريق</h1><p class="sub">${ppl.length} ${dp==="org"?"منظّم":"مشرف"} · أسبوع ${esc(fmtDay(start))}${nconf?` · <span class="late">تعارض في ${nconf} ${nconf===1?"يوم":"أيام"}</span>`:""}</p></div>
+    <div class="tsctl">${depts.length>1?`<div class="seg sm">${depts.map(k=>`<button class="${k===dp?"on":""}" data-a="sdept" data-v="${k}">${DN[k]}</button>`).join("")}</div>`:""}
+    <div class="seg sm">${[["day","📅 يوم"],["week","🗓️ الأسبوع"]].map(([k,l])=>`<button class="${k===mode?"on":""}" data-a="smode" data-v="${k}">${l}</button>`).join("")}</div>
+    <div class="wnav"><button class="btn sm ghost" data-a="swk" data-v="-1" title="الأسبوع السابق">‹</button>${S.swk?`<button class="btn sm ghost" data-a="swk" data-v="0">هذا الأسبوع</button>`:""}<button class="btn sm ghost" data-a="swk" data-v="1" title="الأسبوع التالي">›</button></div>
+    <button class="btn sm ghost" data-a="print">🖨️ طباعة</button></div></div>
+  <div class="dchips noprint">${chips}</div>`;
+  const legend=`<div class="tslegend noprint"><span><i class="lg lec"></i>محاضرة</span><span><i class="lg task"></i>مهمة</span><span><i class="lg brk"></i>استراحة</span><span><i class="lg conf"></i>تعارض</span>${dp==="org"&&isAdmin()?`<span><i class="lg free"></i>بلا منظّم</span>`:""}</div>`;
+  if(!ppl.length) return top+`<div class="card"><div class="empty">لا يوجد أعضاء نشطون في هذا القسم.</div></div>`;
+  return top + (mode==="day" ? tsDay(ppl, S.sday, free(S.sday)) : tsWeek(ppl, days, free)) + legend;
 }
+// عرض اليوم: خط زمني، عمود لكل شخص، والبنود بطول مدتها
+function tsDay(ppl, ds, fr){
+  const PX=1.1, all=ppl.flatMap(m=>allSlotsOf(m.id,ds)).concat(fr.map(l=>({start:l.start,end:l.end})));
+  const ts=all.filter(x=>x.start).map(x=>toMin(x.start)), te=all.filter(x=>x.end||x.start).map(x=>{ const a=toMin(x.start||x.end), e=x.end?toMin(x.end):a+60; return e>a?e:a+60; });
+  const h0=Math.max(0,Math.floor((ts.length?Math.min(...ts):480)/60)), h1=Math.min(24,Math.ceil((te.length?Math.max(...te):1320)/60)), H=Math.max(h1-h0,4), top0=h0*60;
+  const hrs=[...Array(H+1)].map((_,i)=>h0+i);
+  const grid=`<div class="tl-hours">${hrs.map(h=>`<span style="top:${(h*60-top0)*PX}px">${t12(pad(h%24)+":00")}</span>`).join("")}</div>`;
+  const lines=hrs.map(h=>`<i class="hl" style="top:${(h*60-top0)*PX}px"></i>`).join("");
+  const nowM = ds===today() ? toMin(cairoNow().hm) : -1, showNow = nowM>=top0 && nowM<=h1*60;
+  const now = showNow ? `<i class="nowl" style="top:${(nowM-top0)*PX}px"></i>` : "", nowAx = showNow ? `<i class="nowl ax" style="top:${(nowM-top0)*PX}px"><b>الآن</b></i>` : "";
+  const block=(x,cls,mid,lane,lanes,bad)=>{ if(!x.start) return ""; const a=toMin(x.start), e=x.end&&toMin(x.end)>a?toMin(x.end):a+45, off=mid&&x.id?slotOff(mid,ds,x.id):null;
+    const w=100/lanes, sk=(lecOf(x)||{}).sheikh, h=(e-a)*PX;
+    return `<div class="blk ${cls} ${bad?"conf":""} ${off?"off":""} ${h<40?"tiny":""}" style="top:${(a-top0)*PX}px;height:${h-2}px;inset-inline-start:calc(${lane*w}% + 3px);width:calc(${w}% - 6px)" title="${esc((x.label||x.name)+" · "+t12(x.start)+(x.end?" – "+t12(x.end):""))}">
+      <small>${esc(t12(x.start))}${x.end?" – "+esc(t12(x.end)):""}</small><b>${cls==="brk"?"☕ ":bad?"⚠️ ":""}${esc(x.label||x.name)}</b>${sk&&h>=70?`<em>${esc(sk)}</em>`:""}${x.cover?`<em>بديل عن ${esc(nameOf(x.cover))}</em>`:""}${off?`<em>${esc(okLabel(off))}</em>`:""}</div>`; };
+  const lanesOf=items=>{ const L=[]; items.sort((p,q)=>toMin(p.start)-toMin(q.start)).forEach(x=>{ const a=toMin(x.start); let k=L.findIndex(end=>end<=a); const e=x.end&&toMin(x.end)>a?toMin(x.end):a+45; if(k<0){ k=L.length; L.push(e); } else L[k]=e; x._lane=k; }); return Math.max(1,L.length); };
+  const busy=ppl.map((m,i)=>[m,i]).filter(([m])=>allSlotsOf(m.id,ds).length), idle=ppl.map((m,i)=>[m,i]).filter(([m])=>!allSlotsOf(m.id,ds).length);
+  const cols=busy.map(([m,i])=>{ const sl=allSlotsOf(m.id,ds).filter(x=>x.start), bad=tsConflicts(m.id,ds), n=lanesOf(sl), noT=allSlotsOf(m.id,ds).filter(x=>!x.start);
+      const lec=sl.filter(isLecture).length, mins=sl.filter(x=>!isBreak(x)&&x.end).reduce((k,x)=>k+Math.max(0,toMin(x.end)-toMin(x.start)),0);
+      return `<div class="tl-col"><div class="tl-h">${avatar(m,i)}<div class="tl-nm"><b title="${esc(m.name)}">${esc(m.name)}</b><small>${[lec?lec+" محاضرة":"", mins?dur(mins):""].filter(Boolean).join(" · ")}</small></div></div>
+      <div class="tl-body" style="height:${H*60*PX}px">${lines}${now}${sl.map(x=>block(x,tsKind(x),m.id,x._lane,n,bad.has(x.id))).join("")}</div>
+      ${noT.length?`<div class="tl-not">${noT.map(x=>`<span>${esc(x.label)}</span>`).join("")}</div>`:""}</div>`; }).join("");
+  const frc = fr.length ? (()=>{ const it=fr.map(l=>({...l, label:l.name})), n=lanesOf(it); return `<div class="tl-col free"><div class="tl-h"><span class="av" style="background:var(--bad)">!</span><div class="tl-nm"><b>بلا منظّم</b><small>${fr.length} محاضرة</small></div></div><div class="tl-body" style="height:${H*60*PX}px">${lines}${it.map(x=>block(x,"freeb",null,x._lane,n,false)).join("")}</div></div>`; })() : "";
+  const idl = idle.length ? `<div class="tl-idle"><span class="sub">لا شيء في جدولهم هذا اليوم:</span>${idle.map(([m,i])=>`<span class="ip">${avatar(m,i)}${esc(m.name)}</span>`).join("")}</div>` : "";
+  if(!busy.length && !fr.length) return `<div class="card"><div class="empty">لا يوجد شغل مجدول لهم في هذا اليوم.</div></div>`+idl;
+  return `<div class="card tl"><div class="tl-scroll"><div class="tl-axis"><div class="tl-h"></div><div class="tl-body" style="height:${H*60*PX}px">${grid}${nowAx}</div></div>${frc}${cols}</div></div>${idl}`;
+}
+// عرض الأسبوع: صف لكل شخص، وفي كل يوم بطاقات صغيرة
+function tsWeek(ppl, days, free){ const t=today();
+  const head=`<tr><th class="nm"></th>${days.map((ds,i)=>{ const d=parse(ds); return `<th class="${ds===t?"tdy":""}"><b>${DAYS[i]}</b><small>${d.getDate()} ${MONTHS[d.getMonth()]}</small></th>`; }).join("")}</tr>`;
+  const card=(x,mid,ds,bad)=>{ const off=slotOff(mid,ds,x.id), k=tsKind(x); return `<div class="wc ${k} ${bad?"conf":""} ${off?"off":""}" title="${esc(x.label)}"><small>${x.start?esc(t12(x.start))+(x.end?" – "+esc(t12(x.end)):""):"بلا موعد"}</small><b>${k==="brk"?"☕ ":bad?"⚠️ ":""}${esc(x.label.length>42?x.label.slice(0,42)+"…":x.label)}</b>${x.cover?`<em>بديل</em>`:""}${off?`<em>${esc(okLabel(off))}</em>`:""}</div>`; };
+  const rows=ppl.map((m,i)=>`<tr><th class="nm">${avatar(m,i)}<span>${esc(m.name)}</span></th>${days.map(ds=>{ const sl=allSlotsOf(m.id,ds), bad=tsConflicts(m.id,ds); return `<td class="${ds===t?"tdy":""}">${sl.map(x=>card(x,m.id,ds,bad.has(x.id))).join("")||`<span class="none">—</span>`}</td>`; }).join("")}</tr>`).join("");
+  const fr=days.map(ds=>free(ds)); const frRow = fr.some(x=>x.length) ? `<tr class="free"><th class="nm"><span class="av" style="background:var(--bad)">!</span><span>بلا منظّم</span></th>${fr.map((ls,i)=>`<td class="${days[i]===t?"tdy":""}">${ls.map(l=>`<div class="wc freeb"><small>${esc(t12(l.start||""))}</small><b>${esc(l.name)}</b></div>`).join("")||`<span class="none">—</span>`}</td>`).join("")}</tr>` : "";
+  return `<div class="card tsw"><div class="tsw-scroll"><table><thead>${head}</thead><tbody>${rows}${frRow}</tbody></table></div></div>`; }
 // مجالس معروضة على المنظّمين (قرار 8 نوفمبر): المنظّم يرغب، ومسئول اللجنة يعتمد
 function offersCard(me){ if(S.me.dept!=="org") return "";
   const ls=S.lectures.filter(l=>l.offer && l.active!==false && !S.slots.some(s=>s.lec===l.id && s.owner===me));
@@ -1274,6 +1345,8 @@ document.addEventListener("click", async e=>{
     catch(err){ open(`<h2>رابط زووم</h2><p class="sub" style="font-size:13px">اضغط على الرابط ثم انسخه.</p><input id="zl" dir="ltr" readonly value="${esc(u)}"><div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`); const i=document.getElementById("zl"); if(i){ i.focus(); i.select(); } }
     return; }
   if(a==="sdept"){ S.sdept=el.dataset.v; render(); return; }
+  if(a==="smode"){ S.smode=el.dataset.v; render(); return; }
+  if(a==="sday"){ S.sday=el.dataset.v; S.smode="day"; render(); return; }
   if(a==="swk"){ S.swk = el.dataset.v==="0" ? 0 : (S.swk||0)+Number(el.dataset.v); render(); return; }
   if(a==="wk"){ S.wk = el.dataset.v==="0" ? 0 : S.wk+Number(el.dataset.v); render(); return; }
   if(a==="toggleInactive"){ S.showInactive=!S.showInactive; render(); return; }
