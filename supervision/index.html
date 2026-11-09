@@ -61,7 +61,9 @@ h2{font-size:18px;margin:0 0 10px;color:var(--brand-deep)}
 .wday h3{margin:0 0 6px;font-size:13.5px;color:var(--brand-deep);display:flex;justify-content:space-between;align-items:center;gap:4px}
 .wday h3 small{color:var(--muted);font-weight:500}
 .wev{background:#fff;border-radius:8px;padding:6px 8px;margin-bottom:6px;border-inline-start:4px solid var(--brand);font-size:12.5px;line-height:1.5}
-.card.newtk{border-top-color:var(--gold);background:#fffaf0;outline:2px solid var(--gold)}.tshead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}.pick{display:inline-flex;flex-direction:row;align-items:center;gap:4px;margin:0;font-size:15px}.pick select{width:auto;min-width:150px;padding:5px 8px;font-size:13.5px}
+.card.newtk{border-top-color:var(--gold);background:#fffaf0;outline:2px solid var(--gold)}.tshead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}.asbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#FFF4D6;border:1px solid #F7B717;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:14.5px;color:#5A3E00;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.asmode #app [data-a]:not([data-a=asExit]):not([data-a=toggleLec]):not([data-a=copyZoom]):not([data-a=print]){cursor:not-allowed}
+.pick{display:inline-flex;flex-direction:row;align-items:center;gap:4px;margin:0;font-size:15px}.pick select{width:auto;min-width:150px;padding:5px 8px;font-size:13.5px}
 .tsctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.seg.sm{margin:0;padding:3px}.seg.sm button{padding:6px 12px;font-size:13.5px}.wnav{display:flex;gap:4px}
 .dchips{display:grid;grid-template-columns:repeat(7,minmax(92px,1fr));gap:8px;overflow-x:auto;padding-bottom:2px}
 .dchip{position:relative;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center;cursor:pointer;font-family:inherit;color:var(--brand-deep);transition:.15s;box-shadow:0 1px 4px rgba(0,50,98,.05)}
@@ -368,6 +370,13 @@ function toast(m){ document.querySelectorAll(".toast").forEach(x=>x.remove()); c
 const nameOf = id => (S.members.find(m=>m.id===id)||{}).name || "—";
 const isMgr = () => S.me && (S.me.role==="committee" || S.me.role==="head");
 const isAdmin = () => S.me && S.me.role==="committee";
+// «👁 شاشته» (قرار المستخدم 9 نوفمبر): مسئول اللجنة يرى شاشة أي عضو، ومسئول القسم أعضاء قسمه فقط — للعرض فقط
+const canView = id => !!(isMgr() && id && id!==S.me.id && (isAdmin() ? S.members.some(m=>m.id===id && m.role!=="committee") : team().some(m=>m.id===id)));
+const VIEWER = () => S.as && canView(S.as) ? S.as : null;
+const meId = () => VIEWER() || S.me.id;
+const meName = () => VIEWER() ? nameOf(S.as) : S.me.name;
+const AS_OK = new Set(["asExit","asView","toggleLec","copyZoom","print","logout"]);
+const asBtn = id => canView(id) ? `<button class="btn sm ghost" data-a="asView" data-id="${esc(id)}" title="عرض شاشته كما تظهر له">👁 شاشته</button>` : "";
 function team(){ // من أتابعهم
   const act = S.members.filter(m => m.active!==false && m.role!=="committee");
   if(isAdmin()) return act;
@@ -582,10 +591,12 @@ function renderInner(){
   const td=today(), hday=$("#hday"); hday.hidden=false;
   hday.innerHTML = `<div class="hd-date"><b>${DAYS[dayIdx(parse(td))]}</b><span>${esc(gregFull(td))}<i>◆</i>${esc(hijri(td))}</span></div><div class="hclk" aria-label="الساعة بتوقيت القاهرة"><span class="ic"></span><span class="hm" data-live="hm"></span><span class="sx"><span class="ss" data-live="ss"></span><span class="ap" data-live="ap"></span></span></div>`;
   const banner = S.msg ? `<div class="banner">${esc(S.msg)}</div>` : "";
-  if(!isMgr()){ const mt=[["today","يومي",S.evals.filter(e=>e.member===S.me.id&&!e.ack).length+newTasks(S.me.id).length],["week","جدولي الأسبوعي",0],["mine","تقريري",0],["reqs","طلباتي",0]];
+  const asv=VIEWER(); document.body.classList.toggle("asmode", !!asv);
+  if(!isMgr() || asv){ const me=meId(), mt=[["today","يومي",S.evals.filter(e=>e.member===me&&!e.ack).length+newTasks(me).length],["week","جدولي الأسبوعي",0],["mine","تقريري",0],["reqs","طلباتي",0]];
     if(!mt.some(t=>t[0]===S.view)) S.view="today";
+    const asBar = asv ? `<div class="asbar noprint"><span>👁 أنت تشاهد شاشة <b>${esc(nameOf(asv))}</b> كما تظهر له — <b>للعرض فقط</b></span><button class="btn sm" data-a="asExit">↩ رجوع</button></div>` : "";
     nav.hidden=false; $("#tabs").innerHTML = mt.map(([k,l,n])=>`<a href="#${k}" class="${S.view===k?"on":""}">${l}${n?`<span class="n">${n}</span>`:""}</a>`).join("");
-    app.innerHTML = banner + ({today:viewMine, week:()=>weekCard(S.me.id), mine:viewMyReport, reqs:viewMyReqs}[S.view])(); return; }
+    app.innerHTML = asBar + banner + ({today:viewMine, week:()=>weekCard(me), mine:viewMyReport, reqs:viewMyReqs}[S.view])(); return; }
   const pend = team().reduce((n,m)=>n+problemsOf(m.id,today()).filter(c=>!c.reply).length,0) + pendingReqs().length;
   const tabs = [["today","اليوم",pend],["tasks","المهام",0],["sched","جداول الفريق",0],["report","التقارير",0],["lreps","تقارير المحاضرات",0]].concat(isAdmin()?[["academy","جدول الأكاديمية",unassigned().length],["team","الفريق والجداول",0]]:[]);
   if(!tabs.some(t=>t[0]===S.view)) S.view="today";
@@ -614,7 +625,7 @@ function viewTeamSched(){
   const top = ptitle((one?"جدول "+one.name:"جدول "+DN[dp])+" — "+(mode==="day"?fmtDay(S.sday):"أسبوع "+fmtDay(start)))+`
   <div class="tshead noprint"><div><h1>${one?"جدول "+esc(one.name):"جداول الفريق"}</h1><p class="sub">${one?(dp==="org"?"منظّم":"مشرف"):ppl.length+" "+(dp==="org"?"منظّم":"مشرف")} · أسبوع ${esc(fmtDay(start))}${nconf?` · <span class="late">تعارض في ${nconf} ${nconf===1?"يوم":"أيام"}</span>`:""}</p></div>
     <div class="tsctl">${depts.length>1?`<div class="seg sm">${depts.map(k=>`<button class="${k===dp?"on":""}" data-a="sdept" data-v="${k}">${DN[k]}</button>`).join("")}</div>`:""}
-    <label class="pick" title="اختر شخصًا لعرض جدوله فقط">👤<select data-a="sper"><option value="">كل ${dp==="org"?"المنظّمين":"المشرفين"}</option>${all.map(m=>`<option value="${esc(m.id)}" ${one&&one.id===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}</select></label>${one?`<button class="btn sm ghost" data-a="sper0">✕ الكل</button>`:""}
+    <label class="pick" title="اختر شخصًا لعرض جدوله فقط">👤<select data-a="sper"><option value="">كل ${dp==="org"?"المنظّمين":"المشرفين"}</option>${all.map(m=>`<option value="${esc(m.id)}" ${one&&one.id===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}</select></label>${one?`<button class="btn sm ghost" data-a="sper0">✕ الكل</button>${asBtn(one.id)}`:""}
     <div class="seg sm">${[["day","📅 يوم"],["week","🗓️ الأسبوع"]].map(([k,l])=>`<button class="${k===mode?"on":""}" data-a="smode" data-v="${k}">${l}</button>`).join("")}</div>
     <div class="wnav"><button class="btn sm ghost" data-a="swk" data-v="-1" title="الأسبوع السابق">‹</button>${S.swk?`<button class="btn sm ghost" data-a="swk" data-v="0">هذا الأسبوع</button>`:""}<button class="btn sm ghost" data-a="swk" data-v="1" title="الأسبوع التالي">›</button></div>
     <button class="btn sm ghost" data-a="print">🖨️ طباعة</button></div></div>
@@ -657,29 +668,29 @@ function tsWeek(ppl, days, free){ const t=today();
   const fr=days.map(ds=>free(ds)); const frRow = fr.some(x=>x.length) ? `<tr class="free"><th class="nm"><span class="av" style="background:var(--bad)">!</span><span>بلا منظّم</span></th>${fr.map((ls,i)=>`<td class="${days[i]===t?"tdy":""}">${ls.map(l=>`<div class="wc freeb"><small>${esc(t12(l.start||""))}</small><b>${esc(l.name)}</b></div>`).join("")||`<span class="none">—</span>`}</td>`).join("")}</tr>` : "";
   return `<div class="card tsw"><div class="tsw-scroll"><table><thead>${head}</thead><tbody>${rows}${frRow}</tbody></table></div></div>`; }
 // مجالس معروضة على المنظّمين (قرار 8 نوفمبر): المنظّم يرغب، ومسئول اللجنة يعتمد
-function offersCard(me){ if(S.me.dept!=="org") return "";
+function offersCard(me){ if(memberOf(me).dept!=="org") return "";
   const ls=S.lectures.filter(l=>l.offer && l.active!==false && !S.slots.some(s=>s.lec===l.id && s.owner===me));
   if(!ls.length) return "";
   return `<div class="card"><h2>مجالس معروضة عليك</h2><p class="sub" style="font-size:14px">إن أردت تنظيم أحدها اضغط «أرغب في تنظيمه»، ويعتمد مسئول اللجنة فيُضاف لجدولك.</p>${ls.map(l=>{ const mine=S.requests.find(r=>r.kind==="offer" && r.slot===l.id && r.member===me && r.status==="pending");
     return `<div class="item"><div class="what"><b>${esc(l.name)}${l.sheikh?` <span class="shk">${esc(l.sheikh)}</span>`:""}</b><small>${esc(lecWhen(l))}${l.startFrom?" · يبدأ "+esc(fmtDay(l.startFrom)):""}</small></div>${mine?`<span class="pill ok">أرسلت رغبتك</span><button class="btn sm ghost" data-a="cancelReq" data-id="${esc(mine.id)}">إلغاء</button>`:`<button class="btn sm" data-a="wantLec" data-id="${esc(l.id)}">أرغب في تنظيمه</button>`}</div>`; }).join("")}</div>`; }
 // صفحة المشرف: شغلي اليوم
 function viewMine(){
-  const me=S.me.id, d=today(), sl=slotsOf(me,d), tk=openTasks(me), pr=problemsOf(me,d);
+  const me=meId(), d=today(), sl=slotsOf(me,d), tk=openTasks(me), pr=problemsOf(me,d);
   const exp=sl.filter(s=>!slotOff(me,d,s.id)), done=exp.filter(s=>isSlotDone(d,s.id)).length;
   return `<p class="sub">${exp.length ? `أنجزت ${done} من ${exp.length} من شغل اليوم` : sl.length ? "شغل اليوم معتذر عنه بموافقة المسئول" : "لا يوجد شغل مجدول لك اليوم"}</p>
   ${newTasksCard(me)}
   ${followCards(me)}
   ${reservedCard(me)}
   ${offersCard(me)}
-  <div class="card"><h2>شغل اليوم</h2>${sl.length ? allSlotsOf(me,d).map(s=>isBreak(s)?breakRow(s):slotRow(d,s,me,true)).join("") : `<div class="empty">لا توجد محاضرات أو متابعات في جدولك اليوم.</div>`}</div>
+  <div class="card"><h2>شغل اليوم</h2>${sl.length ? allSlotsOf(me,d).map(s=>isBreak(s)?breakRow(s):slotRow(d,s,me,!VIEWER())).join("") : `<div class="empty">لا توجد محاضرات أو متابعات في جدولك اليوم.</div>`}</div>
   ${tk.length ? `<div class="card"><h2>مهام مطلوبة منك</h2>${tk.map(t=>taskRow(t,true)).join("")}</div>` : ""}
   <div class="row"><button class="btn ghost" data-a="problem" data-slot="">⚠️ عندي مشكلة أو استفسار</button></div>
   ${pr.filter(p=>!p.slot).map(probHtml).join("")}`;
 }
 // تقريري: إنجاز الشهر والتقييمات
 // تقريري: التقرير اليومي فقط (قرار المستخدم 6 نوفمبر)
-function viewMyReport(){ const me=S.me.id, d=S.myday||today(), st=periodStats(me,d,d);
-  return ptitle("التقرير اليومي — "+S.me.name+" — "+fmtDay(d))+`<div class="row noprint"><div class="grow"><h1>تقريري اليومي</h1><p class="sub">${esc(fmtDay(d))}</p></div><input type="date" data-a="myday" value="${esc(d)}" max="${today()}" style="width:auto"><button class="btn ghost" data-a="print">🖨️ طباعة / PDF</button></div>
+function viewMyReport(){ const me=meId(), d=S.myday||today(), st=periodStats(me,d,d);
+  return ptitle("التقرير اليومي — "+meName()+" — "+fmtDay(d))+`<div class="row noprint"><div class="grow"><h1>تقريري اليومي</h1><p class="sub">${esc(fmtDay(d))}</p></div><input type="date" data-a="myday" value="${esc(d)}" max="${today()}" style="width:auto"><button class="btn ghost" data-a="print">🖨️ طباعة / PDF</button></div>
   <div class="card"><h2>ملخص اليوم</h2><div class="row" style="gap:6px">${daySumPills(st)||`<span class="sub">لا يوجد شغل مجدول في هذا اليوم.</span>`}</div></div>
   <div class="card"><h2>التفاصيل</h2>${dayDetail(me,d)}</div>`; }
 // متابعات المسئول في «يومي»: التقارير المرسلة (أسبوعي/شهري) والتقييم الشهري
@@ -695,7 +706,7 @@ function followCards(me){
   if(!pend.length && goal && goal.goal && goal.goal.text) h+=`<div class="banner">🎯 <b>هدفك هذا الشهر:</b> ${esc(goal.goal.text)}</div>`;
   return h; }
 // طلباتي
-function viewMyReqs(){ const me=S.me.id, r=myReqs(me);
+function viewMyReqs(){ const me=meId(), r=myReqs(me);
   return `<div class="row"><div class="grow"><h1>طلباتي</h1><p class="sub">الاعتذار عن محاضرة أو يوم، والإجازات، وتصحيح يوم سابق</p></div><button class="btn" data-a="newReq">📝 طلب جديد</button></div>${r||`<div class="card"><div class="empty">لا توجد طلبات حديثة.</div></div>`}`; }
 // جدولي الأسبوعي: جدول الشخص نفسه فقط (لا يُعرض جدول غيره)
 function weekCard(mid){
@@ -919,7 +930,7 @@ function viewTeamToday(){
   ${reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button></div></div></div>`).join("")}</div>`:""}
   ${needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>`<div class="item"><div class="what"><b>${esc(m.name)}</b><div class="prob">${esc(p.note)}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button></div></div></div>`).join("")}</div>`:""}
   ${mineSl.length?`<div class="card"><h2>شغلي اليوم</h2>${mineSl.map(s=>slotRow(d,s,S.me.id,d===today())).join("")}</div>`:""}
-  <div class="card"><h2>الفريق</h2>${rows.length? rows.map(({m,sl,exp,dn,pr,late})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${esc(DEPTS[m.dept]||"")}</small></span>${dutyPill(m.id,d)}${pr.length?`<span class="pill gold">⚠️ ${pr.length}</span>`:""}${late?`<span class="pill bad">${late} متأخرة</span>`:""}${exp.length?`<span class="pill ${dn===exp.length?"ok":""}">${dn} من ${exp.length}</span>`:""}</summary>
+  <div class="card"><h2>الفريق</h2>${rows.length? rows.map(({m,sl,exp,dn,pr,late})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${esc(DEPTS[m.dept]||"")}</small></span>${asBtn(m.id)}${dutyPill(m.id,d)}${pr.length?`<span class="pill gold">⚠️ ${pr.length}</span>`:""}${late?`<span class="pill bad">${late} متأخرة</span>`:""}${exp.length?`<span class="pill ${dn===exp.length?"ok":""}">${dn} من ${exp.length}</span>`:""}</summary>
     <div class="mini">${sl.map(s=>{ const off=slotOff(m.id,d,s.id), ok=isSlotDone(d,s.id), lec=isLecture(s);
       return `<span class="${ok?"d":"u"}">${off?"—":ok?"✓":"○"} ${s.start?esc(t12(s.start))+" — ":""}${esc(s.label)}${off?` (${off.kind==="sheikh"?"اعتذر الشيخ · "+(marksOf(d,s.id).tgx?"✓ أُبلغ الطلاب":"لم يُبلَّغ الطلاب بعد"):"معتذر"})`:lec&&!ok?` (${markCount(d,s.id)} من ${stepsFor(d).length}: ${stepsFor(d).filter(([k])=>!marksOf(d,s.id)[k]).map(x=>stepLabel(x,s)).join("، ")} ناقص)`:""}${repLine((slotTask(d,s.id)||{}).report)}</span>`; }).join("")}${pr.map(probHtml).join("")}</div></details>`).join("") : `<div class="empty">لا يوجد شغل مجدول للفريق في هذا اليوم.</div>`}</div>`;
 }
@@ -1180,7 +1191,7 @@ function viewTeam(){
   const act=S.members.filter(m=>m.active!==false && m.role!=="committee"), inN=act.filter(m=>m.lastSeen).length;
   return `<div class="row"><div class="grow"><h1>الفريق والجداول</h1><p class="sub">كل عضو يدخل بإيميل جوجل المكتوب هنا · دخل ${inN} من ${act.length}${act.length-inN?` · <span class="late">لم يدخل: ${act.length-inN}</span>`:""}</p></div><button class="btn" data-a="newMember">+ عضو</button></div>
   ${off?`<div class="row"><button class="flag" data-a="toggleInactive">${S.showInactive?"إخفاء الموقوفين":`إظهار الموقوفين (${off})`}</button></div>`:""}
-  <div class="card" style="overflow-x:auto"><table><thead><tr><th>الاسم</th><th>الدور</th><th>الإيميل</th><th>آخر دخول</th><th class="c">جدوله</th><th></th></tr></thead><tbody>${list.map(m=>`<tr><td><b>${esc(m.name)}</b>${m.active===false?` <span class="pill bad">موقوف</span>`:""}</td><td>${esc(ROLES[m.role]||"")}</td><td dir="ltr" style="font-size:13px">${m.email?esc(m.email):`<span class="pill gold">بلا إيميل</span>`}</td><td>${seenCell(m)}</td><td class="c">${S.slots.filter(s=>s.owner===m.id&&s.kind!=="flex"&&!s.date).length}</td><td><div class="row" style="flex-wrap:nowrap"><button class="btn sm ghost" data-a="editMember" data-id="${esc(m.id)}">بياناته</button><button class="btn sm ghost" data-a="sched" data-id="${esc(m.id)}">جدوله</button></div></td></tr>`).join("")}</tbody></table></div>`;
+  <div class="card" style="overflow-x:auto"><table><thead><tr><th>الاسم</th><th>الدور</th><th>الإيميل</th><th>آخر دخول</th><th class="c">جدوله</th><th></th></tr></thead><tbody>${list.map(m=>`<tr><td><b>${esc(m.name)}</b>${m.active===false?` <span class="pill bad">موقوف</span>`:""}</td><td>${esc(ROLES[m.role]||"")}</td><td dir="ltr" style="font-size:13px">${m.email?esc(m.email):`<span class="pill gold">بلا إيميل</span>`}</td><td>${seenCell(m)}</td><td class="c">${S.slots.filter(s=>s.owner===m.id&&s.kind!=="flex"&&!s.date).length}</td><td><div class="row" style="flex-wrap:nowrap"><button class="btn sm ghost" data-a="editMember" data-id="${esc(m.id)}">بياناته</button><button class="btn sm ghost" data-a="sched" data-id="${esc(m.id)}">جدوله</button>${asBtn(m.id)}</div></td></tr>`).join("")}</tbody></table></div>`;
 }
 function memberForm(m){
   const isNew=!m; m=m||{role:"sa",dept:"sa",active:true};
@@ -1235,6 +1246,9 @@ document.addEventListener("click", async e=>{
   const el=e.target.closest("[data-a]"); if(!el) return; const a=el.dataset.a, id=el.dataset.id;
   if(a==="bg"){ if(e.target===el) close(); return; }
   if(el.tagName==="INPUT") return;
+  if(VIEWER() && !AS_OK.has(a) && el.closest("#app")){ e.preventDefault(); toast("للعرض فقط — هذه شاشة "+nameOf(S.as)); return; }
+  if(a==="asView"){ e.preventDefault(); if(!canView(id)) return; S.asBack=S.view; S.as=id; S.view="today"; close(); history.replaceState(null,"","#today"); render(); scrollTo(0,0); return; }
+  if(a==="asExit"){ const b=S.asBack||"today"; S.as=null; S.view=b; history.replaceState(null,"","#"+b); render(); scrollTo(0,0); return; }
   const me=S.me&&S.me.id, d=today();
   if(a==="logout") return logout("");
   if(a==="gprompt") return loadGsi(()=>{ try { google.accounts.id.prompt(); } catch(err){ toast("تعذّر فتح نافذة الدخول؛ جرّب Chrome محدّثًا."); } });
