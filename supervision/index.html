@@ -61,7 +61,7 @@ h2{font-size:18px;margin:0 0 10px;color:var(--brand-deep)}
 .wday h3{margin:0 0 6px;font-size:13.5px;color:var(--brand-deep);display:flex;justify-content:space-between;align-items:center;gap:4px}
 .wday h3 small{color:var(--muted);font-weight:500}
 .wev{background:#fff;border-radius:8px;padding:6px 8px;margin-bottom:6px;border-inline-start:4px solid var(--brand);font-size:12.5px;line-height:1.5}
-.wev.task{border-color:#00A598}.wev.brk{border-color:#C9D2DC;background:#f4f6f8;color:var(--muted)}.item.brk{opacity:.7}.item.brk .chk{border:0;background:none}.wev.cover{border-color:var(--gold)}.wev.off{opacity:.55;text-decoration:line-through}
+.card.newtk{border-top-color:var(--gold);background:#fffaf0;outline:2px solid var(--gold)}.wev.task{border-color:#00A598}.wev.brk{border-color:#C9D2DC;background:#f4f6f8;color:var(--muted)}.item.brk{opacity:.7}.item.brk .chk{border:0;background:none}.wev.cover{border-color:var(--gold)}.wev.off{opacity:.55;text-decoration:line-through}
 .wev b{display:block;font-weight:600}.wev small{color:var(--muted)}.wev .ok{color:var(--ok);font-weight:700}
 .clk{font-variant-numeric:tabular-nums;color:var(--brand);background:var(--gold-soft);border:1px solid var(--gold);border-radius:8px;padding:0 10px;font-weight:700;white-space:nowrap}
 .dates{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:14.5px;margin-top:2px}
@@ -411,6 +411,16 @@ function shMin(sh){ if(!sh) return 0; let m;
   return Math.max(0, Math.round(m-(sh.breakMin||0))); }
 function firstStart(mid, date){ const st=slotsOf(mid,date).filter(s=>s.start && !slotOff(mid,date,s.id)).map(s=>toMin(s.start)); return st.length?Math.min(...st):null; }
 function lateBy(mid, date){ const sh=shiftOf(mid,date), f=firstStart(mid,date); if(!sh||f==null) return 0; const x=toMin(sh.start)-(f-GOAL.before); return x>GOAL.grace ? x : 0; }
+const EST=[[15,"15 دقيقة"],[30,"30 دقيقة"],[60,"ساعة"],[120,"ساعتان"],[180,"3 ساعات"],[480,"يوم عمل"]];
+const estLabel = m => (EST.find(x=>x[0]===Number(m))||[])[1] || (m?dur(Number(m)):"");
+const taskWhen = t => fmtDay(t.due)+(t.dueTime?" الساعة "+t12(t.dueTime):"")+(t.est?" · المدة: "+estLabel(t.est):"");
+const newTasks = mid => S.tasks.filter(t => t.type==="assigned" && t.assignee===mid && t.status!=="done" && !t.seenAt);
+let NEWSEEN = null; // معرّفات المهام الجديدة المعروفة لهذه الصفحة (لإظهار رسالة عند وصول مهمة أثناء فتحها)
+function notifyNew(){ if(!S.me) return; const ids=newTasks(S.me.id).map(t=>t.id);
+  if(NEWSEEN){ const fresh=ids.filter(i=>!NEWSEEN.has(i)); if(fresh.length){ const t=S.tasks.find(x=>x.id===fresh[0]); toast("🔔 مهمة جديدة: "+t.title+(fresh.length>1?" (+"+(fresh.length-1)+")":"")); } }
+  NEWSEEN=new Set(ids); }
+function newTasksCard(mid){ const ls=newTasks(mid); if(!ls.length) return "";
+  return `<div class="card newtk"><h2>🔔 ${ls.length>1?ls.length+" مهام جديدة":"مهمة جديدة"}</h2>${ls.map(t=>`<div class="item"><div class="what"><b>${esc(t.title)}</b><small>من ${esc(nameOf(t.assigner)||"المسئول")} · التسليم: ${esc(taskWhen(t))}</small>${t.output?`<small style="display:block">${esc(t.output)}</small>`:""}</div><button class="btn sm" data-a="seenTask" data-id="${esc(t.id)}">تمام، اطّلعت</button></div>`).join("")}</div>`; }
 const openTasks = mid => S.tasks.filter(t => t.type!=="scheduled" && t.assignee===mid && t.status!=="done").sort((a,b)=>(a.due||"").localeCompare(b.due||""));
 const problemsOf = (mid, date) => S.checkins.filter(c => c.member===mid && c.date===date && c.mark==="warn");
 
@@ -424,10 +434,10 @@ async function api(action, payload={}){
     return d;
   } catch(e){ if(e && e.reason) throw e; throw {reason:"network"}; } finally { clearTimeout(tm); }
 }
-function apply(d){ S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals"].forEach(k => S[k]=d[k]||[]); S.phase="app"; }
+function apply(d){ if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals"].forEach(k => S[k]=d[k]||[]); S.phase="app"; }
 async function refresh(quiet){
   const f=document.activeElement; if(quiet && f && /INPUT|TEXTAREA|SELECT/.test(f.tagName) && f.value) return; // لا نمسح ما يكتبه
-  try { const d = await api("load"); if(d.ok){ apply(d); render(); } else if(d.reason==="not_registered") logout("حسابك ليس ضمن الفريق النشط. راجع مسئول اللجنة."); }
+  try { const d = await api("load"); if(d.ok){ apply(d); render(); notifyNew(); } else if(d.reason==="not_registered") logout("حسابك ليس ضمن الفريق النشط. راجع مسئول اللجنة."); }
   catch(e){ if(!quiet && e.reason==="network"){ S.msg="تعذّر الاتصال بالخادم. تأكد من الإنترنت ثم أعد فتح الصفحة."; render(); } }
 }
 // حفظ فوري على الشاشة ثم في الخلفية (بالترتيب لكل عنصر)؛ يرجع كما كان إن فشل الحفظ
@@ -476,7 +486,7 @@ async function remove(col, id){
   try { const d = await api("delete", {col, id}); if(d.ok){ S[col]=S[col].filter(x=>x.id!==id); render(); } else toast("لم يُحذف."); }
   catch(e){ toast("لا يوجد اتصال؛ لم يُحذف."); }
 }
-function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=null; S.phase="login"; S.msg=msg||""; render(); }
+function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=null; S.dayAt=null; NEWSEEN=null; S.phase="login"; S.msg=msg||""; render(); }
 
 // ---------- الدخول بجوجل ----------
 let gsiBusy=false;
@@ -491,7 +501,7 @@ function mountGoogle(){ const box=$("#gbtn"); if(!box) return; loadGsi(()=>{ try
 async function onGoogle(resp){
   S.msg="جارٍ التحقق…"; render();
   try { const d = await api("login",{idtoken:resp.credential});
-    if(d.ok){ S.session=d.session; store.set("wahy_sup_session",d.session); apply(d); S.msg=""; render(); }
+    if(d.ok){ S.session=d.session; store.set("wahy_sup_session",d.session); apply(d); S.msg=""; render(); notifyNew(); }
     else if(d.reason==="not_registered"){ S.msg="الحساب "+(d.email||"")+" غير مسجّل في الفريق. اطلب من مسئول اللجنة إضافته."; render(); }
     else { S.msg="لم يكتمل الدخول، حاول مرة أخرى."; render(); }
   } catch(e){ S.msg="تعذّر الاتصال بالخادم، حاول بعد قليل."; render(); }
@@ -514,7 +524,7 @@ function renderInner(){
   const td=today(), hday=$("#hday"); hday.hidden=false;
   hday.innerHTML = `<div class="hd-date"><b>${DAYS[dayIdx(parse(td))]}</b><span>${esc(gregFull(td))}<i>◆</i>${esc(hijri(td))}</span></div><div class="hclk" aria-label="الساعة بتوقيت القاهرة"><span class="ic"></span><span class="hm" data-live="hm"></span><span class="sx"><span class="ss" data-live="ss"></span><span class="ap" data-live="ap"></span></span></div>`;
   const banner = S.msg ? `<div class="banner">${esc(S.msg)}</div>` : "";
-  if(!isMgr()){ const mt=[["today","يومي",S.evals.filter(e=>e.member===S.me.id&&!e.ack).length],["week","جدولي الأسبوعي",0],["mine","تقريري",0],["reqs","طلباتي",0]];
+  if(!isMgr()){ const mt=[["today","يومي",S.evals.filter(e=>e.member===S.me.id&&!e.ack).length+newTasks(S.me.id).length],["week","جدولي الأسبوعي",0],["mine","تقريري",0],["reqs","طلباتي",0]];
     if(!mt.some(t=>t[0]===S.view)) S.view="today";
     nav.hidden=false; $("#tabs").innerHTML = mt.map(([k,l,n])=>`<a href="#${k}" class="${S.view===k?"on":""}">${l}${n?`<span class="n">${n}</span>`:""}</a>`).join("");
     app.innerHTML = banner + ({today:viewMine, week:()=>weekCard(S.me.id), mine:viewMyReport, reqs:viewMyReqs}[S.view])(); return; }
@@ -537,6 +547,7 @@ function viewMine(){
   const me=S.me.id, d=today(), sl=slotsOf(me,d), tk=openTasks(me), pr=problemsOf(me,d);
   const exp=sl.filter(s=>!slotOff(me,d,s.id)), done=exp.filter(s=>isSlotDone(d,s.id)).length;
   return `<p class="sub">${exp.length ? `أنجزت ${done} من ${exp.length} من شغل اليوم` : sl.length ? "شغل اليوم معتذر عنه بموافقة المسئول" : "لا يوجد شغل مجدول لك اليوم"}</p>
+  ${newTasksCard(me)}
   ${followCards(me)}
   ${offersCard(me)}
   <div class="card"><h2>شغل اليوم</h2>${sl.length ? allSlotsOf(me,d).map(s=>isBreak(s)?breakRow(s):slotRow(d,s,me,true)).join("") : `<div class="empty">لا توجد محاضرات أو متابعات في جدولك اليوم.</div>`}</div>
@@ -602,6 +613,7 @@ function tick(){
   });
 }
 setInterval(tick,1000);
+setInterval(()=>{ if(S.me && S.dayAt && today()!==S.dayAt) logout("انتهت جلسة اليوم (الموقع يُغلق يوميًا 12 منتصف الليل). ادخل مرة أخرى."); }, 15000);
 // بطاقة الدوام: بدء ← استراحة ← إنهاء (الوقت يُختم من الخادم)
 function dutyCard(mid){
   const d=today(), sh=activeShift(mid), st=shState(sh), off=dayOff(mid,d), f=firstStart(mid,d);
@@ -727,11 +739,12 @@ function reqForm(kind){
     <p class="sub" style="font-size:13px">يصل الطلب للمسئول، ولا يُحتسب إلا بعد موافقته.</p>
     <div class="row"><button class="btn" data-a="sendReq" data-k="${kind}">إرسال الطلب</button><button class="btn ghost" data-a="close">إلغاء</button></div>`;
 }
+function seenWhen(ms){ const t=new Date(Number(ms)), dk=new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Cairo"}).format(t), hm=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit",hour12:false}).format(t); return (dk===today()?"":fmtDay(dk)+" ")+t12(hm); }
 function taskRow(t,mine){
   const late = t.due && t.due<today();
   return `<div class="item">
     ${mine?`<button class="chk" data-a="task" data-id="${esc(t.id)}" aria-label="تم">✓</button>`:""}
-    <div class="what"><b>${esc(t.title)}</b><small class="${late?"late":""}">${late?"متأخرة — ":""}التسليم: ${esc(fmtDay(t.due))}${mine?"":" · "+esc(nameOf(t.assignee))}</small>${t.output?`<small style="display:block">${esc(t.output)}</small>`:""}</div>
+    <div class="what"><b>${esc(t.title)}</b><small class="${late?"late":""}">${late?"متأخرة — ":""}التسليم: ${esc(taskWhen(t))}${mine?"":" · "+esc(nameOf(t.assignee))}</small>${mine?"":t.type==="assigned"?(t.seenAt?`<small style="display:block;color:var(--ok)">✓ اطّلع ${esc(seenWhen(t.seenAt))}</small>`:`<small style="display:block" class="late">لم يطّلع بعد</small>`):""}${t.output?`<small style="display:block">${esc(t.output)}</small>`:""}</div>
     ${mine?"":`<button class="btn sm ghost" data-a="editTask" data-id="${esc(t.id)}">تعديل</button>`}
   </div>`;
 }
@@ -806,6 +819,8 @@ function taskForm(t){
     <label class="full">المطلوب<input id="t_title" value="${esc(t.title||"")}" placeholder="مثال: حصر بيانات خريجي الدفعة الثالثة"></label>
     <label>لمن<select id="t_who"><option value="">اختر…</option>${ppl.map(m=>`<option value="${esc(m.id)}" ${t.assignee===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}</select></label>
     <label>موعد التسليم<input type="date" id="t_due" value="${esc(t.due||"")}"></label>
+    <label>الساعة (اختياري)<input type="time" id="t_time" value="${esc(t.dueTime||"")}"></label>
+    <label>المدة المتوقعة<select id="t_est"><option value="">—</option>${EST.map(([m,l])=>`<option value="${m}" ${Number(t.est)===m?"selected":""}>${l}</option>`).join("")}</select></label>
     <label class="full">تفاصيل (اختياري)<textarea id="t_note">${esc(t.output||"")}</textarea></label></div>
     <div class="row"><button class="btn" data-a="saveTask" data-id="${esc(isNew?"":t.id)}">حفظ</button><button class="btn ghost" data-a="close">إلغاء</button><span class="grow"></span>${isNew?"":`<button class="btn danger sm" data-a="delTask" data-id="${esc(t.id)}">حذف</button>`}</div>`;
 }
@@ -1150,7 +1165,7 @@ document.addEventListener("click", async e=>{
     catch(e){ toast("تعذّر الاتصال بالخادم."); el.disabled=false; } return; }
   if(a==="otpVerify"){ const o=S.otp||{}, code=v("otp_c").replace(/\D/g,""); if(code.length!==6) return toast("اكتب الكود (6 أرقام).");
     el.disabled=true; try { const d=await api("otpVerify",{email:o.email, code});
-      if(d.ok){ S.session=d.session; store.set("wahy_sup_session",d.session); S.otp=null; apply(d); S.msg=""; render(); }
+      if(d.ok){ S.session=d.session; store.set("wahy_sup_session",d.session); S.otp=null; apply(d); S.msg=""; render(); notifyNew(); }
       else if(d.reason==="not_registered"){ S.msg="الحساب "+(d.email||"")+" غير مسجّل في الفريق. اطلب من مسئول اللجنة إضافته."; render(); }
       else { toast("الكود غير صحيح أو انتهت صلاحيته."); el.disabled=false; } }
     catch(e){ toast("تعذّر الاتصال بالخادم."); el.disabled=false; } return; }
@@ -1208,10 +1223,12 @@ document.addEventListener("click", async e=>{
   if(a==="reply"){ const r=v("r_"+id); if(!r) return toast("اكتب الرد."); await save("checkins", id, {reply:r, repliedBy:me, repliedAt:Date.now()}); return; }
   if(a==="newTask") return open(taskForm(null));
   if(a==="editTask") return open(taskForm(S.tasks.find(t=>t.id===id)));
-  if(a==="saveTask"){ const data={title:v("t_title"), assignee:v("t_who"), due:v("t_due"), output:v("t_note")};
+  if(a==="saveTask"){ const data={title:v("t_title"), assignee:v("t_who"), due:v("t_due"), dueTime:v("t_time"), est:v("t_est")?Number(v("t_est")):null, output:v("t_note")};
+    if(id){ const old=S.tasks.find(x=>x.id===id); if(old && old.assignee!==data.assignee) data.seenAt=null; }
     if(!data.title||!data.assignee||!data.due) return toast("اكتب المطلوب واختر الشخص والموعد.");
     if(!id) Object.assign(data,{type:"assigned", status:"todo", assigner:me, createdAt:Date.now()});
     if(await save("tasks", id||null, data, !!id)) close(); return; }
+  if(a==="seenTask"){ saveFast("tasks", id, {seenAt:Date.now()}, "", id); NEWSEEN && NEWSEEN.delete(id); return; }
   if(a==="delTask"){ await remove("tasks", id); close(); return; }
   if(a==="newMember") return open(memberForm(null));
   if(a==="editMember") return open(memberForm(S.members.find(m=>m.id===id)));
