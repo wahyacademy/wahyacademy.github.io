@@ -97,6 +97,8 @@ h2{font-size:18px;margin:0 0 10px;color:var(--brand-deep)}
 .wc{border-radius:8px;padding:5px 7px;margin-bottom:5px;font-size:12px;line-height:1.4;border-inline-start:3px solid}.wc small{display:block;color:inherit;opacity:.75;font-variant-numeric:tabular-nums;font-size:11px}.wc b{font-weight:600}.wc em{font-style:normal;font-size:11px;color:var(--gold-ink);display:block}
 .wc.lec{background:#EAF3FB;border-color:#0F588C;color:#003262}.wc.task{background:#E6F6F4;border-color:#00A598;color:#0B4F48}.wc.brk{background:#F2F4F7;border-color:#C9D2DC;color:#7A8592}.wc.freeb{background:#fff;border:1.5px dashed var(--bad);color:var(--bad)}.wc.conf{box-shadow:0 0 0 2px rgba(237,78,51,.35)}.wc.off{opacity:.45;text-decoration:line-through}
 @media print{.tl-scroll,.tsw-scroll{overflow:visible}.tsw table{min-width:0}.tl-col{min-width:0}}
+.card.resv{border-top-color:#C4820E;background:#FFFCF5}.wev.hold{border-color:#C4820E;background:repeating-linear-gradient(135deg,#fff,#fff 6px,#FFF7E6 6px,#FFF7E6 12px);opacity:.85}
+.blk.hold{background:repeating-linear-gradient(135deg,#FFFDF7,#FFFDF7 6px,#FFF3D6 6px,#FFF3D6 12px);border:1.5px dashed #C4820E;border-inline-start-width:4px;color:#7A5208;box-shadow:none}.wc.hold{background:#FFF7E6;border-color:#C4820E;color:#7A5208;border-inline-start-style:dashed}.lg.hold{background:#FFF3D6;border:1.5px dashed #C4820E}
 .wev.task{border-color:#00A598}.wev.brk{border-color:#C9D2DC;background:#f4f6f8;color:var(--muted)}.item.brk{opacity:.7}.item.brk .chk{border:0;background:none}.wev.cover{border-color:var(--gold)}.wev.off{opacity:.55;text-decoration:line-through}
 .wev b{display:block;font-weight:600}.wev small{color:var(--muted)}.wev .ok{color:var(--ok);font-weight:700}
 .clk{font-variant-numeric:tabular-nums;color:var(--brand);background:var(--gold-soft);border:1px solid var(--gold);border-radius:8px;padding:0 10px;font-weight:700;white-space:nowrap}
@@ -374,7 +376,7 @@ function team(){ // من أتابعهم
 
 // ---------- بيانات اليوم ----------
 // إيقاف مؤقت لمحاضرة (قرار المستخدم 8 نوفمبر): من تاريخ إلى تاريخ، لا تظهر ولا تُحسب ثم تعود وحدها
-const lecPaused = (l, date) => !!(l && ((l.pauseFrom && l.pauseTo && l.pauseFrom<=date && date<=l.pauseTo) || (l.startFrom && date<l.startFrom))); // موقوفة مؤقتًا أو لم تبدأ بعد
+const lecPaused = (l, date) => !!(l && (l.hold===true || (l.pauseFrom && l.pauseTo && l.pauseFrom<=date && date<=l.pauseTo) || (l.startFrom && date<l.startFrom))); // موقوفة مؤقتًا أو لم تبدأ بعد
 // الاستراحة (قرار المستخدم 9 نوفمبر): أي خانة غير محاضرة في اسمها «استراحة» أو «بريك» — بلا أزرار ولا تُحسب
 const isBreak = s => !!s && s.lecture!==true && /استراحة|بريك/.test(s.label||"");
 const allSlotsOf = (mid, date) => S.slots.filter(s => s.owner===mid && s.kind!=="flex" && (s.date ? s.date===date : Number(s.day)===dayIdx(parse(date))) && !(s.lec && lecPaused(S.lectures.find(l=>l.id===s.lec), date))).sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")||(a.label||"").localeCompare(b.label||""));
@@ -421,6 +423,19 @@ const lecSlots = lid => S.slots.filter(s=>s.lec===lid && !s.date && memberOf(s.o
 const unassigned = () => S.lectures.filter(l=>l.active!==false && !l.noOrg && !lecPaused(l,today()) && !lecSlots(l.id).length); // «لا يحتاج منظّم» والموقوفة ليست «بلا منظّم»
 const lecWhen = l => (DAYS[Number(l.day)]||"")+(l.start?" "+t12(l.start)+(l.end?" – "+t12(l.end):""):"");
 const offerReqs = lid => S.requests.filter(r=>r.kind==="offer" && r.slot===lid && r.status==="pending");
+// المجالس المحجوزة (قرار المستخدم 9 نوفمبر): hold = محجوز بلا موعد بداية؛ startFrom لاحق = يبدأ قريبًا. تظهر لمنظّمها تذكيرًا ولا تُحسب
+const showDaysOf = l => (l && l.showDays!=null && l.showDays!=="" && !isNaN(Number(l.showDays))) ? Number(l.showDays) : 3;
+const revealOf = l => l && l.startFrom ? addDays(l.startFrom, -showDaysOf(l)) : null;
+const isReserved = l => !!(l && (l.hold===true || (l.startFrom && l.startFrom>today())));
+const heldSlotsOf = (mid, ds) => S.slots.filter(s=>s.owner===mid && s.lec && !s.date && Number(s.day)===dayIdx(parse(ds)) && isReserved(lecOf(s)) && lecPaused(lecOf(s),ds));
+function reservedCard(mid){ const ls=S.slots.filter(s=>s.owner===mid && s.lec && !s.date).map(s=>[s,lecOf(s)]).filter(([s,l])=>isReserved(l));
+  if(!ls.length) return "";
+  return `<div class="card resv"><h2>📌 مجالس محجوزة لك</h2><p class="sub" style="font-size:13.5px">لا تُحسب ولا يصلك عنها تذكير حتى تبدأ. تظهر روابطها قبل البداية بأيام.</p>${ls.map(([s,l])=>{ const soon=l.startFrom && today()>=revealOf(l);
+    return `<div class="item"><span class="chk" aria-hidden="true" style="border:0">${soon?"🆕":"📌"}</span><div class="what"><b>${esc(l.name)}${l.sheikh?` <span class="shk">${esc(l.sheikh)}</span>`:""}</b><small>${esc(lecWhen(l))} · ${l.startFrom?(soon?`<b style="color:var(--gold-ink)">يبدأ ${esc(fmtDay(l.startFrom))}</b>`:"يبدأ "+esc(fmtDay(l.startFrom))):"موعد البداية يُحدَّد لاحقًا"}</small>${soon?linksHtml(l):""}</div></div>`; }).join("")}</div>`; }
+function heldAdminCard(){ if(!isAdmin()) return ""; const ls=S.lectures.filter(l=>l.active!==false && l.hold===true);
+  if(!ls.length) return "";
+  return `<div class="card resv"><h2>📌 مجالس محجوزة بلا موعد بداية (${ls.length})</h2>${ls.map(l=>{ const org=lecSlots(l.id);
+    return `<div class="item"><div class="what"><b>${esc(l.name)}</b><small>${esc(lecWhen(l))} · ${org.length?"محجوز لـ "+org.map(x=>esc(nameOf(x.owner))).join("، "):`<span class="late">بلا منظّم</span>`}</small></div><button class="btn sm" data-a="editLec" data-id="${esc(l.id)}">تحديد موعد البداية</button></div>`; }).join("")}</div>`; }
 function linksHtml(l){ if(!l) return ""; const z=safeUrl(l.zoom), sh=safeUrl(l.sheet);
   return `<div class="links">${z?`<a href="${esc(z)}" target="_blank" rel="noopener noreferrer">🎥 فتح زووم</a><button class="lk" data-a="copyZoom" data-u="${esc(z)}">📋 نسخ رابط زووم</button>`:`<span class="pill gray">رابط زووم غير مضاف</span>`}${sh?`<a href="${esc(sh)}" target="_blank" rel="noopener noreferrer">📊 شيت الحضور والغياب</a>`:`<span class="pill gray">شيت الحضور غير مضاف</span>`}${l.account?`<span class="pill acct">🔑 حساب زووم: ${esc(l.account)}</span>`:`<span class="pill gray">حساب زووم غير محدد</span>`}</div>`; }
 // الطلبات المقبولة تُسقط اليوم أو المحاضرة من الحساب
@@ -574,9 +589,10 @@ function renderInner(){
 
 // جداول الفريق (قرار المستخدم 9 نوفمبر): للمسئول، ولمسئول القسم لقسمه فقط — عرض «يوم» (خط زمني) و«أسبوع»
 function tsPeople(dp){ return team().filter(m=>m.dept===dp).sort((a,b)=>(a.name||"").localeCompare(b.name||"")); }
-function tsConflicts(mid, ds){ const tm=allSlotsOf(mid,ds).filter(x=>!isBreak(x) && x.start && x.end && !slotOff(mid,ds,x.id)), bad=new Set();
+function tsConflicts(mid, ds){ const tm=allSlotsOf(mid,ds).concat(heldSlotsOf(mid,ds)).filter(x=>!isBreak(x) && x.start && x.end && !slotOff(mid,ds,x.id)), bad=new Set();
   tm.forEach((a,i)=>tm.slice(i+1).forEach(b=>{ const a1=toMin(a.start), a2=toMin(a.end), b1=toMin(b.start), b2=toMin(b.end); if(a2>a1 && b2>b1 && a1<b2 && b1<a2){ bad.add(a.id); bad.add(b.id); } })); return bad; }
-const tsKind = x => isBreak(x)?"brk":isLecture(x)?"lec":"task";
+const tsKind = x => isReserved(lecOf(x)) && lecPaused(lecOf(x),S.sday||today()) ? "hold" : isBreak(x)?"brk":isLecture(x)?"lec":"task";
+const tsAll = (mid, ds) => allSlotsOf(mid,ds).concat(heldSlotsOf(mid,ds)).sort((a,b)=>(a.start||"99").localeCompare(b.start||"99"));
 const AV=["#0F588C","#00A598","#C4820E","#2D637F","#ED4E33","#6C3302","#9DAD33","#46535E"];
 const avatar = (m,i) => `<span class="av" style="background:${AV[i%AV.length]}">${esc((m.name||"؟").replace(/^أ\.\s*/,"").trim().charAt(0))}</span>`;
 function viewTeamSched(){
@@ -586,7 +602,7 @@ function viewTeamSched(){
   if(!S.sday || !days.includes(S.sday)) S.sday = days.includes(t)?t:days[0];
   const ppl=tsPeople(dp), cf=days.map(ds=>ppl.some(m=>tsConflicts(m.id,ds).size)), nconf=cf.filter(Boolean).length;
   const free=ds=> isAdmin() && dp==="org" ? S.lectures.filter(l=>l.active!==false && !l.noOrg && !lecPaused(l,ds) && Number(l.day)===dayIdx(parse(ds)) && !lecSlots(l.id).length) : [];
-  const chips=days.map((ds,i)=>{ const d=parse(ds), n=ppl.reduce((k,m)=>k+allSlotsOf(m.id,ds).filter(x=>!isBreak(x)).length,0), fr=free(ds).length;
+  const chips=days.map((ds,i)=>{ const d=parse(ds), n=ppl.reduce((k,m)=>k+tsAll(m.id,ds).filter(x=>!isBreak(x)).length,0), fr=free(ds).length;
     return `<button class="dchip ${ds===S.sday&&mode==="day"?"on":""} ${ds===t?"tdy":""}" data-a="sday" data-v="${ds}"><b>${DAYS[i]}</b><small>${d.getDate()} ${MONTHS[d.getMonth()]}</small><span class="dn">${n} ${n===1?"بند":"بنود"}</span>${cf[i]?`<i class="dot bad" title="تعارض"></i>`:fr?`<i class="dot gold" title="بلا منظّم"></i>`:""}</button>`; }).join("");
   const top = ptitle("جدول "+DN[dp]+" — "+(mode==="day"?fmtDay(S.sday):"أسبوع "+fmtDay(start)))+`
   <div class="tshead noprint"><div><h1>جداول الفريق</h1><p class="sub">${ppl.length} ${dp==="org"?"منظّم":"مشرف"} · أسبوع ${esc(fmtDay(start))}${nconf?` · <span class="late">تعارض في ${nconf} ${nconf===1?"يوم":"أيام"}</span>`:""}</p></div>
@@ -595,13 +611,13 @@ function viewTeamSched(){
     <div class="wnav"><button class="btn sm ghost" data-a="swk" data-v="-1" title="الأسبوع السابق">‹</button>${S.swk?`<button class="btn sm ghost" data-a="swk" data-v="0">هذا الأسبوع</button>`:""}<button class="btn sm ghost" data-a="swk" data-v="1" title="الأسبوع التالي">›</button></div>
     <button class="btn sm ghost" data-a="print">🖨️ طباعة</button></div></div>
   <div class="dchips noprint">${chips}</div>`;
-  const legend=`<div class="tslegend noprint"><span><i class="lg lec"></i>محاضرة</span><span><i class="lg task"></i>مهمة</span><span><i class="lg brk"></i>استراحة</span><span><i class="lg conf"></i>تعارض</span>${dp==="org"&&isAdmin()?`<span><i class="lg free"></i>بلا منظّم</span>`:""}</div>`;
+  const legend=`<div class="tslegend noprint"><span><i class="lg lec"></i>محاضرة</span><span><i class="lg task"></i>مهمة</span><span><i class="lg brk"></i>استراحة</span><span><i class="lg hold"></i>محجوز</span><span><i class="lg conf"></i>تعارض</span>${dp==="org"&&isAdmin()?`<span><i class="lg free"></i>بلا منظّم</span>`:""}</div>`;
   if(!ppl.length) return top+`<div class="card"><div class="empty">لا يوجد أعضاء نشطون في هذا القسم.</div></div>`;
   return top + (mode==="day" ? tsDay(ppl, S.sday, free(S.sday)) : tsWeek(ppl, days, free)) + legend;
 }
 // عرض اليوم: خط زمني، عمود لكل شخص، والبنود بطول مدتها
 function tsDay(ppl, ds, fr){
-  const PX=1.1, all=ppl.flatMap(m=>allSlotsOf(m.id,ds)).concat(fr.map(l=>({start:l.start,end:l.end})));
+  const PX=1.1, all=ppl.flatMap(m=>tsAll(m.id,ds)).concat(fr.map(l=>({start:l.start,end:l.end})));
   const ts=all.filter(x=>x.start).map(x=>toMin(x.start)), te=all.filter(x=>x.end||x.start).map(x=>{ const a=toMin(x.start||x.end), e=x.end?toMin(x.end):a+60; return e>a?e:a+60; });
   const h0=Math.max(0,Math.floor((ts.length?Math.min(...ts):480)/60)), h1=Math.min(24,Math.ceil((te.length?Math.max(...te):1320)/60)), H=Math.max(h1-h0,4), top0=h0*60;
   const hrs=[...Array(H+1)].map((_,i)=>h0+i);
@@ -612,11 +628,11 @@ function tsDay(ppl, ds, fr){
   const block=(x,cls,mid,lane,lanes,bad)=>{ if(!x.start) return ""; const a=toMin(x.start), e=x.end&&toMin(x.end)>a?toMin(x.end):a+45, off=mid&&x.id?slotOff(mid,ds,x.id):null;
     const w=100/lanes, sk=(lecOf(x)||{}).sheikh, h=(e-a)*PX;
     return `<div class="blk ${cls} ${bad?"conf":""} ${off?"off":""} ${h<40?"tiny":""}" style="top:${(a-top0)*PX}px;height:${h-2}px;inset-inline-start:calc(${lane*w}% + 3px);width:calc(${w}% - 6px)" title="${esc((x.label||x.name)+" · "+t12(x.start)+(x.end?" – "+t12(x.end):""))}">
-      <small>${esc(t12(x.start))}${x.end?" – "+esc(t12(x.end)):""}</small><b>${cls==="brk"?"☕ ":bad?"⚠️ ":""}${esc(x.label||x.name)}</b>${sk&&h>=70?`<em>${esc(sk)}</em>`:""}${x.cover?`<em>بديل عن ${esc(nameOf(x.cover))}</em>`:""}${off?`<em>${esc(okLabel(off))}</em>`:""}</div>`; };
+      <small>${esc(t12(x.start))}${x.end?" – "+esc(t12(x.end)):""}</small><b>${cls==="brk"?"☕ ":cls==="hold"?"📌 ":bad?"⚠️ ":""}${esc(x.label||x.name)}</b>${cls==="hold"?`<em>محجوز${(lecOf(x)||{}).startFrom?" · يبدأ "+esc(fmtDay(lecOf(x).startFrom)):""}</em>`:""}${sk&&h>=70?`<em>${esc(sk)}</em>`:""}${x.cover?`<em>بديل عن ${esc(nameOf(x.cover))}</em>`:""}${off?`<em>${esc(okLabel(off))}</em>`:""}</div>`; };
   const lanesOf=items=>{ const L=[]; items.sort((p,q)=>toMin(p.start)-toMin(q.start)).forEach(x=>{ const a=toMin(x.start); let k=L.findIndex(end=>end<=a); const e=x.end&&toMin(x.end)>a?toMin(x.end):a+45; if(k<0){ k=L.length; L.push(e); } else L[k]=e; x._lane=k; }); return Math.max(1,L.length); };
-  const busy=ppl.map((m,i)=>[m,i]).filter(([m])=>allSlotsOf(m.id,ds).length), idle=ppl.map((m,i)=>[m,i]).filter(([m])=>!allSlotsOf(m.id,ds).length);
-  const cols=busy.map(([m,i])=>{ const sl=allSlotsOf(m.id,ds).filter(x=>x.start), bad=tsConflicts(m.id,ds), n=lanesOf(sl), noT=allSlotsOf(m.id,ds).filter(x=>!x.start);
-      const lec=sl.filter(isLecture).length, mins=sl.filter(x=>!isBreak(x)&&x.end).reduce((k,x)=>k+Math.max(0,toMin(x.end)-toMin(x.start)),0);
+  const busy=ppl.map((m,i)=>[m,i]).filter(([m])=>tsAll(m.id,ds).length), idle=ppl.map((m,i)=>[m,i]).filter(([m])=>!tsAll(m.id,ds).length);
+  const cols=busy.map(([m,i])=>{ const sl=tsAll(m.id,ds).filter(x=>x.start), bad=tsConflicts(m.id,ds), n=lanesOf(sl), noT=allSlotsOf(m.id,ds).filter(x=>!x.start);
+      const lec=sl.filter(x=>isLecture(x)&&!isReserved(lecOf(x))).length, mins=sl.filter(x=>!isBreak(x)&&!isReserved(lecOf(x))&&x.end).reduce((k,x)=>k+Math.max(0,toMin(x.end)-toMin(x.start)),0);
       return `<div class="tl-col"><div class="tl-h">${avatar(m,i)}<div class="tl-nm"><b title="${esc(m.name)}">${esc(m.name)}</b><small>${[lec?lec+" محاضرة":"", mins?dur(mins):""].filter(Boolean).join(" · ")}</small></div></div>
       <div class="tl-body" style="height:${H*60*PX}px">${lines}${now}${sl.map(x=>block(x,tsKind(x),m.id,x._lane,n,bad.has(x.id))).join("")}</div>
       ${noT.length?`<div class="tl-not">${noT.map(x=>`<span>${esc(x.label)}</span>`).join("")}</div>`:""}</div>`; }).join("");
@@ -628,8 +644,8 @@ function tsDay(ppl, ds, fr){
 // عرض الأسبوع: صف لكل شخص، وفي كل يوم بطاقات صغيرة
 function tsWeek(ppl, days, free){ const t=today();
   const head=`<tr><th class="nm"></th>${days.map((ds,i)=>{ const d=parse(ds); return `<th class="${ds===t?"tdy":""}"><b>${DAYS[i]}</b><small>${d.getDate()} ${MONTHS[d.getMonth()]}</small></th>`; }).join("")}</tr>`;
-  const card=(x,mid,ds,bad)=>{ const off=slotOff(mid,ds,x.id), k=tsKind(x); return `<div class="wc ${k} ${bad?"conf":""} ${off?"off":""}" title="${esc(x.label)}"><small>${x.start?esc(t12(x.start))+(x.end?" – "+esc(t12(x.end)):""):"بلا موعد"}</small><b>${k==="brk"?"☕ ":bad?"⚠️ ":""}${esc(x.label.length>42?x.label.slice(0,42)+"…":x.label)}</b>${x.cover?`<em>بديل</em>`:""}${off?`<em>${esc(okLabel(off))}</em>`:""}</div>`; };
-  const rows=ppl.map((m,i)=>`<tr><th class="nm">${avatar(m,i)}<span>${esc(m.name)}</span></th>${days.map(ds=>{ const sl=allSlotsOf(m.id,ds), bad=tsConflicts(m.id,ds); return `<td class="${ds===t?"tdy":""}">${sl.map(x=>card(x,m.id,ds,bad.has(x.id))).join("")||`<span class="none">—</span>`}</td>`; }).join("")}</tr>`).join("");
+  const card=(x,mid,ds,bad)=>{ const off=slotOff(mid,ds,x.id), k=isReserved(lecOf(x))&&lecPaused(lecOf(x),ds)?"hold":tsKind(x); return `<div class="wc ${k} ${bad?"conf":""} ${off?"off":""}" title="${esc(x.label)}"><small>${x.start?esc(t12(x.start))+(x.end?" – "+esc(t12(x.end)):""):"بلا موعد"}</small><b>${k==="brk"?"☕ ":k==="hold"?"📌 ":bad?"⚠️ ":""}${esc(x.label.length>42?x.label.slice(0,42)+"…":x.label)}</b>${x.cover?`<em>بديل</em>`:""}${off?`<em>${esc(okLabel(off))}</em>`:""}</div>`; };
+  const rows=ppl.map((m,i)=>`<tr><th class="nm">${avatar(m,i)}<span>${esc(m.name)}</span></th>${days.map(ds=>{ const sl=tsAll(m.id,ds), bad=tsConflicts(m.id,ds); return `<td class="${ds===t?"tdy":""}">${sl.map(x=>card(x,m.id,ds,bad.has(x.id))).join("")||`<span class="none">—</span>`}</td>`; }).join("")}</tr>`).join("");
   const fr=days.map(ds=>free(ds)); const frRow = fr.some(x=>x.length) ? `<tr class="free"><th class="nm"><span class="av" style="background:var(--bad)">!</span><span>بلا منظّم</span></th>${fr.map((ls,i)=>`<td class="${days[i]===t?"tdy":""}">${ls.map(l=>`<div class="wc freeb"><small>${esc(t12(l.start||""))}</small><b>${esc(l.name)}</b></div>`).join("")||`<span class="none">—</span>`}</td>`).join("")}</tr>` : "";
   return `<div class="card tsw"><div class="tsw-scroll"><table><thead>${head}</thead><tbody>${rows}${frRow}</tbody></table></div></div>`; }
 // مجالس معروضة على المنظّمين (قرار 8 نوفمبر): المنظّم يرغب، ومسئول اللجنة يعتمد
@@ -645,6 +661,7 @@ function viewMine(){
   return `<p class="sub">${exp.length ? `أنجزت ${done} من ${exp.length} من شغل اليوم` : sl.length ? "شغل اليوم معتذر عنه بموافقة المسئول" : "لا يوجد شغل مجدول لك اليوم"}</p>
   ${newTasksCard(me)}
   ${followCards(me)}
+  ${reservedCard(me)}
   ${offersCard(me)}
   <div class="card"><h2>شغل اليوم</h2>${sl.length ? allSlotsOf(me,d).map(s=>isBreak(s)?breakRow(s):slotRow(d,s,me,true)).join("") : `<div class="empty">لا توجد محاضرات أو متابعات في جدولك اليوم.</div>`}</div>
   ${tk.length ? `<div class="card"><h2>مهام مطلوبة منك</h2>${tk.map(t=>taskRow(t,true)).join("")}</div>` : ""}
@@ -680,8 +697,9 @@ function weekCard(mid){
     const evs=sl.map(s=>{ if(isBreak(s)) return `<div class="wev brk"><small>${esc(t12(s.start||""))}${s.end?" – "+esc(t12(s.end)):""}</small><b>☕ ${esc(s.label)}</b></div>`; const off=slotOff(mid,ds,s.id), lec=isLecture(s); if(lec&&!off) n++;
       const done=ds<=t && isSlotDone(ds,s.id);
       return `<div class="wev ${lec?"":"task"} ${s.cover?"cover":""} ${off?"off":""}"><small>${s.start?esc(t12(s.start))+(s.end?" – "+esc(t12(s.end)):""):"بلا موعد"}</small>${done?` <span class="ok">✓</span>`:""}<b>${esc(s.label)}</b>${s.cover?`<small>بديل عن ${esc(nameOf(s.cover))}</small>`:""}${off?`<small>${esc(okLabel(off))}</small>`:""}</div>`; }).join("");
+    const hv=heldSlotsOf(mid,ds).map(s=>{ const l=lecOf(s); return `<div class="wev hold"><small>${esc(t12(s.start||""))}${s.end?" – "+esc(t12(s.end)):""}</small><b>📌 ${esc(s.label)}</b><small>محجوز لك · ${l.startFrom?"يبدأ "+esc(fmtDay(l.startFrom)):"يُحدَّد موعد البداية لاحقًا"}</small></div>`; }).join("");
     const d=parse(ds);
-    return `<div class="wday ${ds===t?"today":""} ${sl.length?"":"empty"}"><h3>${DAYS[i]} <small>${d.getDate()} ${MONTHS[d.getMonth()]}</small>${ds===t?`<span class="pill gold">اليوم</span>`:""}</h3>${evs||`<small class="sub">لا شيء</small>`}</div>`; }).join("");
+    return `<div class="wday ${ds===t?"today":""} ${sl.length||hv?"":"empty"}"><h3>${DAYS[i]} <small>${d.getDate()} ${MONTHS[d.getMonth()]}</small>${ds===t?`<span class="pill gold">اليوم</span>`:""}</h3>${evs+hv||`<small class="sub">لا شيء</small>`}</div>`; }).join("");
   return `<div class="card"><div class="row" style="margin-bottom:10px"><h2 style="margin:0">جدولي الأسبوعي</h2><span class="pill gold">${n} محاضرة</span><span class="grow"></span>
     <button class="btn sm ghost" data-a="wk" data-v="-1">‹ السابق</button>${S.wk?`<button class="btn sm ghost" data-a="wk" data-v="0">هذا الأسبوع</button>`:""}<button class="btn sm ghost" data-a="wk" data-v="1">التالي ›</button></div>
     <div class="week">${cols}</div></div>`;
@@ -887,6 +905,7 @@ function viewTeamToday(){
   const needReply = rows.flatMap(r=>r.pr.filter(p=>!p.reply).map(p=>({p,m:r.m})));
   const reqs = pendingReqs().sort((a,b)=>(a.date||"").localeCompare(b.date||""));
   return `<div class="row"><div class="grow"><h1>${d===today()?"متابعة اليوم":DAYS[dayIdx(parse(d))]}</h1>${d===today()?"":datesHtml(d)}<p class="sub">من أنجز شغله، ومن يحتاج ردك</p></div><input type="date" data-a="day" value="${esc(d)}" style="width:auto"></div>
+  ${d===today()?heldAdminCard():""}
   ${daySummary(d)}
   ${d===today()?riskCard():""}
   ${reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button></div></div></div>`).join("")}</div>`:""}
@@ -1066,7 +1085,7 @@ function viewAcademy(){
   return `<div class="row"><div class="grow"><h1>جدول الأكاديمية</h1><p class="sub">${S.lectures.length} محاضرة${un.length?` · <span class="late">${un.length} بلا منظّم</span>`:" · كلها لها منظّم"}</p></div><button class="btn ghost" data-a="impOpen">⟳ تحديث من شيت اللينكات</button><button class="btn" data-a="newLec">+ محاضرة</button></div>
   ${byDay.length?byDay.map(([d,ls])=>`<div class="card"><h2>${d}</h2>${ls.map(l=>{ const org=lecSlots(l.id);
     return `<div class="lec-row"><div class="tm">${l.start?esc(t12(l.start))+(l.end?" – "+esc(t12(l.end)):""):"بلا موعد"}</div>
-    <div class="what"><b>${esc(l.name)}</b>${l.pauseTo&&l.pauseTo>=today()?` <span class="pill gold" title="من ${esc(fmtDay(l.pauseFrom))}">⏸ موقوفة حتى ${esc(fmtDay(l.pauseTo))}</span>`:""}${l.startFrom&&l.startFrom>today()?` <span class="pill gold">يبدأ ${esc(fmtDay(l.startFrom))}</span>`:""}${l.offer?` <span class="pill gold">معروض على المنظّمين${offerReqs(l.id).length?` · ${offerReqs(l.id).length} راغب`:""}</span>`:""}${l.sheikh?`<small>${esc(l.sheikh)}</small>`:""}
+    <div class="what"><b>${esc(l.name)}</b>${l.pauseTo&&l.pauseTo>=today()?` <span class="pill gold" title="من ${esc(fmtDay(l.pauseFrom))}">⏸ موقوفة حتى ${esc(fmtDay(l.pauseTo))}</span>`:""}${l.hold===true?` <span class="pill gold">📌 محجوز — موعد البداية لم يُحدَّد</span>`:""}${l.startFrom&&l.startFrom>today()?` <span class="pill gold">يبدأ ${esc(fmtDay(l.startFrom))}</span>`:""}${l.offer?` <span class="pill gold">معروض على المنظّمين${offerReqs(l.id).length?` · ${offerReqs(l.id).length} راغب`:""}</span>`:""}${l.sheikh?`<small>${esc(l.sheikh)}</small>`:""}
       <div class="chips">${org.length?org.map(s=>`<span class="pill ok">${esc(nameOf(s.owner))}</span>`).join(""):l.noOrg?`<span class="pill gray">لا يحتاج منظّم</span>`:lecPaused(l,today())?(l.startFrom>today()&&!l.offer?`<span class="pill gray">لم يُكلَّف منظّم بعد</span>`:""):l.offer?"":`<span class="pill bad">بلا منظّم</span>`}</div>${linksHtml(l)}</div>
     <div class="row" style="flex-wrap:nowrap">${org.length||l.noOrg?"":`<button class="btn sm gold" data-a="takeLec" data-id="${esc(l.id)}">أنظّمها أنا</button>`}<button class="btn sm" data-a="assignLec" data-id="${esc(l.id)}">تكليف</button><button class="btn sm ghost" data-a="editLec" data-id="${esc(l.id)}">تعديل</button></div></div>`; }).join("")}</div>`).join(""):`<div class="card empty">لا توجد محاضرات بعد.</div>`}`;
 }
@@ -1082,6 +1101,8 @@ function lecForm(l){
     <label>حساب زووم<input id="l_acct" value="${esc(l.account||"")}" placeholder="وحي 1"></label>
     <label>⏸ إيقاف مؤقت من<input type="date" id="l_pf" value="${esc(l.pauseFrom||"")}"></label><label>إلى<input type="date" id="l_pt" value="${esc(l.pauseTo||"")}"></label>
     <label>يبدأ من (للمجلس الجديد)<input type="date" id="l_sf" value="${esc(l.startFrom||"")}"></label>
+    <label>يظهر لمنظّمه قبل البداية بـ (أيام)<input type="number" id="l_show" min="0" max="30" value="${esc(String(showDaysOf(l)))}"></label>
+    <label class="full chkl"><input type="checkbox" id="l_hold" ${l.hold?"checked":""}> 📌 محجوز — موعد البداية لم يُحدَّد بعد (يظهر لمنظّمه «محجوز لك» بلا روابط ولا يُحسب)</label>
     <label class="full chkl"><input type="checkbox" id="l_no" ${l.noOrg?"checked":""}> لا يحتاج منظّم (الشيخ لا يحتاج تنظيمًا)</label>
     <label class="full chkl"><input type="checkbox" id="l_of" ${l.offer?"checked":""}> عرضه على المنظّمين ليرغب فيه من يريد</label></div>
     <p class="sub" style="font-size:13px">أثناء الإيقاف لا تظهر المحاضرة لمنظّمها ولا تُحسب في التقارير، وتعود وحدها بعد التاريخ الأخير. اترك الخانتين فارغتين لإلغاء الإيقاف.</p>
@@ -1386,7 +1407,8 @@ document.addEventListener("click", async e=>{
   if(a==="adminDone"){ const s=S.slots.find(x=>x.id===id); if(!s || !adminLec(s)) return; el.disabled=true; const tid=slotDoneId(d,id);
     if(isSlotDone(d,id)){ await save("tasks", tid, {status:"todo", doneAt:null}); return; }
     await save("tasks", tid, {title:s.label, type:"scheduled", assignee:me, due:d, status:"done", doneAt:d, slot:id}, false); return; }
-  if(a==="saveLec"){ const data={name:v("l_name"), sheikh:v("l_sheikh"), day:Number(v("l_day")), start:v("l_from"), end:v("l_to"), zoom:v("l_zoom"), sheet:v("l_sheet"), account:v("l_acct"), pauseFrom:v("l_pf"), pauseTo:v("l_pt"), startFrom:v("l_sf"), noOrg:$("#l_no").checked, offer:$("#l_of").checked, active:true};
+  if(a==="saveLec"){ const data={name:v("l_name"), sheikh:v("l_sheikh"), day:Number(v("l_day")), start:v("l_from"), end:v("l_to"), zoom:v("l_zoom"), sheet:v("l_sheet"), account:v("l_acct"), pauseFrom:v("l_pf"), pauseTo:v("l_pt"), startFrom:v("l_sf"), noOrg:$("#l_no").checked, offer:$("#l_of").checked, showDays:Number(v("l_show")||3), active:true};
+    data.hold = $("#l_hold").checked && !data.startFrom; // كتابة «يبدأ من» تُنهي الحجز
     if(data.noOrg && data.offer) return toast("اختر واحدة: «لا يحتاج منظّم» أو «عرضه على المنظّمين».");
     if(!data.name) return toast("اكتب اسم المحاضرة."); if(!!data.pauseFrom!==!!data.pauseTo) return toast("اكتب تاريخ بداية الإيقاف ونهايته معًا، أو اتركهما فارغين."); if(data.pauseFrom && data.pauseTo<data.pauseFrom) return toast("تاريخ نهاية الإيقاف قبل بدايته."); if(data.end && !data.start) return toast("اكتب وقت البداية.");
     if(data.zoom && !safeUrl(data.zoom)) return toast("رابط زووم يجب أن يبدأ بـ https://"); if(data.sheet && !safeUrl(data.sheet)) return toast("رابط الشيت يجب أن يبدأ بـ https://");
