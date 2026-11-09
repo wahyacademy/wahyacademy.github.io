@@ -403,12 +403,12 @@ const isSlotDone = (date, sid) => { const t=slotTask(date,sid); if(!t) return fa
   if(adminLec(s)) return t.status==="done";
   return isLecture(s) && t.marks ? stepsFor(date).every(([k])=>t.marks[k]) : t.status==="done"; };
 // البديل: محاضرات الطلب التي ستحتاج من يغطيها
-function reqDates(r){ const out=[]; let d=r.date; const end=r.kind==="leave"?(r.dateTo||r.date):r.date; for(let i=0;i<31 && d<=end;i++){ out.push(d); d=addDays(d,1); } return out; }
+function reqDates(r){ const out=[]; let d=r.date; const end=(r.kind==="leave"||r.kind==="lecture")?(r.dateTo||r.date):r.date; for(let i=0;i<70 && d<=end;i++){ out.push(d); d=addDays(d,1); } return out; }
 function reqLectures(r){ if(r.kind==="fix" || r.kind==="offer") return [];
   return reqDates(r).flatMap(d=>slotsOf(r.member,d).filter(s=>isLecture(s) && (r.kind!=="lecture" || s.id===r.slot)).map(s=>({d,s}))); }
 function coverSelect(r){ const ls=reqLectures(r); if(!ls.length) return "";
   const ppl=S.members.filter(m=>m.active!==false && m.role!=="committee" && m.id!==r.member && (isAdmin() || m.dept===S.me.dept));
-  return `<select id="cv_${esc(r.id)}" style="width:auto" title="من يغطي ${ls.length} محاضرة"><option value="">بلا بديل (${ls.length} محاضرة)</option>${ppl.map(m=>`<option value="${esc(m.id)}">البديل: ${esc(m.name)}</option>`).join("")}</select>`; }
+  return `<select id="cv_${esc(r.id)}" style="width:auto" title="من يغطي ${ls.length} محاضرة"><option value="">بلا بديل (${ls.length} ${ls.length>2&&ls.length<11?"محاضرات":"محاضرة"})</option>${ppl.map(m=>`<option value="${esc(m.id)}">البديل: ${esc(m.name)}</option>`).join("")}</select>`; }
 async function makeCovers(r, sub){ let n=0;
   for(const {d,s} of reqLectures(r)){ const doc={owner:sub, date:d, day:dayIdx(parse(d)), start:s.start||"", end:s.end||"", kind:"fixed", label:s.label, lecture:true, cover:r.member}; if(s.lec) doc.lec=s.lec;
     if(await save("slots", "cov_"+d+"_"+s.id, doc, false)) n++; }
@@ -426,7 +426,7 @@ function linksHtml(l){ if(!l) return ""; const z=safeUrl(l.zoom), sh=safeUrl(l.s
 // الطلبات المقبولة تُسقط اليوم أو المحاضرة من الحساب
 const okReqs = mid => S.requests.filter(r => r.member===mid && r.status==="accepted");
 const dayOff = (mid, date) => okReqs(mid).find(r => (r.kind==="day" && r.date===date) || (r.kind==="leave" && r.date<=date && date<=(r.dateTo||r.date)));
-const slotOff = (mid, date, sid) => dayOff(mid,date) || okReqs(mid).find(r => r.kind==="lecture" && r.date===date && r.slot===sid) || ((slotTask(date,sid)||{}).excused==="sheikh" ? {kind:"sheikh"} : null);
+const slotOff = (mid, date, sid) => dayOff(mid,date) || okReqs(mid).find(r => r.kind==="lecture" && r.date<=date && date<=(r.dateTo||r.date) && r.slot===sid) || ((slotTask(date,sid)||{}).excused==="sheikh" ? {kind:"sheikh"} : null);
 const pendingReqs = () => { const ids=team().map(m=>m.id); return S.requests.filter(r=>r.status==="pending" && ids.includes(r.member)); };
 // الدوام — من 6 نوفمبر لكل محاضرة/مهمة بدء وإنهاء خاصان بها (قرار المستخدم)
 const SLOT_DUTY_SINCE = "2026-11-06";
@@ -806,7 +806,8 @@ function slotRow(d,s,mid,mine){
 // الطلبات
 function reqDesc(r){
   if(r.kind==="offer"){ const l=S.lectures.find(x=>x.id===r.slot)||{}; return (l.name||"مجلس")+" — "+lecWhen(l)+(l.startFrom?" · يبدأ "+fmtDay(l.startFrom):""); }
-  if(r.kind==="lecture"){ const s=S.slots.find(x=>x.id===r.slot); return fmtDay(r.date)+" — "+(s?s.label:"محاضرة"); }
+  if(r.kind==="lecture"){ const s=S.slots.find(x=>x.id===r.slot), n=r.dateTo&&r.dateTo>r.date ? Math.round((parse(r.dateTo)-parse(r.date))/(7*864e5))+1 : 1;
+    return (n>1 ? "من "+fmtDay(r.date)+" إلى "+fmtDay(r.dateTo)+" ("+n+" مرات)" : fmtDay(r.date))+" — "+(s?s.label:"محاضرة"); }
   if(r.kind==="leave") return "من "+fmtDay(r.date)+" إلى "+fmtDay(r.dateTo||r.date);
   if(r.kind==="fix"){ const s=r.slot&&S.slots.find(x=>x.id===r.slot); return fmtDay(r.date)+(s?" — "+s.label:"")+(r.start?" · الدوام "+t12(r.start)+(r.end?" – "+t12(r.end):""):""); }
   return fmtDay(r.date);
@@ -822,7 +823,9 @@ function reqForm(kind){
   const me=S.me.id, d=today(); kind=kind||"lecture";
   const opts=[]; for(let i=0;i<14;i++){ const ds=addDays(d,i); slotsOf(me,ds).filter(s=>!slotOff(me,ds,s.id)).forEach(s=>opts.push([ds+"|"+s.id, fmtDay(ds)+" — "+s.label+(s.start?" ("+t12(s.start)+")":"")])); }
   const f = {
-    lecture:`<label class="full">المحاضرة<select id="q_slot">${opts.length?opts.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join(""):`<option value="">لا توجد محاضرات في الأسبوعين القادمين</option>`}</select></label>`,
+    lecture:`<label class="full">المحاضرة<select id="q_slot">${opts.length?opts.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join(""):`<option value="">لا توجد محاضرات في الأسبوعين القادمين</option>`}</select></label>
+      <label>عدد المرات<select id="q_times">${[1,2,3,4,5,6,7,8].map(n=>`<option value="${n}">${n===1?"هذه المرة فقط":n===2?"مرتين (أسبوعين)":n+" مرات ("+n+" أسابيع)"}</option>`).join("")}</select></label>
+      <p class="sub full" style="font-size:13px">لو اخترت أكثر من مرة، يُطبَّق الاعتذار على نفس المحاضرة في الأسابيع التالية، ويختار المسئول من ينظّمها بدلًا منك في هذه المدة فقط.</p>`,
     day:`<label>اليوم<input type="date" id="q_date" min="${d}" value="${d}"></label>`,
     leave:`<label>من<input type="date" id="q_date" min="${d}" value="${d}"></label><label>إلى<input type="date" id="q_to" min="${d}" value="${d}"></label>`,
     fix:(()=>{ const po=[]; for(let i=1;i<=14;i++){ const ds=addDays(d,-i); slotsOf(me,ds).filter(s=>s.start && !slotOff(me,ds,s.id)).forEach(s=>po.push([ds+"|"+s.id, fmtDay(ds)+" — "+s.label+" ("+t12(s.start)+")"])); }
@@ -1286,7 +1289,7 @@ document.addEventListener("click", async e=>{
     close(); toast(`تم تطبيق ${n} تعديل. راجع «بلا منظّم» لتكليف الجديد.`); return; }
   if(a==="newReq") return open(reqForm("lecture"));
   if(a==="sendReq"){ const k=el.dataset.k, note=v("q_note"); const data={kind:k, note, status:"pending", at:Date.now()};
-    if(k==="lecture"){ const x=v("q_slot"); if(!x) return toast("اختر المحاضرة."); [data.date,data.slot]=x.split("|"); }
+    if(k==="lecture"){ const x=v("q_slot"); if(!x) return toast("اختر المحاضرة."); [data.date,data.slot]=x.split("|"); const n=Number(v("q_times")||1); if(n>1) data.dateTo=addDays(data.date,7*(n-1)); }
     else { data.date=v("q_date"); if(!data.date) return toast("اختر اليوم."); }
     if(k==="leave"){ data.dateTo=v("q_to"); if(!data.dateTo||data.dateTo<data.date) return toast("تاريخ النهاية بعد البداية."); }
     if(k==="fix"){ const fs=(v("q_fslot")||"").split("|"); if(!fs[1]) return toast("اختر المحاضرة أو المهمة."); data.date=fs[0]; data.slot=fs[1]; data.start=v("q_from"); data.end=v("q_to"); if(data.date>=d) return toast("التصحيح لأيام سابقة فقط."); }
