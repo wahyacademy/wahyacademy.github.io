@@ -61,7 +61,7 @@ h2{font-size:18px;margin:0 0 10px;color:var(--brand-deep)}
 .wday h3{margin:0 0 6px;font-size:13.5px;color:var(--brand-deep);display:flex;justify-content:space-between;align-items:center;gap:4px}
 .wday h3 small{color:var(--muted);font-weight:500}
 .wev{background:#fff;border-radius:8px;padding:6px 8px;margin-bottom:6px;border-inline-start:4px solid var(--brand);font-size:12.5px;line-height:1.5}
-.wev.task{border-color:#00A598}.wev.cover{border-color:var(--gold)}.wev.off{opacity:.55;text-decoration:line-through}
+.wev.task{border-color:#00A598}.wev.brk{border-color:#C9D2DC;background:#f4f6f8;color:var(--muted)}.item.brk{opacity:.7}.item.brk .chk{border:0;background:none}.wev.cover{border-color:var(--gold)}.wev.off{opacity:.55;text-decoration:line-through}
 .wev b{display:block;font-weight:600}.wev small{color:var(--muted)}.wev .ok{color:var(--ok);font-weight:700}
 .clk{font-variant-numeric:tabular-nums;color:var(--brand);background:var(--gold-soft);border:1px solid var(--gold);border-radius:8px;padding:0 10px;font-weight:700;white-space:nowrap}
 .dates{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:14.5px;margin-top:2px}
@@ -339,7 +339,11 @@ function team(){ // من أتابعهم
 // ---------- بيانات اليوم ----------
 // إيقاف مؤقت لمحاضرة (قرار المستخدم 8 نوفمبر): من تاريخ إلى تاريخ، لا تظهر ولا تُحسب ثم تعود وحدها
 const lecPaused = (l, date) => !!(l && ((l.pauseFrom && l.pauseTo && l.pauseFrom<=date && date<=l.pauseTo) || (l.startFrom && date<l.startFrom))); // موقوفة مؤقتًا أو لم تبدأ بعد
-const slotsOf = (mid, date) => S.slots.filter(s => s.owner===mid && s.kind!=="flex" && (s.date ? s.date===date : Number(s.day)===dayIdx(parse(date))) && !(s.lec && lecPaused(S.lectures.find(l=>l.id===s.lec), date))).sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")||(a.label||"").localeCompare(b.label||""));
+// الاستراحة (قرار المستخدم 9 نوفمبر): أي خانة غير محاضرة في اسمها «استراحة» أو «بريك» — بلا أزرار ولا تُحسب
+const isBreak = s => !!s && s.lecture!==true && /استراحة|بريك/.test(s.label||"");
+const allSlotsOf = (mid, date) => S.slots.filter(s => s.owner===mid && s.kind!=="flex" && (s.date ? s.date===date : Number(s.day)===dayIdx(parse(date))) && !(s.lec && lecPaused(S.lectures.find(l=>l.id===s.lec), date))).sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")||(a.label||"").localeCompare(b.label||""));
+const slotsOf = (mid, date) => allSlotsOf(mid,date).filter(s=>!isBreak(s));
+const breakRow = s => `<div class="item brk"><span class="chk" aria-hidden="true">☕</span><div class="what"><b>${esc(s.label)}</b><small>${s.start?esc(t12(s.start))+(s.end?" – "+esc(t12(s.end)):""):""}</small></div></div>`;
 const slotDoneId = (date, sid) => "sch_"+date+"_"+sid;
 const slotTask = (date, sid) => S.tasks.find(t => t.id===slotDoneId(date,sid));
 const memberOf = id => S.members.find(m=>m.id===id) || {};
@@ -445,6 +449,20 @@ function saveFast(col, id, data, okMsg, tag){ tag=tag||id; SAVING[tag]=(SAVING[t
     finally { PENDING--; if(!--SAVING[tag]) delete SAVING[tag]; render(); } };
   SAVEQ[col+id]=(SAVEQ[col+id]||Promise.resolve()).then(run);
   return SAVEQ[col+id]; }
+// بدء/إنهاء دوام خانة فورًا على الشاشة؛ الخادم يختم الوقت الرسمي في الخلفية، وعند الرفض يرجع كما كان (قرار المستخدم 9 نوفمبر)
+const CLOCK_MSG={already_started:"الدوام بدأ بالفعل.", already_ended:"الدوام انتهى بالفعل.", not_started:"لم تبدأ الدوام بعد.", not_today:"هذه المهمة ليست اليوم.", forbidden:"هذه المهمة ليست في جدولك.", paused:"هذه المحاضرة موقوفة مؤقتًا.", marks_missing:"أكمل خطوات التنظيم أولًا."};
+function clockFast(op, slot){ const me=S.me.id, d=today(), id="sh_"+me+"_"+d+"_"+slot, tag="clk:"+slot, now=cairoNow().hm;
+  const i=S.shifts.findIndex(x=>x.id===id), prev=i>=0?S.shifts[i]:null;
+  const local=op==="start" ? {id, member:me, date:d, slot, start:now, startAt:Date.now()} : Object.assign({}, prev||{id, member:me, date:d, slot}, {end:now, endAt:Date.now()});
+  if(i>=0) S.shifts[i]=local; else S.shifts.push(local);
+  SAVING[tag]=(SAVING[tag]||0)+1; PENDING++; savingUi(); render();
+  const run=async()=>{ try { const r=await api("clock",{op,slot}); if(!r.ok) throw r;
+      const j=S.shifts.findIndex(x=>x.id===r.doc.id); if(j>=0) S.shifts[j]=r.doc; else S.shifts.push(r.doc);
+      toast(op==="start"?"بدأ، بالتوفيق.":"تم التسجيل، جزاك الله خيرًا."); }
+    catch(e){ const j=S.shifts.findIndex(x=>x.id===id); if(prev){ if(j>=0) S.shifts[j]=prev; } else if(j>=0) S.shifts.splice(j,1);
+      toast(e.reason==="network"?"لا يوجد اتصال؛ لم يُسجَّل.":(CLOCK_MSG[e.reason]||"لم يُسجَّل، حاول مرة أخرى.")); if(e.reason && e.reason!=="network") refresh(true); }
+    finally { PENDING--; if(!--SAVING[tag]) delete SAVING[tag]; render(); } };
+  SAVEQ["clk"+slot]=(SAVEQ["clk"+slot]||Promise.resolve()).then(run); }
 async function save(col, id, data, merge=true){
   const theId = id || rid();
   try {
@@ -521,7 +539,7 @@ function viewMine(){
   return `<p class="sub">${exp.length ? `أنجزت ${done} من ${exp.length} من شغل اليوم` : sl.length ? "شغل اليوم معتذر عنه بموافقة المسئول" : "لا يوجد شغل مجدول لك اليوم"}</p>
   ${followCards(me)}
   ${offersCard(me)}
-  <div class="card"><h2>شغل اليوم</h2>${sl.length ? sl.map(s=>slotRow(d,s,me,true)).join("") : `<div class="empty">لا توجد محاضرات أو متابعات في جدولك اليوم.</div>`}</div>
+  <div class="card"><h2>شغل اليوم</h2>${sl.length ? allSlotsOf(me,d).map(s=>isBreak(s)?breakRow(s):slotRow(d,s,me,true)).join("") : `<div class="empty">لا توجد محاضرات أو متابعات في جدولك اليوم.</div>`}</div>
   ${tk.length ? `<div class="card"><h2>مهام مطلوبة منك</h2>${tk.map(t=>taskRow(t,true)).join("")}</div>` : ""}
   <div class="row"><button class="btn ghost" data-a="problem" data-slot="">⚠️ عندي مشكلة أو استفسار</button></div>
   ${pr.filter(p=>!p.slot).map(probHtml).join("")}`;
@@ -551,8 +569,8 @@ function viewMyReqs(){ const me=S.me.id, r=myReqs(me);
 function weekCard(mid){
   const t=today(), start=addDays(addDays(t,-dayIdx(parse(t))), 7*S.wk), days=[...Array(7)].map((_,i)=>addDays(start,i));
   let n=0;
-  const cols=days.map((ds,i)=>{ const sl=slotsOf(mid,ds);
-    const evs=sl.map(s=>{ const off=slotOff(mid,ds,s.id), lec=isLecture(s); if(lec&&!off) n++;
+  const cols=days.map((ds,i)=>{ const sl=allSlotsOf(mid,ds);
+    const evs=sl.map(s=>{ if(isBreak(s)) return `<div class="wev brk"><small>${esc(t12(s.start||""))}${s.end?" – "+esc(t12(s.end)):""}</small><b>☕ ${esc(s.label)}</b></div>`; const off=slotOff(mid,ds,s.id), lec=isLecture(s); if(lec&&!off) n++;
       const done=ds<=t && isSlotDone(ds,s.id);
       return `<div class="wev ${lec?"":"task"} ${s.cover?"cover":""} ${off?"off":""}"><small>${s.start?esc(t12(s.start))+(s.end?" – "+esc(t12(s.end)):""):"بلا موعد"}</small>${done?` <span class="ok">✓</span>`:""}<b>${esc(s.label)}</b>${s.cover?`<small>بديل عن ${esc(nameOf(s.cover))}</small>`:""}${off?`<small>${esc(okLabel(off))}</small>`:""}</div>`; }).join("");
     const d=parse(ds);
@@ -599,11 +617,12 @@ function dutyCard(mid){
 function dutyBar(d, s, mid, mine){ if(!s.start || d<SLOT_DUTY_SINCE) return "";
   const sh=slotShift(mid,d,s.id), st=shState(sh), from=dutyFrom(s);
   if(st==="none"){ if(!mine || d!==today()) return `<div class="dbar"><span class="pill ${d<today()||(d===today()&&toMin(cairoNow().hm)>from+GOAL.grace)?"bad":""}">لم يبدأ الدوام</span></div>`;
-    return `<div class="dbar"><span class="dl">الدوام يبدأ ${esc(t12(fromMin(from)))}</span><span class="cd" data-live="cd" data-t="${from*60}"></span><button class="btn gold" data-a="clock" data-op="start" data-slot="${esc(s.id)}">▶ بدء الدوام</button></div>`; }
+    return `<div class="dbar"><span class="dl">${isLecture(s)?"الدوام يبدأ":"تبدأ"} ${esc(t12(fromMin(from)))}</span><span class="cd" data-live="cd" data-t="${from*60}"></span><button class="btn gold" data-a="clock" data-op="start" data-slot="${esc(s.id)}">▶ ${isLecture(s)?"بدء الدوام":"بدء المهمة"}</button></div>`; }
   const lt=slotLate(mid,d,s), ltp=lt?`<span class="pill bad">متأخر ${dur(lt)}</span>`:"";
-  if(st==="on") return `<div class="dbar on"><span class="pill ok">في الدوام منذ ${esc(t12(sh.start))}</span>${ltp}<span class="live" data-live="el" data-s="${sh.startAt||""}" data-b="0">${dur(shMin(sh))}</span>${mine?`<button class="btn" data-a="clock" data-op="end" data-slot="${esc(s.id)}">إنهاء الدوام</button>`:""}</div>`;
+  const task=!isLecture(s), pend=svTag("clk:"+s.id);
+  if(st==="on") return `<div class="dbar on"><span class="pill ok">${task?"بدأت المهمة":"في الدوام"} ${esc(t12(sh.start))}</span>${ltp}<span class="live" data-live="el" data-s="${sh.startAt||""}" data-b="0">${dur(shMin(sh))}</span>${pend}${mine?(task?`<button class="btn" data-a="taskEnd" data-slot="${esc(s.id)}">✓ أنهيت المهمة</button>`:`<button class="btn" data-a="clock" data-op="end" data-slot="${esc(s.id)}">إنهاء الدوام</button>`):""}</div>`;
   if(st==="open") return `<div class="dbar"><span class="pill bad">دوام بلا نهاية</span>${ltp}<small class="sub">بدأ ${esc(t12(sh.start))}</small></div>`;
-  return `<div class="dbar done"><span class="pill">الدوام ${esc(t12(sh.start))} – ${esc(t12(sh.end))} · ${dur(shMin(sh))}</span>${ltp}</div>`; }
+  return `<div class="dbar done"><span class="pill">${isLecture(s)?"الدوام":"من"} ${esc(t12(sh.start))} – ${esc(t12(sh.end))} · ${dur(shMin(sh))}</span>${ltp}${svTag("clk:"+s.id)}</div>`; }
 // سطر ملخص تقرير المحاضرة
 function repLine(rp){ if(!rp) return ""; const tl=x=>x?t12(x):"—"; const c=(l,v)=>`<div class="rc"><small>${l}</small><b>${esc(String(v))}</b></div>`;
   const n=(l,v)=>v?`<div class="rn"><b>${l}:</b> ${esc(v)}</div>`:"";
@@ -669,8 +688,9 @@ function slotRow(d,s,mid,mine){
       const inner = `<span class="bx">${v?"✓":ix+1}</span><span class="tx">${esc(lbl)}</span><span class="tm">${esc(tm)}</span>${tag?`<span class="tg">${tag}</span>`:""}${svTag(s.id+":"+k)}<span class="cp" role="button" tabindex="0" data-a="copyStep" data-t="${esc(cp)}" title="${q?"نسخ نص التذكرة":"نسخ النص"}">📋 ${q?"نسخ التذكرة":"نسخ"}</span>`;
       return mine ? `<div class="stp ${ss}" role="button" tabindex="0" data-a="${k==="report"?"report":"mark"}" data-id="${esc(s.id)}" data-k="${k}" aria-pressed="${!!v}">${inner}</div>` : `<span class="stp ${ss}">${inner}</span>`; }).join("")}</div>
     ${repLine((slotTask(d,s.id)||{}).report)}${pr.map(probHtml).join("")}</div>`; }
+  const hasDuty = !!s.start && d>=SLOT_DUTY_SINCE;
   return `<div class="item ${done?"done":""}">
-    ${mine?`<button class="chk ${done?"on":""}" data-a="slot" data-id="${esc(s.id)}" aria-label="تم">✓</button>`:`<span class="chk ${done?"on":""}" aria-hidden="true">✓</span>`}
+    ${mine && !hasDuty?`<button class="chk ${done?"on":""}" data-a="slot" data-id="${esc(s.id)}" aria-label="تم">✓</button>`:`<span class="chk ${done?"on":""}" aria-hidden="true">✓</span>`}
     <div class="what"><b>${esc(s.label)}</b><small>${when}</small>${dutyBar(d,s,mid,mine)}${pr.map(probHtml).join("")}</div>
     ${mine && !done?`<button class="flag" data-a="problem" data-slot="${esc(s.id)}">مشكلة؟</button>`:""}
   </div>`;
@@ -1077,12 +1097,17 @@ document.addEventListener("click", async e=>{
   if(a==="gprompt") return loadGsi(()=>{ try { google.accounts.id.prompt(); } catch(err){ toast("تعذّر فتح نافذة الدخول؛ جرّب Chrome محدّثًا."); } });
   if(a==="close") return close();
   if(a==="slot"){ const s=S.slots.find(x=>x.id===id); const tid=slotDoneId(d,id);
-    if(isSlotDone(d,id)){ el.disabled=true; await save("tasks", tid, {status:"todo", doneAt:null}); return; }
-    el.disabled=true; await save("tasks", tid, {title:s.label, type:"scheduled", assignee:me, due:d, status:"done", doneAt:d, slot:id}, false); return; }
+    if(isSlotDone(d,id)){ saveFast("tasks", tid, {status:"todo", doneAt:null}); return; }
+    saveFast("tasks", tid, {title:s.label, type:"scheduled", assignee:me, due:d, status:"done", doneAt:d, slot:id}); return; }
+  if(a==="taskEnd"){ const slot=el.dataset.slot, s=S.slots.find(x=>x.id===slot); if(!s) return;
+    if(!el.dataset.sure) return open(`<h2>أنهيت «${esc(s.label)}»؟</h2><p class="sub">تُعلَّم المهمة «تمت» ويُسجَّل وقت الانتهاء الآن.</p><div class="row"><button class="btn" data-a="taskEnd" data-slot="${esc(slot)}" data-sure="1">نعم، أنهيتها</button><button class="btn ghost" data-a="close">إلغاء</button></div>`);
+    close(); clockFast("end", slot);
+    saveFast("tasks", slotDoneId(today(),slot), {title:s.label, type:"scheduled", assignee:me, due:today(), status:"done", doneAt:today(), slot}); return; }
   if(a==="clock"){ const op=el.dataset.op, slot=el.dataset.slot||"";
     if(op==="end"){ const sd=today(), miss=slot?slotsOf(me,sd).filter(x=>x.id===slot && isLecture(x) && !slotOff(me,sd,x.id) && markCount(sd,x.id)<stepsFor(sd).length):[];
       if(miss.length) return open(`<h2>لا يمكن إنهاء الدوام بعد</h2><p class="sub">أكمل خطوات التنظيم لهذه المحاضرة أولًا:</p><div class="mini">${miss.map(x=>`<span class="u">○ ${esc(x.label)} — ناقص: ${stepsFor(sd).filter(([k])=>!marksOf(sd,x.id)[k]).map(m=>stepLabel(m,x)).join("، ")}</span>`).join("")}</div><p class="sub" style="font-size:13px">إن تعذّر شيء منها، ارفع «مشكلة» على المحاضرة أو اطلب اعتذارًا عنها.</p><div class="row"><button class="btn" data-a="close">حسنًا</button></div>`); }
     if(op==="end" && !el.dataset.sure) return open(`<h2>إنهاء الدوام الآن؟</h2><p class="sub">يُسجَّل وقت الإنهاء الآن، ولا يمكن الرجوع إلا بطلب تصحيح.</p><div class="row"><button class="btn" data-a="clock" data-op="end" data-slot="${esc(slot)}" data-sure="1">نعم، إنهاء الدوام</button><button class="btn ghost" data-a="close">إلغاء</button></div>`);
+    if(slot && (op==="start" || op==="end")){ close(); clockFast(op, slot); return; }
     el.disabled=true;
     try { const r=await api("clock",slot?{op,slot}:{op});
       if(r.ok){ const i=S.shifts.findIndex(x=>x.id===r.doc.id); if(i>=0) S.shifts[i]=r.doc; else S.shifts.push(r.doc); close(); render();
