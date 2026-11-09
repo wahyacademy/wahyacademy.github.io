@@ -61,7 +61,8 @@ h2{font-size:18px;margin:0 0 10px;color:var(--brand-deep)}
 .wday h3{margin:0 0 6px;font-size:13.5px;color:var(--brand-deep);display:flex;justify-content:space-between;align-items:center;gap:4px}
 .wday h3 small{color:var(--muted);font-weight:500}
 .wev{background:#fff;border-radius:8px;padding:6px 8px;margin-bottom:6px;border-inline-start:4px solid var(--brand);font-size:12.5px;line-height:1.5}
-.card.newtk{border-top-color:var(--gold);background:#fffaf0;outline:2px solid var(--gold)}.tshead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}.tsctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.seg.sm{margin:0;padding:3px}.seg.sm button{padding:6px 12px;font-size:13.5px}.wnav{display:flex;gap:4px}
+.card.newtk{border-top-color:var(--gold);background:#fffaf0;outline:2px solid var(--gold)}.tshead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}.pick{display:inline-flex;flex-direction:row;align-items:center;gap:4px;margin:0;font-size:15px}.pick select{width:auto;min-width:150px;padding:5px 8px;font-size:13.5px}
+.tsctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.seg.sm{margin:0;padding:3px}.seg.sm button{padding:6px 12px;font-size:13.5px}.wnav{display:flex;gap:4px}
 .dchips{display:grid;grid-template-columns:repeat(7,minmax(92px,1fr));gap:8px;overflow-x:auto;padding-bottom:2px}
 .dchip{position:relative;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center;cursor:pointer;font-family:inherit;color:var(--brand-deep);transition:.15s;box-shadow:0 1px 4px rgba(0,50,98,.05)}
 .dchip b{display:block;font-size:15px}.dchip small{display:block;color:var(--muted);font-size:12px}.dchip .dn{display:inline-block;margin-top:4px;font-size:11.5px;background:var(--fog);border-radius:999px;padding:1px 8px;color:var(--brand)}
@@ -379,7 +380,13 @@ function team(){ // من أتابعهم
 const lecPaused = (l, date) => !!(l && (l.hold===true || (l.pauseFrom && l.pauseTo && l.pauseFrom<=date && date<=l.pauseTo) || (l.startFrom && date<l.startFrom))); // موقوفة مؤقتًا أو لم تبدأ بعد
 // الاستراحة (قرار المستخدم 9 نوفمبر): أي خانة غير محاضرة في اسمها «استراحة» أو «بريك» — بلا أزرار ولا تُحسب
 const isBreak = s => !!s && s.lecture!==true && /استراحة|بريك/.test(s.label||"");
-const allSlotsOf = (mid, date) => S.slots.filter(s => s.owner===mid && s.kind!=="flex" && (s.date ? s.date===date : Number(s.day)===dayIdx(parse(date))) && !(s.lec && lecPaused(S.lectures.find(l=>l.id===s.lec), date))).sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")||(a.label||"").localeCompare(b.label||""));
+// المحاضرة المشتركة (قرار المستخدم 9 نوفمبر): خانتان لنفس المنظّم في نفس اليوم والوقت وبنفس رابط الزووم = محاضرة واحدة،
+// تُعرض مرة وتُعلَّم مرة وتُحسب مرة؛ الأصل صاحب أصغر معرّف (والخادم يطبّق نفس القاعدة)
+const lecZoom = s => { const l=s && s.lec && S.lectures.find(x=>x.id===s.lec); return l && l.zoom ? String(l.zoom).trim() : ""; };
+const sameRun = (a,b) => a.owner===b.owner && !!a.lec && !!b.lec && a.lec!==b.lec && (a.date||"")===(b.date||"") && Number(a.day)===Number(b.day) && !!a.start && a.start===b.start && (a.end||"")===(b.end||"") && !!lecZoom(a) && lecZoom(a)===lecZoom(b);
+function twinLabel(ss){ const w=ss.map(s=>String(s.label||"").split(" ")); let k=0; while(w.every(x=>k<x.length-1 && x[k]===w[0][k])) k++; if(k>1) k--; return ss.map((s,i)=>i?w[i].slice(k).join(" "):s.label).join(" + "); }
+function mergeTwins(list){ return list.filter(s=>!list.some(o=>o.id<s.id && sameRun(o,s))).map(s=>{ const tw=list.filter(o=>o.id>s.id && sameRun(s,o)); return tw.length ? {...s, label:twinLabel([s,...tw]), twinLecs:tw.map(o=>o.lec)} : s; }); }
+const allSlotsOf = (mid, date) => mergeTwins(S.slots.filter(s => s.owner===mid && s.kind!=="flex" && (s.date ? s.date===date : Number(s.day)===dayIdx(parse(date))) && !(s.lec && lecPaused(S.lectures.find(l=>l.id===s.lec), date)))).sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")||(a.label||"").localeCompare(b.label||""));
 const slotsOf = (mid, date) => allSlotsOf(mid,date).filter(s=>!isBreak(s));
 const breakRow = s => `<div class="item brk"><span class="chk" aria-hidden="true">☕</span><div class="what"><b>${esc(s.label)}</b><small>${s.start?esc(t12(s.start))+(s.end?" – "+esc(t12(s.end)):""):""}</small></div></div>`;
 const slotDoneId = (date, sid) => "sch_"+date+"_"+sid;
@@ -436,8 +443,8 @@ function heldAdminCard(){ if(!isAdmin()) return ""; const ls=S.lectures.filter(l
   if(!ls.length) return "";
   return `<div class="card resv"><h2>📌 مجالس محجوزة بلا موعد بداية (${ls.length})</h2>${ls.map(l=>{ const org=lecSlots(l.id);
     return `<div class="item"><div class="what"><b>${esc(l.name)}</b><small>${esc(lecWhen(l))} · ${org.length?"محجوز لـ "+org.map(x=>esc(nameOf(x.owner))).join("، "):`<span class="late">بلا منظّم</span>`}</small></div><button class="btn sm" data-a="editLec" data-id="${esc(l.id)}">تحديد موعد البداية</button></div>`; }).join("")}</div>`; }
-function linksHtml(l){ if(!l) return ""; const z=safeUrl(l.zoom), sh=safeUrl(l.sheet);
-  return `<div class="links">${z?`<a href="${esc(z)}" target="_blank" rel="noopener noreferrer">🎥 فتح زووم</a><button class="lk" data-a="copyZoom" data-u="${esc(z)}">📋 نسخ رابط زووم</button>`:`<span class="pill gray">رابط زووم غير مضاف</span>`}${sh?`<a href="${esc(sh)}" target="_blank" rel="noopener noreferrer">📊 شيت الحضور والغياب</a>`:`<span class="pill gray">شيت الحضور غير مضاف</span>`}${l.account?`<span class="pill acct">🔑 حساب زووم: ${esc(l.account)}</span>`:`<span class="pill gray">حساب زووم غير محدد</span>`}</div>`; }
+function linksHtml(l, s){ if(!l) return ""; const z=safeUrl(l.zoom), sh=safeUrl(l.sheet), tw=((s&&s.twinLecs)||[]).map(id=>S.lectures.find(x=>x.id===id)).filter(Boolean);
+  return `<div class="links">${z?`<a href="${esc(z)}" target="_blank" rel="noopener noreferrer">🎥 فتح زووم</a><button class="lk" data-a="copyZoom" data-u="${esc(z)}">📋 نسخ رابط زووم</button>`:`<span class="pill gray">رابط زووم غير مضاف</span>`}${sh?`<a href="${esc(sh)}" target="_blank" rel="noopener noreferrer">📊 شيت الحضور والغياب${tw.length?" (1)":""}</a>`:`<span class="pill gray">شيت الحضور غير مضاف</span>`}${tw.map((x,i)=>safeUrl(x.sheet)&&safeUrl(x.sheet)!==sh?`<a href="${esc(safeUrl(x.sheet))}" target="_blank" rel="noopener noreferrer">📊 شيت الحضور والغياب (${i+2})</a>`:"").join("")}${l.account?`<span class="pill acct">🔑 حساب زووم: ${esc(l.account)}</span>`:`<span class="pill gray">حساب زووم غير محدد</span>`}</div>`; }
 // الطلبات المقبولة تُسقط اليوم أو المحاضرة من الحساب
 const okReqs = mid => S.requests.filter(r => r.member===mid && r.status==="accepted");
 const dayOff = (mid, date) => okReqs(mid).find(r => (r.kind==="day" && r.date===date) || (r.kind==="leave" && r.date<=date && date<=(r.dateTo||r.date)));
@@ -600,13 +607,14 @@ function viewTeamSched(){
   const dp=S.sdept, DN={org:"المنظّمون",sa:"المشرفون"}, mode=S.smode||"day";
   const t=today(), start=addDays(addDays(t,-dayIdx(parse(t))), 7*(S.swk||0)), days=[...Array(7)].map((_,i)=>addDays(start,i));
   if(!S.sday || !days.includes(S.sday)) S.sday = days.includes(t)?t:days[0];
-  const ppl=tsPeople(dp), cf=days.map(ds=>ppl.some(m=>tsConflicts(m.id,ds).size)), nconf=cf.filter(Boolean).length;
-  const free=ds=> isAdmin() && dp==="org" ? S.lectures.filter(l=>l.active!==false && !l.noOrg && !lecPaused(l,ds) && Number(l.day)===dayIdx(parse(ds)) && !lecSlots(l.id).length) : [];
+  const all=tsPeople(dp), one=all.find(m=>m.id===S.sper), ppl=one?[one]:all, cf=days.map(ds=>ppl.some(m=>tsConflicts(m.id,ds).size)), nconf=cf.filter(Boolean).length;
+  const free=ds=> isAdmin() && dp==="org" && !one ? S.lectures.filter(l=>l.active!==false && !l.noOrg && !lecPaused(l,ds) && Number(l.day)===dayIdx(parse(ds)) && !lecSlots(l.id).length) : [];
   const chips=days.map((ds,i)=>{ const d=parse(ds), n=ppl.reduce((k,m)=>k+tsAll(m.id,ds).filter(x=>!isBreak(x)).length,0), fr=free(ds).length;
     return `<button class="dchip ${ds===S.sday&&mode==="day"?"on":""} ${ds===t?"tdy":""}" data-a="sday" data-v="${ds}"><b>${DAYS[i]}</b><small>${d.getDate()} ${MONTHS[d.getMonth()]}</small><span class="dn">${n} ${n===1?"بند":"بنود"}</span>${cf[i]?`<i class="dot bad" title="تعارض"></i>`:fr?`<i class="dot gold" title="بلا منظّم"></i>`:""}</button>`; }).join("");
-  const top = ptitle("جدول "+DN[dp]+" — "+(mode==="day"?fmtDay(S.sday):"أسبوع "+fmtDay(start)))+`
-  <div class="tshead noprint"><div><h1>جداول الفريق</h1><p class="sub">${ppl.length} ${dp==="org"?"منظّم":"مشرف"} · أسبوع ${esc(fmtDay(start))}${nconf?` · <span class="late">تعارض في ${nconf} ${nconf===1?"يوم":"أيام"}</span>`:""}</p></div>
+  const top = ptitle((one?"جدول "+one.name:"جدول "+DN[dp])+" — "+(mode==="day"?fmtDay(S.sday):"أسبوع "+fmtDay(start)))+`
+  <div class="tshead noprint"><div><h1>${one?"جدول "+esc(one.name):"جداول الفريق"}</h1><p class="sub">${one?(dp==="org"?"منظّم":"مشرف"):ppl.length+" "+(dp==="org"?"منظّم":"مشرف")} · أسبوع ${esc(fmtDay(start))}${nconf?` · <span class="late">تعارض في ${nconf} ${nconf===1?"يوم":"أيام"}</span>`:""}</p></div>
     <div class="tsctl">${depts.length>1?`<div class="seg sm">${depts.map(k=>`<button class="${k===dp?"on":""}" data-a="sdept" data-v="${k}">${DN[k]}</button>`).join("")}</div>`:""}
+    <label class="pick" title="اختر شخصًا لعرض جدوله فقط">👤<select data-a="sper"><option value="">كل ${dp==="org"?"المنظّمين":"المشرفين"}</option>${all.map(m=>`<option value="${esc(m.id)}" ${one&&one.id===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}</select></label>${one?`<button class="btn sm ghost" data-a="sper0">✕ الكل</button>`:""}
     <div class="seg sm">${[["day","📅 يوم"],["week","🗓️ الأسبوع"]].map(([k,l])=>`<button class="${k===mode?"on":""}" data-a="smode" data-v="${k}">${l}</button>`).join("")}</div>
     <div class="wnav"><button class="btn sm ghost" data-a="swk" data-v="-1" title="الأسبوع السابق">‹</button>${S.swk?`<button class="btn sm ghost" data-a="swk" data-v="0">هذا الأسبوع</button>`:""}<button class="btn sm ghost" data-a="swk" data-v="1" title="الأسبوع التالي">›</button></div>
     <button class="btn sm ghost" data-a="print">🖨️ طباعة</button></div></div>
@@ -644,7 +652,7 @@ function tsDay(ppl, ds, fr){
 // عرض الأسبوع: صف لكل شخص، وفي كل يوم بطاقات صغيرة
 function tsWeek(ppl, days, free){ const t=today();
   const head=`<tr><th class="nm"></th>${days.map((ds,i)=>{ const d=parse(ds); return `<th class="${ds===t?"tdy":""}"><b>${DAYS[i]}</b><small>${d.getDate()} ${MONTHS[d.getMonth()]}</small></th>`; }).join("")}</tr>`;
-  const card=(x,mid,ds,bad)=>{ const off=slotOff(mid,ds,x.id), k=isReserved(lecOf(x))&&lecPaused(lecOf(x),ds)?"hold":tsKind(x); return `<div class="wc ${k} ${bad?"conf":""} ${off?"off":""}" title="${esc(x.label)}"><small>${x.start?esc(t12(x.start))+(x.end?" – "+esc(t12(x.end)):""):"بلا موعد"}</small><b>${k==="brk"?"☕ ":k==="hold"?"📌 ":bad?"⚠️ ":""}${esc(x.label.length>42?x.label.slice(0,42)+"…":x.label)}</b>${x.cover?`<em>بديل</em>`:""}${off?`<em>${esc(okLabel(off))}</em>`:""}</div>`; };
+  const card=(x,mid,ds,bad)=>{ const off=slotOff(mid,ds,x.id), k=isReserved(lecOf(x))&&lecPaused(lecOf(x),ds)?"hold":tsKind(x); return `<div class="wc ${k} ${bad?"conf":""} ${off?"off":""}" title="${esc(x.label)}"><small>${x.start?esc(t12(x.start))+(x.end?" – "+esc(t12(x.end)):""):"بلا موعد"}</small><b>${k==="brk"?"☕ ":k==="hold"?"📌 ":bad?"⚠️ ":""}${esc(x.label.length>(x.twinLecs?90:42)?x.label.slice(0,42)+"…":x.label)}</b>${x.cover?`<em>بديل</em>`:""}${off?`<em>${esc(okLabel(off))}</em>`:""}</div>`; };
   const rows=ppl.map((m,i)=>`<tr><th class="nm">${avatar(m,i)}<span>${esc(m.name)}</span></th>${days.map(ds=>{ const sl=tsAll(m.id,ds), bad=tsConflicts(m.id,ds); return `<td class="${ds===t?"tdy":""}">${sl.map(x=>card(x,m.id,ds,bad.has(x.id))).join("")||`<span class="none">—</span>`}</td>`; }).join("")}</tr>`).join("");
   const fr=days.map(ds=>free(ds)); const frRow = fr.some(x=>x.length) ? `<tr class="free"><th class="nm"><span class="av" style="background:var(--bad)">!</span><span>بلا منظّم</span></th>${fr.map((ls,i)=>`<td class="${days[i]===t?"tdy":""}">${ls.map(l=>`<div class="wc freeb"><small>${esc(t12(l.start||""))}</small><b>${esc(l.name)}</b></div>`).join("")||`<span class="none">—</span>`}</td>`).join("")}</tr>` : "";
   return `<div class="card tsw"><div class="tsw-scroll"><table><thead>${head}</thead><tbody>${rows}${frRow}</tbody></table></div></div>`; }
@@ -787,7 +795,7 @@ function slotRow(d,s,mid,mine){
   const done=isSlotDone(d,s.id), pr=problemsOf(mid,d).filter(p=>p.slot===s.id), off=slotOff(mid,d,s.id);
   const when = s.start ? esc(t12(s.start))+" – "+esc(t12(s.end)) : DAYS[Number(s.day)];
   if(adminLec(s) && !off) return `<div class="lecc ${done?"done":""}"><div class="lh"><span class="ring ${done?"full":""}" style="--p:${done?100:0}"><span>${done?"✓":"—"}</span></span>
-    <div class="what"><b>${esc(s.label)}${(lecOf(s)||{}).sheikh?`<span class="shk">${esc(lecOf(s).sheikh)}</span>`:""}${done?`<span class="pill ok">✓ تمت</span>`:""}</b><small>🕘 ${when}</small>${linksHtml(lecOf(s))}</div>
+    <div class="what"><b>${esc(s.label)}${(lecOf(s)||{}).sheikh?`<span class="shk">${esc(lecOf(s).sheikh)}</span>`:""}${done?`<span class="pill ok">✓ تمت</span>`:""}</b><small>🕘 ${when}</small>${linksHtml(lecOf(s),s)}</div>
     <div class="lact">${mine?(done?`<button class="btn sm ghost" data-a="adminDone" data-id="${esc(s.id)}">تراجع</button>`:`<button class="btn sm" data-a="adminDone" data-id="${esc(s.id)}">✓ تمت</button>`):""}</div></div></div>`;
   if(isLecture(s) && (!off || off.kind==="sheikh") && !lecExpanded(mid,d,s)) return lecCollapsed(d,s,mid);
   const fold = isLecture(s) ? `<button class="btn sm ghost fold" data-a="toggleLec" data-id="${esc(lecKey(mid,d,s.id))}" title="تصغير">▴ تصغير</button>` : "";
@@ -803,7 +811,7 @@ function slotRow(d,s,mid,mine){
   if(isLecture(s)){ const mk=marksOf(d,s.id), n=markCount(d,s.id), N=stepsFor(d).length, pct=Math.round(n*100/N);
     return `<div class="lecc ${done?"done":""}">
     <div class="lh"><span class="ring ${done?"full":""}" style="--p:${pct}" title="الخطوات المكتملة"><span>${done?"✓":n+"/"+N}</span></span>
-    <div class="what"><b>${esc(s.label)}${(lecOf(s)||{}).sheikh?`<span class="shk">${esc(lecOf(s).sheikh)}</span>`:""}${s.cover?` <span class="pill gold">بديل عن ${esc(nameOf(s.cover))}</span>`:""}${done?`<span class="pill ok">✓ تمت</span>`:pr.length?`<span class="pill bad">⚠️ يوجد مشكلة</span>`:""}${svTag(s.id+":excuse")}</b><small>🕘 ${when}</small>${linksHtml(lecOf(s))}</div>
+    <div class="what"><b>${esc(s.label)}${(lecOf(s)||{}).sheikh?`<span class="shk">${esc(lecOf(s).sheikh)}</span>`:""}${s.cover?` <span class="pill gold">بديل عن ${esc(nameOf(s.cover))}</span>`:""}${done?`<span class="pill ok">✓ تمت</span>`:pr.length?`<span class="pill bad">⚠️ يوجد مشكلة</span>`:""}${svTag(s.id+":excuse")}</b><small>🕘 ${when}</small>${linksHtml(lecOf(s),s)}</div>
     <div class="lact">${mine && !done?`<button class="btn sm ghost warn" data-a="problem" data-slot="${esc(s.id)}">⚠️ يوجد مشكلة</button><button class="btn sm ghost" data-a="excuse" data-id="${esc(s.id)}" data-v="sheikh">اعتذر الشيخ</button>`:""}${fold}</div></div>
     ${dutyBar(d,s,mid,mine)}
     <div class="prog"><i style="width:${pct}%"></i></div>
@@ -1368,7 +1376,8 @@ document.addEventListener("click", async e=>{
     try { await navigator.clipboard.writeText(u); toast("نُسخ رابط زووم."); }
     catch(err){ open(`<h2>رابط زووم</h2><p class="sub" style="font-size:13px">اضغط على الرابط ثم انسخه.</p><input id="zl" dir="ltr" readonly value="${esc(u)}"><div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`); const i=document.getElementById("zl"); if(i){ i.focus(); i.select(); } }
     return; }
-  if(a==="sdept"){ S.sdept=el.dataset.v; render(); return; }
+  if(a==="sdept"){ S.sdept=el.dataset.v; S.sper=""; render(); return; }
+  if(a==="sper0"){ S.sper=""; render(); return; }
   if(a==="smode"){ S.smode=el.dataset.v; render(); return; }
   if(a==="sday"){ S.sday=el.dataset.v; S.smode="day"; render(); return; }
   if(a==="swk"){ S.swk = el.dataset.v==="0" ? 0 : (S.swk||0)+Number(el.dataset.v); render(); return; }
@@ -1423,7 +1432,7 @@ document.addEventListener("click", async e=>{
     close(); toast(want.length?"تم التكليف.":"أُلغي التكليف."); return; }
   if(a==="delSlot"){ const m=el.dataset.m; await remove("slots", id); open(schedForm(m)); return; }
 });
-document.addEventListener("change", e=>{ const a=e.target.dataset.a; if(a==="reqKind"){ open(reqForm(e.target.value)); return; } if(a==="day"){ S.day=e.target.value||today(); render(); } if(a==="month"){ S.month=e.target.value||today().slice(0,7); render(); } if(a==="rmem"){ S.rmem=e.target.value; render(); } if(a==="rday"){ S.rday=e.target.value||today(); render(); } if(a==="myday"){ S.myday=e.target.value||today(); render(); } });
+document.addEventListener("change", e=>{ const a=e.target.dataset.a; if(a==="reqKind"){ open(reqForm(e.target.value)); return; } if(a==="day"){ S.day=e.target.value||today(); render(); } if(a==="month"){ S.month=e.target.value||today().slice(0,7); render(); } if(a==="sper"){ S.sper=e.target.value; render(); return; } if(a==="rmem"){ S.rmem=e.target.value; render(); } if(a==="rday"){ S.rday=e.target.value||today(); render(); } if(a==="myday"){ S.myday=e.target.value||today(); render(); } });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") close();
   const t=e.target; if((e.key==="Enter"||e.key===" ") && t && t.getAttribute && t.getAttribute("role")==="button" && t.dataset.a){ e.preventDefault(); t.click(); } });
 window.addEventListener("hashchange", ()=>{ S.view=location.hash.slice(1)||"today"; render(); });
