@@ -61,7 +61,9 @@ h2{font-size:18px;margin:0 0 10px;color:var(--brand-deep)}
 .wday h3{margin:0 0 6px;font-size:13.5px;color:var(--brand-deep);display:flex;justify-content:space-between;align-items:center;gap:4px}
 .wday h3 small{color:var(--muted);font-weight:500}
 .wev{background:#fff;border-radius:8px;padding:6px 8px;margin-bottom:6px;border-inline-start:4px solid var(--brand);font-size:12.5px;line-height:1.5}
-.card.newtk{border-top-color:var(--gold);background:#fffaf0;outline:2px solid var(--gold)}.wev.task{border-color:#00A598}.wev.brk{border-color:#C9D2DC;background:#f4f6f8;color:var(--muted)}.item.brk{opacity:.7}.item.brk .chk{border:0;background:none}.wev.cover{border-color:var(--gold)}.wev.off{opacity:.55;text-decoration:line-through}
+.card.newtk{border-top-color:var(--gold);background:#fffaf0;outline:2px solid var(--gold)}.tsched{overflow-x:auto;padding:12px}.tsched table{border-collapse:collapse;min-width:980px;width:100%}.tsched th,.tsched td{border:1px solid var(--line);vertical-align:top;padding:5px;font-size:12px}.tsched thead th{background:var(--fog);color:var(--brand-deep);font-size:13px}.tsched thead th small{display:block;color:var(--muted);font-weight:500}.tsched tbody th{background:var(--fog);white-space:nowrap;font-size:13px;color:var(--brand-deep)}.tsched .tdy{background:#fff8e6}.tsched tr.free th{color:var(--bad)}
+.ts{border-inline-start:3px solid var(--brand);background:#fff;border-radius:6px;padding:3px 6px;margin-bottom:4px;line-height:1.45}.ts small{display:block;color:var(--muted);font-variant-numeric:tabular-nums}.ts.task{border-color:#00A598}.ts.brk{border-color:#C9D2DC;color:var(--muted);background:#f4f6f8}.ts.conf{border-color:var(--bad);background:var(--bad-soft)}.ts.off{opacity:.5;text-decoration:line-through}.ts em{font-style:normal;color:var(--gold-ink);font-size:11px}
+.wev.task{border-color:#00A598}.wev.brk{border-color:#C9D2DC;background:#f4f6f8;color:var(--muted)}.item.brk{opacity:.7}.item.brk .chk{border:0;background:none}.wev.cover{border-color:var(--gold)}.wev.off{opacity:.55;text-decoration:line-through}
 .wev b{display:block;font-weight:600}.wev small{color:var(--muted)}.wev .ok{color:var(--ok);font-weight:700}
 .clk{font-variant-numeric:tabular-nums;color:var(--brand);background:var(--gold-soft);border:1px solid var(--gold);border-radius:8px;padding:0 10px;font-weight:700;white-space:nowrap}
 .dates{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:14.5px;margin-top:2px}
@@ -348,7 +350,7 @@ const slotDoneId = (date, sid) => "sch_"+date+"_"+sid;
 const slotTask = (date, sid) => S.tasks.find(t => t.id===slotDoneId(date,sid));
 const memberOf = id => S.members.find(m=>m.id===id) || {};
 // المحاضرة التي تحتاج تنظيمًا لها 4 علامات؛ افتراضيًا كل شغل المنظمين، ويمكن تفعيلها لشغل أي مشرف من صفحة الجدول
-const isLecture = s => !!s && (s.lecture===true || (s.lecture===undefined && memberOf(s.owner).dept==="org"));
+const isLecture = s => !!s && (!!s.lec || (s.lecture===true && !!s.date)); // المحاضرة = مربوطة بجدول الأكاديمية (شيت اللينكات) فقط؛ والبديل ليوم محدد
 const marksOf = (date, sid) => (slotTask(date,sid)||{}).marks || {};
 const markCount = (date, sid) => { const m=marksOf(date,sid); return stepsFor(date).filter(([k])=>m[k]).length; };
 // موعد الخطوة بدقائق اليوم (قد يتجاوز 1440 بعد منتصف الليل)
@@ -529,13 +531,36 @@ function renderInner(){
     nav.hidden=false; $("#tabs").innerHTML = mt.map(([k,l,n])=>`<a href="#${k}" class="${S.view===k?"on":""}">${l}${n?`<span class="n">${n}</span>`:""}</a>`).join("");
     app.innerHTML = banner + ({today:viewMine, week:()=>weekCard(S.me.id), mine:viewMyReport, reqs:viewMyReqs}[S.view])(); return; }
   const pend = team().reduce((n,m)=>n+problemsOf(m.id,today()).filter(c=>!c.reply).length,0) + pendingReqs().length;
-  const tabs = [["today","اليوم",pend],["tasks","المهام",0],["report","التقارير",0],["lreps","تقارير المحاضرات",0]].concat(isAdmin()?[["academy","جدول الأكاديمية",unassigned().length],["team","الفريق والجداول",0]]:[]);
+  const tabs = [["today","اليوم",pend],["tasks","المهام",0],["sched","جداول الفريق",0],["report","التقارير",0],["lreps","تقارير المحاضرات",0]].concat(isAdmin()?[["academy","جدول الأكاديمية",unassigned().length],["team","الفريق والجداول",0]]:[]);
   if(!tabs.some(t=>t[0]===S.view)) S.view="today";
   nav.hidden=false;
   $("#tabs").innerHTML = tabs.map(([k,l,n])=>`<a href="#${k}" class="${S.view===k?"on":""}">${l}${n?`<span class="n">${n}</span>`:""}</a>`).join("");
-  app.innerHTML = banner + ({today:viewTeamToday, tasks:viewTasks, report:viewReport, lreps:viewLecReports, academy:viewAcademy, team:viewTeam}[S.view])();
+  app.innerHTML = banner + ({today:viewTeamToday, tasks:viewTasks, report:viewReport, lreps:viewLecReports, academy:viewAcademy, team:viewTeam, sched:viewTeamSched}[S.view])();
 }
 
+// جداول الفريق (قرار المستخدم 9 نوفمبر): أسبوع كامل لكل المنظمين أو كل المشرفين؛ للمسئول، ولمسئول القسم لقسمه فقط
+function viewTeamSched(){
+  const depts=isAdmin()?["org","sa"]:[S.me.dept]; if(!depts.includes(S.sdept)) S.sdept=depts[0];
+  const dp=S.sdept, DN={org:"المنظمون",sa:"مشرفو شئون الطلاب"};
+  const t=today(), start=addDays(addDays(t,-dayIdx(parse(t))), 7*(S.swk||0)), days=[...Array(7)].map((_,i)=>addDays(start,i));
+  const ppl=team().filter(m=>m.dept===dp).sort((a,b)=>(a.name||"").localeCompare(b.name||""));
+  let conf=0;
+  const cell=(m,ds)=>{ const sl=allSlotsOf(m.id,ds), mn=x=>x.start?toMin(x.start):null;
+    const bad=new Set(); const tm=sl.filter(x=>!isBreak(x) && x.start && x.end && !slotOff(m.id,ds,x.id));
+    tm.forEach((a,i)=>tm.slice(i+1).forEach(b=>{ const a1=mn(a), a2=toMin(a.end), b1=mn(b), b2=toMin(b.end); if(a2>a1 && b2>b1 && a1<b2 && b1<a2){ bad.add(a.id); bad.add(b.id); } }));
+    conf+=bad.size?1:0;
+    return sl.map(x=>{ const off=slotOff(m.id,ds,x.id), cls=isBreak(x)?"brk":isLecture(x)?"lec":"task";
+      return `<div class="ts ${cls} ${bad.has(x.id)?"conf":""} ${off?"off":""}" title="${esc(x.label)}"><small>${x.start?esc(t12(x.start))+(x.end?"–"+esc(t12(x.end)):""):"بلا موعد"}</small>${esc(x.label.length>48?x.label.slice(0,48)+"…":x.label)}${x.cover?` <em>بديل</em>`:""}${off?` <em>${esc(okLabel(off))}</em>`:""}</div>`; }).join("") || `<span class="sub">—</span>`; };
+  const rows=ppl.map(m=>`<tr><th>${esc(m.name)}</th>${days.map(ds=>`<td class="${ds===t?"tdy":""}">${cell(m,ds)}</td>`).join("")}</tr>`).join("");
+  const free = isAdmin() && dp==="org" ? `<tr class="free"><th>بلا منظّم</th>${days.map(ds=>{ const ls=S.lectures.filter(l=>l.active!==false && !l.noOrg && !lecPaused(l,ds) && Number(l.day)===dayIdx(parse(ds)) && !lecSlots(l.id).length);
+      return `<td>${ls.map(l=>`<div class="ts conf"><small>${esc(t12(l.start||""))}</small>${esc(l.name)}</div>`).join("")||`<span class="sub">—</span>`}</td>`; }).join("")}</tr>` : "";
+  const head=`<tr><th></th>${days.map((ds,i)=>{ const d=parse(ds); return `<th class="${ds===t?"tdy":""}">${DAYS[i]}<small>${d.getDate()} ${MONTHS[d.getMonth()]}</small></th>`; }).join("")}</tr>`;
+  return ptitle("جدول "+DN[dp]+" — أسبوع "+fmtDay(start))+`<div class="row noprint"><div class="grow"><h1>جداول الفريق</h1><p class="sub">أسبوع ${esc(fmtDay(start))} · ${ppl.length} ${dp==="org"?"منظّم":"مشرف"}${conf?` · <span class="late">تعارض في ${conf} يوم</span>`:""}</p></div>
+    ${depts.length>1?`<div class="seg">${depts.map(k=>`<button class="${k===dp?"on":""}" data-a="sdept" data-v="${k}">${DN[k]}</button>`).join("")}</div>`:""}
+    <button class="btn sm ghost" data-a="swk" data-v="-1">‹ السابق</button>${S.swk?`<button class="btn sm ghost" data-a="swk" data-v="0">هذا الأسبوع</button>`:""}<button class="btn sm ghost" data-a="swk" data-v="1">التالي ›</button><button class="btn ghost" data-a="print">🖨️ طباعة / PDF</button></div>
+  <div class="card tsched"><table><thead>${head}</thead><tbody>${rows}${free}</tbody></table>
+  <p class="sub noprint" style="font-size:13px;margin-top:8px"><span class="ts lec" style="display:inline-block">محاضرة</span> <span class="ts task" style="display:inline-block">مهمة</span> <span class="ts brk" style="display:inline-block">استراحة</span> <span class="ts conf" style="display:inline-block">تعارض / بلا منظّم</span></p></div>`;
+}
 // مجالس معروضة على المنظّمين (قرار 8 نوفمبر): المنظّم يرغب، ومسئول اللجنة يعتمد
 function offersCard(me){ if(S.me.dept!=="org") return "";
   const ls=S.lectures.filter(l=>l.offer && l.active!==false && !S.slots.some(s=>s.lec===l.id && s.owner===me));
@@ -1085,14 +1110,14 @@ function transferForm(mid){
 }
 function schedForm(mid, editId){
   const sl=S.slots.filter(s=>s.owner===mid && s.kind!=="flex" && !s.date).sort((a,b)=>(Number(a.day)-Number(b.day))||(a.start||"99").localeCompare(b.start||"99"));
-  const ed=S.slots.find(s=>s.id===editId); const lec = ed ? isLecture(ed) : memberOf(mid).dept==="org";
+  const ed=S.slots.find(s=>s.id===editId);
   return `<h2>جدول ${esc(nameOf(mid))}</h2><p class="sub" style="font-size:14px">الشغل الأسبوعي الثابت الذي يظهر له كل يوم. المحاضرات تُكلَّف من «جدول الأكاديمية»؛ وهنا الشغل الآخر (متابعة، تليجرام…).</p>
   <div>${sl.length?sl.map(s=>`<div class="item"><div class="what"><b>${esc(s.label)} ${s.lec?`<span class="pill ok">من جدول الأكاديمية</span>`:isLecture(s)?`<span class="pill">محاضرة</span>`:""}</b><small>${DAYS[Number(s.day)]}${s.start?" · "+esc(t12(s.start))+" – "+esc(t12(s.end)):` · <span class="late">بلا موعد</span>`}</small></div>${s.lec?"":`<button class="btn sm ghost" data-a="editSlot" data-id="${esc(s.id)}" data-m="${esc(mid)}">تعديل</button>`}<button class="btn sm danger" data-a="delSlot" data-id="${esc(s.id)}" data-m="${esc(mid)}">${s.lec?"إلغاء التكليف":"حذف"}</button></div>`).join(""):`<div class="empty">لا يوجد شغل في جدوله بعد.</div>`}</div>
   <div class="form" style="border-top:1px solid var(--line);padding-top:12px">
     <label class="full">${ed?"تعديل الشغل":"إضافة شغل"}<input id="s_label" value="${esc(ed?ed.label:"")}" placeholder="مثال: تنظيم مساق السبت س3 د2 / متابعة غياب مجلس الشفا"></label>
     <label>اليوم<select id="s_day">${DAYS.map((d,i)=>`<option value="${i}" ${ed&&Number(ed.day)===i?"selected":""}>${d}</option>`).join("")}</select></label>
     <div class="row"><label class="grow">من (اختياري)<input type="time" id="s_from" value="${esc(ed?ed.start||"":"")}"></label><label class="grow">إلى<input type="time" id="s_to" value="${esc(ed?ed.end||"":"")}"></label></div>
-    <label class="full" style="flex-direction:row;align-items:center;gap:8px;font-weight:500"><input type="checkbox" id="s_lec" style="width:auto" ${lec?"checked":""}> محاضرة تحتاج تنظيمًا (خطوات التنظيم بمواعيدها)</label></div>
+    <p class="sub full" style="font-size:13px">المحاضرات لا تُضاف من هنا؛ مصدرها شيت «لينكات المجالس والدورات» عبر «جدول الأكاديمية».</p></div>
   ${(()=>{ const cv=S.slots.filter(s=>s.owner===mid && s.date && s.date>=today()).sort((a,b)=>a.date.localeCompare(b.date)); return cv.length?`<div style="border-top:1px solid var(--line);padding-top:10px"><b style="font-size:14px">بديل في أيام محددة</b>${cv.map(s=>`<div class="item"><div class="what"><b>${esc(s.label)}</b><small>${esc(fmtDay(s.date))}${s.cover?" · بدل "+esc(nameOf(s.cover)):""}</small></div><button class="btn sm danger" data-a="delSlot" data-id="${esc(s.id)}" data-m="${esc(mid)}">إلغاء</button></div>`).join("")}</div>`:""; })()}
   ${weeklyLecs(mid).length?`<div class="row"><button class="btn sm ghost" data-a="transfer" data-id="${esc(mid)}">نقل كل محاضراته (${weeklyLecs(mid).length}) إلى منظّم آخر</button></div>`:""}
   <div class="row"><button class="btn" data-a="addSlot" data-m="${esc(mid)}" data-id="${esc(ed?ed.id:"")}">${ed?"حفظ التعديل":"إضافة"}</button>${ed?`<button class="btn ghost" data-a="sched" data-id="${esc(mid)}">إلغاء التعديل</button>`:""}<button class="btn ghost" data-a="close">إغلاق</button></div>`;
@@ -1248,6 +1273,8 @@ document.addEventListener("click", async e=>{
     try { await navigator.clipboard.writeText(u); toast("نُسخ رابط زووم."); }
     catch(err){ open(`<h2>رابط زووم</h2><p class="sub" style="font-size:13px">اضغط على الرابط ثم انسخه.</p><input id="zl" dir="ltr" readonly value="${esc(u)}"><div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`); const i=document.getElementById("zl"); if(i){ i.focus(); i.select(); } }
     return; }
+  if(a==="sdept"){ S.sdept=el.dataset.v; render(); return; }
+  if(a==="swk"){ S.swk = el.dataset.v==="0" ? 0 : (S.swk||0)+Number(el.dataset.v); render(); return; }
   if(a==="wk"){ S.wk = el.dataset.v==="0" ? 0 : S.wk+Number(el.dataset.v); render(); return; }
   if(a==="toggleInactive"){ S.showInactive=!S.showInactive; render(); return; }
   if(a==="invite"){ const m=memberOf(id); try{ await navigator.clipboard.writeText(inviteText(m)); toast("نُسخت رسالة الدعوة؛ الصقها له في واتساب أو تيليجرام."); } catch(err){ open(`<h2>رسالة الدعوة</h2><textarea style="min-height:200px">${esc(inviteText(m))}</textarea><div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`); } return; }
@@ -1271,7 +1298,7 @@ document.addEventListener("click", async e=>{
     el.disabled=true; if(await save("evals", evalId(mid,month), data, true)){ close(); toast("حُفظ التقييم، وسيظهر له في صفحته."); } else el.disabled=false; return; }
   if(a==="ackEval"){ el.disabled=true; const n=document.getElementById("ack_"+id); await save("evals", id, {ack:true, ackAt:today(), ackNote:n?n.value.trim():""}); toast("شكرًا، سُجّل اطّلاعك."); return; }
   if(a==="sched") return open(schedForm(id));
-  if(a==="addSlot"){ const m=el.dataset.m; const data={owner:m, day:Number(v("s_day")), start:v("s_from"), end:v("s_to"), kind:"fixed", label:v("s_label"), lecture:document.getElementById("s_lec").checked};
+  if(a==="addSlot"){ const m=el.dataset.m; const data={owner:m, day:Number(v("s_day")), start:v("s_from"), end:v("s_to"), kind:"fixed", label:v("s_label"), lecture:false};
     if(!data.label) return toast("اكتب الشغل."); if(data.end && !data.start) return toast("اكتب وقت البداية."); if(data.start && data.end && toMin(data.end)<=toMin(data.start) && toMin(data.end)>180) return toast("وقت النهاية بعد البداية.");
     if(await save("slots", id||null, data, !!id)){ open(schedForm(m)); toast(id?"عُدّل.":"أُضيف."); } return; }
   if(a==="editSlot") return open(schedForm(el.dataset.m, id));
