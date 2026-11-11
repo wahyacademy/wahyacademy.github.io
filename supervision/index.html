@@ -784,7 +784,7 @@ function reportForm(d,s){ const rp=(slotTask(d,s.id)||{}).report||{}, q=rp.quali
 // المحاضرة المفتوحة: أول محاضرة لم تنتهِ بعد (خطواتها + إنهاء دوامها)؛ والباقي مطويّ ويُفتح بالضغط (قرار المستخدم 6 نوفمبر)
 const LOPEN = new Set(), LCLOSED = new Set();
 function lecFinished(mid, d, s){ const off=slotOff(mid,d,s.id);
-  if(off && off.kind==="sheikh") return !!marksOf(d,s.id).tgx;
+  if(off && off.kind==="sheikh") return true; // قرار المستخدم 11 نوفمبر: مسئول اللجنة هو من يبلّغ الطلاب، فلا خطوة على المنظّم
   if(off) return true;
   if(!isSlotDone(d,s.id)) return false;
   if(d<SLOT_DUTY_SINCE || !s.start) return true;
@@ -794,7 +794,7 @@ const lecKey = (mid,d,sid) => mid+"|"+d+"|"+sid;
 function lecExpanded(mid, d, s){ const k=lecKey(mid,d,s.id); if(LOPEN.has(k)) return true; if(LCLOSED.has(k)) return false; return focusLec(mid,d)===s.id; }
 function lecCollapsed(d, s, mid){ const off=slotOff(mid,d,s.id), exc=off&&off.kind==="sheikh", n=markCount(d,s.id), N=stepsFor(d).length, done=isSlotDone(d,s.id);
   const sh=slotShift(mid,d,s.id), st=shState(sh), pr=problemsOf(mid,d).filter(p=>p.slot===s.id);
-  const ring = exc ? (marksOf(d,s.id).tgx?"✓":"—") : done ? "✓" : n+"/"+N, full = exc ? !!marksOf(d,s.id).tgx : done, pct = exc ? (full?100:0) : Math.round(n*100/N);
+  const ring = exc ? "✓" : done ? "✓" : n+"/"+N, full = exc ? true : done, pct = exc ? 100 : Math.round(n*100/N);
   const duty = !s.start || d<SLOT_DUTY_SINCE || exc ? "" : st==="on" ? `<span class="pill ok">في الدوام</span>` : st==="ended" ? `<span class="pill">انتهى الدوام</span>` : st==="open" ? `<span class="pill bad">دوام بلا نهاية</span>` : `<span class="pill">لم يبدأ الدوام</span>`;
   const sk=(lecOf(s)||{}).sheikh;
   return `<div class="lecc col ${done||full?"done":""}" role="button" tabindex="0" data-a="toggleLec" data-id="${esc(lecKey(mid,d,s.id))}">
@@ -810,14 +810,9 @@ function slotRow(d,s,mid,mine){
     <div class="lact">${mine?(done?`<button class="btn sm ghost" data-a="adminDone" data-id="${esc(s.id)}">تراجع</button>`:`<button class="btn sm" data-a="adminDone" data-id="${esc(s.id)}">✓ تمت</button><button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(mid)}" data-d="${esc(d)}" data-v="sheikh">🕌 اعتذر الشيخ</button>`):""}</div></div></div>`;
   if(isLecture(s) && (!off || off.kind==="sheikh") && !lecExpanded(mid,d,s)) return lecCollapsed(d,s,mid);
   const fold = isLecture(s) ? `<button class="btn sm ghost fold" data-a="toggleLec" data-id="${esc(lecKey(mid,d,s.id))}" title="تصغير">▴ تصغير</button>` : "";
-  if(off && off.kind==="sheikh"){ const st=EXCUSE_STEP, v=marksOf(d,s.id).tgx, ss=stepState(d,s,st,v), w=stepWin(s,st);
-    const tm = v ? (typeof v==="number" ? t12(fromMin(cairoMinOf(v,d))) : "تمت") : w ? "حتى "+t12(fromMin(w.due)) : "";
-    const tag = ss==="now" ? "الآن" : ss==="late" ? "متأخرة" : ss==="lateDone" ? "تمت متأخرة" : "";
-    const inner = `<span class="bx">${v?"✓":"!"}</span><span class="tx">${esc(st[1])}</span><span class="tm">${esc(tm)}</span>${tag?`<span class="tg">${tag}</span>`:""}${svTag(s.id+":tgx")}`;
-    return `<div class="lecc exc"><div class="lh"><span class="ring ${v?"full":""}" style="--p:${v?100:0}"><span>${v?"✓":"—"}</span></span>
-    <div class="what"><b>${esc(s.label)} <span class="pill gray">اعتذر الشيخ</span>${svTag(s.id+":excuse")}</b><small>🕘 ${when} · المطلوب فقط إبلاغ الطلاب في جروب تيليجرام</small></div>
-    <div class="lact">${mine?`<button class="btn sm ghost" data-a="excuse" data-id="${esc(s.id)}" data-v="">تراجع عن الاعتذار</button>`:""}${fold}</div></div>
-    <div class="steps one">${mine?`<button class="stp ${ss}" data-a="mark" data-id="${esc(s.id)}" data-k="tgx" aria-pressed="${!!v}" title="${esc(st[1])}">${inner}</button>`:`<span class="stp ${ss}">${inner}</span>`}</div>${pr.map(probHtml).join("")}</div>`; }
+  if(off && off.kind==="sheikh") return `<div class="lecc exc done"><div class="lh"><span class="ring full" style="--p:100"><span>✓</span></span>
+    <div class="what"><b>${esc(s.label)} <span class="pill gray">اعتذر الشيخ</span>${svTag(s.id+":excuse")}</b><small>🕘 ${when} · مسئول اللجنة يبلّغ الطلاب — لا شيء مطلوب منك</small></div>
+    <div class="lact">${mine?`<button class="btn sm ghost" data-a="excuse" data-id="${esc(s.id)}" data-v="">تراجع عن الاعتذار</button>`:""}${fold}</div></div></div>`;
   if(off) return `<div class="item done"><span class="chk" aria-hidden="true" style="color:var(--muted)">—</span><div class="what"><b>${esc(s.label)} <span class="pill">${esc(okLabel(off))}</span></b><small>${when}</small></div></div>`;
   if(isLecture(s)){ const mk=marksOf(d,s.id), n=markCount(d,s.id), N=stepsFor(d).length, pct=Math.round(n*100/N);
     return `<div class="lecc ${done?"done":""}">
@@ -943,7 +938,7 @@ function viewTeamToday(){
   ${mineSl.length?`<div class="card"><h2>شغلي اليوم</h2>${mineSl.map(s=>slotRow(d,s,S.me.id,d===today())).join("")}</div>`:""}
   <div class="card"><h2>الفريق</h2>${rows.length? rows.map(({m,sl,exp,dn,pr,late})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${esc(DEPTS[m.dept]||"")}</small></span>${asBtn(m.id)}${dutyPill(m.id,d)}${pr.length?`<span class="pill gold">⚠️ ${pr.length}</span>`:""}${late?`<span class="pill bad">${late} متأخرة</span>`:""}${exp.length?`<span class="pill ${dn===exp.length?"ok":""}">${dn} من ${exp.length}</span>`:""}</summary>
     <div class="mini">${sl.map(s=>{ const off=slotOff(m.id,d,s.id), ok=isSlotDone(d,s.id), lec=isLecture(s);
-      return `<span class="${ok?"d":"u"}">${off?"—":ok?"✓":"○"} ${s.start?esc(t12(s.start))+" — ":""}${esc(s.label)}${off?` (${off.kind==="sheikh"?"اعتذر الشيخ · "+(marksOf(d,s.id).tgx?"✓ أُبلغ الطلاب":"لم يُبلَّغ الطلاب بعد"):"معتذر"})`:lec&&!ok?` (${markCount(d,s.id)} من ${stepsFor(d).length}: ${stepsFor(d).filter(([k])=>!marksOf(d,s.id)[k]).map(x=>stepLabel(x,s)).join("، ")} ناقص)`:""}${repLine((slotTask(d,s.id)||{}).report)}${lec && d>=today() && canEmg(m.id) ? (off && /^emg_/.test(off.id||"") ? ` <button class="btn sm ghost" data-a="emgUndo" data-id="${esc(off.id)}">↩ إلغاء البديل</button>` : off && off.kind==="sheikh" ? ` <button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="">↩ تراجع عن اعتذار الشيخ</button>` : !off && !ok ? ` <button class="btn sm ghost warn" data-a="emgOpen" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}">🚨 بديل طارئ</button> <button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="sheikh">🕌 اعتذر الشيخ</button>` : "") : ""}</span>`; }).join("")}${pr.map(probHtml).join("")}</div></details>`).join("") : `<div class="empty">لا يوجد شغل مجدول للفريق في هذا اليوم.</div>`}</div>`;
+      return `<span class="${ok?"d":"u"}">${off?"—":ok?"✓":"○"} ${s.start?esc(t12(s.start))+" — ":""}${esc(s.label)}${off?` (${off.kind==="sheikh"?"اعتذر الشيخ":"معتذر"})`:lec&&!ok?` (${markCount(d,s.id)} من ${stepsFor(d).length}: ${stepsFor(d).filter(([k])=>!marksOf(d,s.id)[k]).map(x=>stepLabel(x,s)).join("، ")} ناقص)`:""}${repLine((slotTask(d,s.id)||{}).report)}${lec && d>=today() && canEmg(m.id) ? (off && /^emg_/.test(off.id||"") ? ` <button class="btn sm ghost" data-a="emgUndo" data-id="${esc(off.id)}">↩ إلغاء البديل</button>` : off && off.kind==="sheikh" ? ` <button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="">↩ تراجع عن اعتذار الشيخ</button>` : !off && !ok ? ` <button class="btn sm ghost warn" data-a="emgOpen" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}">🚨 بديل طارئ</button> <button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="sheikh">🕌 اعتذر الشيخ</button>` : "") : ""}</span>`; }).join("")}${pr.map(probHtml).join("")}</div></details>`).join("") : `<div class="empty">لا يوجد شغل مجدول للفريق في هذا اليوم.</div>`}</div>`;
 }
 
 // ملخص اليوم للمسئول: محاضرات اليوم، تمت، متأخرة الآن، اعتذار الشيخ
@@ -1028,7 +1023,7 @@ function dayDetail(mid, d){ const sl=slotsOf(mid,d); if(!sl.length) return `<div
     if(off && off.kind!=="sheikh") return `<tr><td>${name}</td><td class="c" colspan="4"><span class="pill">${esc(okLabel(off))}</span></td></tr>`;
     const sh=slotShift(mid,d,s.id), late=slotLate(mid,d,s);
     const duty = d<SLOT_DUTY_SINCE ? "—" : !s.start ? "—" : sh ? `${esc(t12(sh.start))} – ${sh.end?esc(t12(sh.end)):"…"}<br><small class="sub">${dur(shMin(sh))}</small>${late?` <span class="pill bad">متأخر ${dur(late)}</span>`:""}` : `<span class="pill ${d<today()?"bad":""}">لم يبدأ</span>`;
-    if(off) return `<tr><td>${name}</td><td class="c">${duty}</td><td class="c" colspan="2"><span class="pill gray">اعتذر الشيخ</span></td><td class="c">${marksOf(d,s.id).tgx?"✓ أُبلغ الطلاب":`<span class="late">لم يُبلَّغ الطلاب</span>`}</td></tr>`;
+    if(off) return `<tr><td>${name}</td><td class="c">${duty}</td><td class="c" colspan="3"><span class="pill gray">اعتذر الشيخ</span></td></tr>`;
     let steps="—", rep="—";
     if(lec){ const mk=marksOf(d,s.id), L=stepsFor(d); let on=0, lt=0; L.forEach(st=>{ const v=mk[st[0]]; if(!v) return; if(stepState(d,s,st,v)==="lateDone") lt++; else on++; });
       const n=on+lt; steps=`<span class="pill ${n===L.length?"ok":n?"gold":"bad"}">${n}/${L.length}</span>${lt?`<br><small class="late">متأخرة ${lt}</small>`:""}`;
@@ -1298,7 +1293,7 @@ document.addEventListener("click", async e=>{
     close(); saveFast("tasks", slotDoneId(d,id), {title:s.label, type:"scheduled", assignee:me, due:d, slot:id, marks, report:Object.assign({at:Date.now()},report,{zoomN:Number(report.zoomN)}), status:all?"done":"todo", doneAt:all?d:null}, all?"وصل التقرير واكتملت خطوات المحاضرة، أحسنت.":"وصل التقرير.", id+":report");
     return; }
   if(a==="excuse"){ const s=S.slots.find(x=>x.id===id); if(!s) return; const val=el.dataset.v;
-    if(val && !el.dataset.sure) return open(`<h2>اعتذر الشيخ؟</h2><p class="sub">«${esc(s.label)}» ستُسجَّل «اعتذر الشيخ»، وتُلغى خطواتها، ويبقى عليك فقط إبلاغ الطلاب في جروب تيليجرام. يظهر ذلك للمسئول.</p><div class="row"><button class="btn" data-a="excuse" data-id="${esc(id)}" data-v="sheikh" data-sure="1">نعم، اعتذر الشيخ</button><button class="btn ghost" data-a="close">إلغاء</button></div>`);
+    if(val && !el.dataset.sure) return open(`<h2>اعتذر الشيخ؟</h2><p class="sub">«${esc(s.label)}» ستُسجَّل «اعتذر الشيخ» وتُلغى خطواتها، ومسئول اللجنة يبلّغ الطلاب. يظهر ذلك للمسئول.</p><div class="row"><button class="btn" data-a="excuse" data-id="${esc(id)}" data-v="sheikh" data-sure="1">نعم، اعتذر الشيخ</button><button class="btn ghost" data-a="close">إلغاء</button></div>`);
     close(); saveFast("tasks", slotDoneId(d,id), {title:s.label, type:"scheduled", assignee:me, due:d, slot:id, excused:val}, val?"سُجّل اعتذار الشيخ.":"تم التراجع عن اعتذار الشيخ.", id+":excuse");
     return; }
   if(a==="rper"){ S.rper=el.dataset.v; render(); return; }
@@ -1355,7 +1350,7 @@ document.addEventListener("click", async e=>{
   if(a==="cancelReq"){ el.disabled=true; await save("requests", id, {status:"cancelled"}); return; }
   // «🕌 اعتذر الشيخ» يسجّله المسئول (قرار المستخدم 11 نوفمبر): نفس علامة المنظّم (excused) لكن باسم صاحب الخانة وللتاريخ المختار
   if(a==="admExc"){ e.preventDefault(); const mid=el.dataset.m, ds=el.dataset.d, val=el.dataset.v, s=S.slots.find(x=>x.id===id); if(!s || !(canEmg(mid) || mid===S.me.id)) return;
-    if(val && !el.dataset.sure) return open(`<h2>🕌 اعتذر الشيخ؟</h2><p class="sub">«${esc(s.label)}» — ${esc(fmtDay(ds))}${mid!==S.me.id?" · "+esc(nameOf(mid)):""}<br>تُسجَّل «اعتذر الشيخ» وتُلغى خطواتها${mid!==S.me.id?"، ويبقى على المنظّم فقط إبلاغ الطلاب في جروب تيليجرام":""}.</p><div class="row"><button class="btn" data-a="admExc" data-id="${esc(id)}" data-m="${esc(mid)}" data-d="${esc(ds)}" data-v="sheikh" data-sure="1">نعم، اعتذر الشيخ</button><button class="btn ghost" data-a="close">إلغاء</button></div>`);
+    if(val && !el.dataset.sure) return open(`<h2>🕌 اعتذر الشيخ؟</h2><p class="sub">«${esc(s.label)}» — ${esc(fmtDay(ds))}${mid!==S.me.id?" · "+esc(nameOf(mid)):""}<br>تُسجَّل «اعتذر الشيخ» وتُلغى خطواتها، ولا يُطلب من المنظّم شيء.</p><div class="row"><button class="btn" data-a="admExc" data-id="${esc(id)}" data-m="${esc(mid)}" data-d="${esc(ds)}" data-v="sheikh" data-sure="1">نعم، اعتذر الشيخ</button><button class="btn ghost" data-a="close">إلغاء</button></div>`);
     close(); el.disabled=true; await save("tasks", slotDoneId(ds,id), {title:s.label, type:"scheduled", assignee:mid, due:ds, slot:id, excused:val}, true); toast(val?"سُجّل اعتذار الشيخ.":"تم التراجع عن اعتذار الشيخ."); return; }
   if(a==="emgOpen"){ e.preventDefault(); if(!canEmg(el.dataset.m)) return; open(emgForm(el.dataset.m, id, el.dataset.d)); return; }
   if(a==="emgSave"){ const mid=el.dataset.m; if(!canEmg(mid)) return; const ds=v("e_date"), n=Number(v("e_n"))||1, subV=v("e_sub"), note=v("e_note");
