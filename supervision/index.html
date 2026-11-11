@@ -63,6 +63,14 @@ h2{font-size:18px;margin:0 0 10px;color:var(--brand-deep)}
 .wev{background:#fff;border-radius:8px;padding:6px 8px;margin-bottom:6px;border-inline-start:4px solid var(--brand);font-size:12.5px;line-height:1.5}
 .card.newtk{border-top-color:var(--gold);background:#fffaf0;outline:2px solid var(--gold)}.tshead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}.asbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#FFF4D6;border:1px solid #F7B717;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:14.5px;color:#5A3E00;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .asmode #app [data-a]:not([data-a=asExit]):not([data-a=toggleLec]):not([data-a=copyZoom]):not([data-a=print]){cursor:not-allowed}
+.dt{width:100%;border-collapse:collapse;font-size:14px}.dt th{background:#F4F7FB;color:var(--brand);font-size:12.5px;text-align:right;padding:8px 10px;white-space:nowrap}
+.dt td{padding:9px 10px;border-bottom:1px solid #EDF1F6;vertical-align:middle}.dt td.tm{white-space:nowrap;font-weight:700;color:var(--brand)}.dt td.tm small{display:block;font-weight:400;color:#64748B;font-size:12px}
+.dt td.who{white-space:nowrap}.dt td.who .av{width:24px;height:24px;font-size:12px;margin-left:6px;vertical-align:middle}.dt td.lk{white-space:nowrap}.dt td.lk a{text-decoration:none;font-size:17px;margin-left:6px}
+.dtab .seg button{white-space:nowrap}.dt tr.nowr td{background:#EAF3FB}
+@media(max-width:640px){.dt thead{display:none}.dt,.dt tbody{display:block}
+.dt tr{display:grid;grid-template-columns:58px 1fr auto;grid-template-areas:"tm ti ti" "tm wh wh" "tm st lk";column-gap:10px;row-gap:6px;padding:11px 6px;border-bottom:1px solid #EDF1F6}
+.dt td{border:0;padding:0;background:none!important}.dt td.tm{grid-area:tm}.dt td:nth-child(2){grid-area:ti}.dt td.who{grid-area:wh;font-size:13px;color:#475569}.dt td:nth-child(4){grid-area:st}.dt td.lk{grid-area:lk}
+.dt tr.nowr{background:#EAF3FB;box-shadow:inset -4px 0 0 #F7B717}.dt tr.nowr td.tm{box-shadow:none}}.dt tr.nowr td.tm{box-shadow:inset -4px 0 0 #F7B717}.dt tr.dim td{opacity:.62}.dt .shk{font-size:12px}
 .pick{display:inline-flex;flex-direction:row;align-items:center;gap:4px;margin:0;font-size:15px}.pick select{width:auto;min-width:150px;padding:5px 8px;font-size:13.5px}
 .tsctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.seg.sm{margin:0;padding:3px}.seg.sm button{padding:6px 12px;font-size:13.5px}.wnav{display:flex;gap:4px}
 .dchips{display:grid;grid-template-columns:repeat(7,minmax(92px,1fr));gap:8px;overflow-x:auto;padding-bottom:2px}
@@ -922,6 +930,29 @@ function emgForm(mid, sid, d){ const s=slotsOf(mid,d).find(x=>x.id===sid); if(!s
   <label class="full">السبب (اختياري، يظهر للمنظّم)<input id="e_note" placeholder="ظرف طارئ"></label>
   <p class="sub" style="font-size:13px">تُسجَّل للمنظّم «اعتذار إداري» معتمد فلا تُحسب عليه ولا يُذكَّر بها، وتظهر للبديل بخطواتها وتُحسب له.</p>
   <div class="row"><button class="btn" data-a="emgSave" data-id="${esc(sid)}" data-m="${esc(mid)}">تأكيد</button><button class="btn ghost" data-a="close">إلغاء</button></div></div>`; }
+// «📋 جدول اليوم» (طلب المستخدم 11 نوفمبر): لمسئول اللجنة (الكل) ومسئول القسم (قسمه) — كل شغل اليوم مرتبًا بالوقت مع حالته
+function dayTable(d){
+  const cur = d===today() ? cairoMinOf(Date.now(), d) : d<today() ? 1e9 : -1;
+  const seen=new Set(), ppl=[S.me].concat(team(), isAdmin()?S.members.filter(m=>m.role==="committee" && m.active!==false):[]).filter(m=>m && !seen.has(m.id) && seen.add(m.id));
+  const f = isAdmin() ? (S.dtf||"all") : "all";
+  let rows=[]; ppl.forEach(m=>slotsOf(m.id,d).forEach(s=>rows.push({m,s,lec:isLecture(s)})));
+  if(f==="lec") rows=rows.filter(r=>r.lec); else if(f==="sa") rows=rows.filter(r=>!r.lec);
+  rows.sort((x,y)=>(x.s.start||"99").localeCompare(y.s.start||"99") || x.m.name.localeCompare(y.m.name));
+  const ix = id => ppl.findIndex(m=>m.id===id);
+  const body = rows.map(({m,s,lec})=>{ const off=slotOff(m.id,d,s.id), done=isSlotDone(d,s.id), st=shState(slotShift(m.id,d,s.id)), a=toMin(s.start), b=toMin(s.end)||(a!=null?a+90:null);
+    const isNow = a!=null && cur>=a && cur<b, past = b!=null && cur>=b;
+    const late = lec && !off && !done && !adminLec(s) && stepsFor(d).some(x=>stepState(d,s,x,marksOf(d,s.id)[x[0]])==="late");
+    const pill = off ? (off.kind==="sheikh" ? `<span class="pill gray">اعتذر الشيخ</span>` : /^emg_/.test(off.id||"") ? `<span class="pill gold">بديل طارئ</span>` : `<span class="pill gray">${esc(okLabel(off))}</span>`)
+      : done ? `<span class="pill ok">✓ تمت</span>` : late ? `<span class="pill bad">خطوات متأخرة</span>` : st==="on" ? `<span class="pill acct">في الدوام</span>`
+      : isNow ? `<span class="pill bad">الآن — لم يبدأ</span>` : past ? `<span class="pill bad">لم تُنجز</span>` : `<span class="pill">لم يبدأ</span>`;
+    const l=lec?lecOf(s):null, z=l&&safeUrl(l.zoom), sh=l&&safeUrl(l.sheet);
+    return `<tr class="${isNow&&!off?"nowr":""}${off||done?" dim":""}"><td class="tm">${s.start?esc(t12(s.start))+(s.end?`<small>${esc(t12(s.end))}</small>`:""):"—"}</td>
+      <td><b>${lec?"🎓 ":""}${esc(s.label)}</b>${l&&l.sheikh?` <span class="shk">${esc(l.sheikh)}</span>`:""}${s.cover?` <span class="pill gold">بديل عن ${esc(nameOf(s.cover))}</span>`:""}</td>
+      <td class="who">${avatar(m,ix(m.id))}${esc(m.name)}</td><td>${pill}</td>
+      <td class="lk">${z?`<a href="${esc(z)}" target="_blank" rel="noopener noreferrer" title="فتح زووم">🎥</a>`:""}${sh?`<a href="${esc(sh)}" target="_blank" rel="noopener noreferrer" title="شيت الحضور">📊</a>`:""}${asBtn(m.id).replace("👁 شاشته","👁")}</td></tr>`; }).join("");
+  const seg = isAdmin() ? `<div class="seg sm" style="width:auto">${[["all","الكل"],["lec","المحاضرات"],["sa","شئون الطلاب"]].map(([k,l])=>`<button class="${k===f?"on":""}" data-a="dtf" data-v="${k}">${l}</button>`).join("")}</div>` : "";
+  return `<div class="card dtab"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><h2 class="grow" style="margin:0">📋 جدول ${d===today()?"اليوم":esc(fmtDay(d))} <small class="sub">· ${rows.length}</small></h2>${seg}</div>
+  ${rows.length?`<div class="tsw-scroll"><table class="dt"><thead><tr><th>الوقت</th><th>الشغل</th><th>المسئول</th><th>الحالة</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`:`<div class="empty">لا يوجد شغل مجدول.</div>`}</div>`; }
 function viewTeamToday(){
   const d=S.day||today(); const ppl=team();
   const mineSl=slotsOf(S.me.id,d);
@@ -932,6 +963,7 @@ function viewTeamToday(){
   return `<div class="row"><div class="grow"><h1>${d===today()?"متابعة اليوم":DAYS[dayIdx(parse(d))]}</h1>${d===today()?"":datesHtml(d)}<p class="sub">من أنجز شغله، ومن يحتاج ردك</p></div><input type="date" data-a="day" value="${esc(d)}" style="width:auto"></div>
   ${d===today()?heldAdminCard():""}
   ${daySummary(d)}
+  ${dayTable(d)}
   ${d===today()?riskCard():""}
   ${reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button></div></div></div>`).join("")}</div>`:""}
   ${needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>`<div class="item"><div class="what"><b>${esc(m.name)}</b><div class="prob">${esc(p.note)}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button></div></div></div>`).join("")}</div>`:""}
@@ -1412,6 +1444,7 @@ document.addEventListener("click", async e=>{
     try { await navigator.clipboard.writeText(u); toast("نُسخ رابط زووم."); }
     catch(err){ open(`<h2>رابط زووم</h2><p class="sub" style="font-size:13px">اضغط على الرابط ثم انسخه.</p><input id="zl" dir="ltr" readonly value="${esc(u)}"><div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`); const i=document.getElementById("zl"); if(i){ i.focus(); i.select(); } }
     return; }
+  if(a==="dtf"){ S.dtf=el.dataset.v; render(); return; }
   if(a==="sdept"){ S.sdept=el.dataset.v; S.sper=""; render(); return; }
   if(a==="sper0"){ S.sper=""; render(); return; }
   if(a==="smode"){ S.smode=el.dataset.v; render(); return; }
