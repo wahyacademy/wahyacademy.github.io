@@ -71,6 +71,13 @@ h2{font-size:18px;margin:0 0 10px;color:var(--brand-deep)}
 .dt tr{display:grid;grid-template-columns:58px 1fr auto;grid-template-areas:"tm ti ti" "tm wh wh" "tm st lk";column-gap:10px;row-gap:6px;padding:11px 6px;border-bottom:1px solid #EDF1F6}
 .dt td{border:0;padding:0;background:none!important}.dt td.tm{grid-area:tm}.dt td:nth-child(2){grid-area:ti}.dt td.who{grid-area:wh;font-size:13px;color:#475569}.dt td:nth-child(4){grid-area:st}.dt td.lk{grid-area:lk}
 .dt tr.nowr{background:#EAF3FB;box-shadow:inset -4px 0 0 #F7B717}.dt tr.nowr td.tm{box-shadow:none}}.dt tr.nowr td.tm{box-shadow:inset -4px 0 0 #F7B717}.dt tr.dim td{opacity:.62}.dt .shk{font-size:12px}
+.rsec{font-size:12.5px;color:#64748B;margin:16px 0 4px;border-top:1px solid #E2E8F0;padding-top:10px}.q{margin:12px 0 4px;font-weight:700;font-size:14.5px}
+.yn{display:flex;gap:6px;margin:4px 0}.yn button{flex:1;border:1.5px solid #CBD5E1;background:#fff;border-radius:10px;padding:8px;font:inherit;font-weight:700;color:#334155;cursor:pointer}
+.yn button.on.y{background:#FEF2F2;border-color:#F87171;color:#991B1B}.yn button.on.n{background:#ECFDF3;border-color:#4ADE80;color:#166534}
+.fx{background:#F4F7FB;border-radius:10px;padding:8px 12px;font-size:13.5px;margin:4px 0 6px}.fx b{color:var(--brand)}.prev{font-size:12px;color:#64748B;margin-top:2px}
+.tchips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}.tchip{display:inline-flex!important;flex-direction:row!important;align-items:center;gap:4px;margin:0!important;background:#F4F7FB;border-radius:999px;padding:4px 10px;font-size:13px;font-weight:600}.tchip input{width:auto;margin:0}
+.rep .rc.bad{background:#FEF2F2;border-color:#FCA5A5}.rep .rc.bad b{color:#991B1B}.rep .rc small{display:block}
+.rflag{border-right:4px solid #EF4444;background:#FEF2F2;border-radius:8px;padding:6px 10px;margin:6px 0 0;font-size:13.5px}.rflag b{color:#991B1B}.rok{font-size:13px;color:#166534;margin-top:6px}
 .pick{display:inline-flex;flex-direction:row;align-items:center;gap:4px;margin:0;font-size:15px}.pick select{width:auto;min-width:150px;padding:5px 8px;font-size:13.5px}
 .tsctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.seg.sm{margin:0;padding:3px}.seg.sm button{padding:6px 12px;font-size:13.5px}.wnav{display:flex;gap:4px}
 .dchips{display:grid;grid-template-columns:repeat(7,minmax(92px,1fr));gap:8px;overflow-x:auto;padding-bottom:2px}
@@ -778,18 +785,85 @@ function dutyBar(d, s, mid, mine){ if(!s.start || d<SLOT_DUTY_SINCE) return "";
   if(st==="open") return `<div class="dbar"><span class="pill bad">دوام بلا نهاية</span>${ltp}<small class="sub">بدأ ${esc(t12(sh.start))}</small></div>`;
   return `<div class="dbar done"><span class="pill">${isLecture(s)?"الدوام":"من"} ${esc(t12(sh.start))} – ${esc(t12(sh.end))} · ${dur(shMin(sh))}</span>${ltp}${svTag("clk:"+s.id)}</div>`; }
 // سطر ملخص تقرير المحاضرة
-function repLine(rp){ if(!rp) return ""; const tl=x=>x?t12(x):"—"; const c=(l,v)=>`<div class="rc"><small>${l}</small><b>${esc(String(v))}</b></div>`;
+function repLineV1(rp){ if(!rp) return ""; const tl=x=>x?t12(x):"—"; const c=(l,v)=>`<div class="rc"><small>${l}</small><b>${esc(String(v))}</b></div>`;
   const n=(l,v)=>v?`<div class="rn"><b>${l}:</b> ${esc(v)}</div>`:"";
   return `<div class="rep"><h4>📝 تقرير المحاضرة</h4><div class="rg">${c("الحضور على زووم",rp.zoomN)}${c("دخول الشيخ",tl(rp.sheikhIn))}${c("خروج الشيخ",tl(rp.sheikhOut))}${c("الصوت والصورة",REPORT_Q[rp.quality]||"—")}</div>${n("مشاكل تقنية",rp.tech)}${n("الطلاب",rp.students)}${n("ملاحظات المنظّم",rp.notes)}</div>`; }
-function reportForm(d,s){ const rp=(slotTask(d,s.id)||{}).report||{}, q=rp.quality||"";
-  return `<h2>📝 تقرير المحاضرة</h2><p class="sub">${esc(s.label)}</p>
-  <label>عدد الحضور على زووم<input id="r_zoomN" type="number" min="0" inputmode="numeric" value="${rp.zoomN!=null?esc(String(rp.zoomN)):""}"></label>
-  <div class="row"><label class="grow">الشيخ دخل الساعة<input id="r_in" type="time" value="${esc(rp.sheikhIn||"")}"></label><label class="grow">وخرج الساعة<input id="r_out" type="time" value="${esc(rp.sheikhOut||"")}"></label></div>
-  <label>جودة الصوت والصورة<select id="r_q"><option value="">اختر</option>${Object.entries(REPORT_Q).map(([k,l])=>`<option value="${k}" ${q===k?"selected":""}>${l}</option>`).join("")}</select></label>
-  <label>مشاكل تقنية حصلت (اختياري)<textarea id="r_tech">${esc(rp.tech||"")}</textarea></label>
-  <label>أسئلة أو ملاحظات مهمة من الطلاب (اختياري)<textarea id="r_st">${esc(rp.students||"")}</textarea></label>
-  <label>ملاحظات المنظّم (اختياري)<textarea id="r_notes">${esc(rp.notes||"")}</textarea></label>
-  <div class="row"><button class="btn" data-a="sendReport" data-id="${esc(s.id)}">إرسال التقرير</button><button class="btn ghost" data-a="close">إلغاء</button></div>`; }
+// ===== تقرير المحاضرة الجديد (v2) — قرار المستخدم 13 نوفمبر =====
+const TECH_C = {audio:"انقطاع أو ضعف الصوت", video:"مشكلة في الصورة أو الشاشة", net:"انقطاع الإنترنت", link:"مشكلة في الرابط أو الدخول", rec:"مشكلة في التسجيل", other:"أخرى"};
+const YN_Q = [["techSh","هل حدثت مشكلة تقنية لدى الشيخ؟",true],["techOrg","هل حدثت مشكلة تقنية لدى المنظّم؟",true],["odd","هل حدث في المحاضرة شيء خلاف الطبيعي؟"],["offq","هل سأل أحد الطلاب أسئلة خارج محتوى المحاضرة؟"],["req","هل طلب الشيخ توجيهًا للإدارة أو تنبيهًا للطلاب أو تكليفات؟"]];
+const YN_FLAG = {techSh:"مشكلة تقنية لدى الشيخ", techOrg:"مشكلة تقنية لدى المنظّم", odd:"حدث خلاف الطبيعي", offq:"أسئلة خارج المحتوى", req:"طلب من الشيخ"};
+const GRACE = 5;
+const hmOf = (v,d) => typeof v==="number" ? fromMin(cairoMinOf(v,d)) : "";
+// تأخر الشيخ وموعد الإنهاء مقارنةً بموعد المحاضرة (سماح 5 دقائق)
+function timing(s, rp){ const a=toMin(s&&s.start), b=toMin(s&&s.end), i=toMin(rp.sheikhIn), o=toMin(rp.sheikhOut), r={};
+  if(a!=null && i!=null){ r.late=i-a; r.inTxt = r.late>GRACE ? "تأخر "+r.late+" د" : "في الموعد"; r.inBad=r.late>GRACE; }
+  if(b!=null && o!=null){ r.over=o-b; r.outTxt = r.over>GRACE ? "بعد الموعد بـ "+r.over+" د" : r.over<-GRACE ? "قبل الموعد بـ "+(-r.over)+" د" : "في موعده"; r.outBad=Math.abs(r.over)>GRACE; }
+  return r; }
+const attPct = rp => rp.base ? Math.round((Number(rp.zoomN)||0)*100/rp.base) : null;
+const mismatch = rp => rp.sheetN!=null && rp.zoomN!=null && Math.abs(rp.zoomN-rp.sheetN) > Math.max(3, Math.round(rp.zoomN*0.25));
+function repFlags(rp){ if(!rp || rp.v!==2) return []; const f=YN_Q.filter(([k])=>rp[k]==="y").map(([k])=>YN_FLAG[k]); if(mismatch(rp)) f.push("فرق بين زووم والشيت"); return f; }
+const slotOfTask = t => S.slots.find(x=>x.id===t.slot) || S.slots.find(x=>t.slot && t.slot.endsWith(x.id));
+function prevReport(s, d){ const lec=s&&s.lec; if(!lec) return null;
+  return S.tasks.filter(t=>/^sch_/.test(t.id) && t.report && t.report.v===2 && (t.due||"")<d && ((slotOfTask(t)||{}).lec===lec)).sort((a,b)=>b.due.localeCompare(a.due))[0] || null; }
+function ynBlock(k, q, tech, rp){ const val=rp[k]||"";
+  return `<div class="q">${q}</div><input type="hidden" id="yn_${k}" value="${esc(val)}"><div class="yn"><button type="button" class="${val==="y"?"on y":""}" data-a="yn" data-k="${k}" data-v="y">نعم</button><button type="button" class="${val==="n"?"on n":""}" data-a="yn" data-k="${k}" data-v="n">لا</button></div>
+  <div id="dw_${k}" ${val==="y"?"":"hidden"}>${tech?`<div class="tchips">${Object.entries(TECH_C).map(([c,l])=>`<label class="tchip"><input type="checkbox" class="tc_${k}" value="${c}" ${(rp[k+"C"]||"").split(",").includes(c)?"checked":""}> ${l}</label>`).join("")}</div>`:""}<textarea id="d_${k}" placeholder="${tech?"تفاصيل (اختياري إذا اخترت نوع المشكلة)":"اكتب التفاصيل (مطلوب)"}">${esc(rp[k+"D"]||"")}</textarea></div>`; }
+function reportForm(d,s){ const t=slotTask(d,s.id)||{}, old=t.report||{}, rp=old.v===2?old:{}, mk=t.marks||{}, pv=(prevReport(s,d)||{}).report||{};
+  const tin=rp.sheikhIn||hmOf(mk.rec,d)||old.sheikhIn||"", tout=rp.sheikhOut||hmOf(mk.close,d)||old.sheikhOut||"";
+  const sh = rp.share ? rp : pv.share ? pv : {}, keep = !rp.share && !!pv.share;
+  return `<h2>📝 تقرير المحاضرة</h2><p class="sub">${esc(s.label)} · ${esc(DAYS[dayIdx(parse(d))])} ${s.start?esc(t12(s.start))+" – "+esc(t12(s.end)):""}</p>
+  <div class="rsec">التوقيت</div>
+  <div class="row"><label class="grow">الشيخ دخل الساعة<input id="r_in" type="time" value="${esc(tin)}"></label><label class="grow">وأنهى الساعة<input id="r_out" type="time" value="${esc(tout)}"></label></div>
+  <small class="sub">${mk.rec||mk.close?"مكتوب تلقائيًا من وقت تعليمك للخطوات — عدّله إن لزم. ":""}يُحسب التأخير مقارنةً بموعد المحاضرة.</small>
+  <div class="rsec">الحضور</div>
+  <label>متوسط عدد الحضور على زووم<input id="r_zoomN" type="number" min="0" inputmode="numeric" value="${rp.zoomN!=null?esc(String(rp.zoomN)):""}"></label>
+  <div class="fx">عدد طلاب ${/مجلس/.test(s.label)?"المجلس":"الدورة"} الأساسي يُحسب تلقائيًا من شيت الحضور${pv.base?` (آخر عدد: <b>${pv.base}</b>)`:""}.</div>
+  <div class="rsec">سير المحاضرة</div>
+  ${YN_Q.map(([k,q,tech])=>ynBlock(k,q,tech,rp)).join("")}
+  <div class="rsec">المحتوى</div>
+  <label>إلى أين وصلنا في ${/مجلس/.test(s.label)?"المجلس":"الدورة"}؟<textarea id="r_prog">${esc(rp.progress||"")}</textarea></label>${pv.progress?`<div class="prev">الأسبوع الماضي: «${esc(pv.progress)}»</div>`:""}
+  <div class="q">الشير</div>
+  ${keep?`<div class="fx" id="sh_sum">الأسبوع الماضي: ${pv.share==="y"?`<b>يوجد شير</b> · يقوم به <b>${pv.shareBy==="org"?"المنظّم":"الشيخ"}</b>${pv.shareBook?` · الكتاب: <b>${esc(pv.shareBook)}</b>`:""}`:"<b>لا يوجد شير</b>"}</div>
+    <div class="yn"><button type="button" class="on n" data-a="shKeep" data-v="1">✓ كما هو</button><button type="button" data-a="shKeep" data-v="0">تغيّر</button></div>`:""}
+  <div id="sh_ed" ${keep?"hidden":""}><input type="hidden" id="yn_share" value="${esc(sh.share||"")}"><div class="yn"><button type="button" class="${sh.share==="y"?"on y":""}" data-a="yn" data-k="share" data-v="y">يوجد شير</button><button type="button" class="${sh.share==="n"?"on n":""}" data-a="yn" data-k="share" data-v="n">لا يوجد</button></div>
+    <div id="dw_share" ${sh.share==="y"?"":"hidden"}><div class="row"><label class="grow">يقوم به<select id="r_shBy"><option value="sheikh" ${sh.shareBy!=="org"?"selected":""}>الشيخ</option><option value="org" ${sh.shareBy==="org"?"selected":""}>المنظّم</option></select></label><label class="grow">اسم الكتاب<input id="r_shBook" value="${esc(sh.shareBook||"")}"></label></div></div></div>
+  <input type="hidden" id="sh_keep" value="${keep?"1":""}" data-share="${esc(pv.share||"")}" data-by="${esc(pv.shareBy||"")}" data-book="${esc(pv.shareBook||"")}">
+  <label style="margin-top:10px">ملاحظات عن محاضرة اليوم (اختياري)<textarea id="r_notes">${esc(rp.notes||"")}</textarea></label>
+  <div class="row" style="margin-top:12px"><button class="btn" data-a="sendReport" data-id="${esc(s.id)}">إرسال التقرير</button><button class="btn ghost" data-a="close">إلغاء</button></div>`; }
+function collectReport(){ const r={v:2, zoomN:v("r_zoomN"), sheikhIn:v("r_in"), sheikhOut:v("r_out"), progress:v("r_prog"), notes:v("r_notes")};
+  if(r.zoomN==="" || !r.sheikhIn || !r.sheikhOut) return "اكتب وقت دخول الشيخ وإنهائه ومتوسط عدد الحضور على زووم.";
+  for(const [k,q,tech] of YN_Q){ const a=v("yn_"+k); if(!a) return "أجب عن: "+q; r[k]=a;
+    if(a==="y"){ r[k+"D"]=v("d_"+k); if(tech) r[k+"C"]=[...document.querySelectorAll(".tc_"+k+":checked")].map(x=>x.value).join(",");
+      if(!r[k+"D"] && !(tech && r[k+"C"])) return "اكتب تفاصيل: "+q; } }
+  const kp=document.getElementById("sh_keep");
+  if(kp && kp.value==="1"){ r.share=kp.dataset.share; if(r.share==="y"){ r.shareBy=kp.dataset.by; r.shareBook=kp.dataset.book; } }
+  else { r.share=v("yn_share"); if(!r.share) return "أجب: هل يوجد شير؟"; if(r.share==="y"){ r.shareBy=v("r_shBy"); r.shareBook=v("r_shBook"); } }
+  r.zoomN=Number(r.zoomN); return r; }
+// عرض التقرير
+function repLine(rp, s){ if(!rp) return ""; if(rp.v!==2) return repLineV1(rp);
+  const tm=timing(s||{}, rp), pc=attPct(rp), c=(l,b,sub,bad)=>`<div class="rc${bad?" bad":""}"><small>${l}</small><b>${esc(String(b))}</b>${sub?`<small>${esc(sub)}</small>`:""}</div>`;
+  const flags=YN_Q.filter(([k])=>rp[k]==="y").map(([k])=>`<div class="rflag"><b>${YN_FLAG[k]}:</b> ${rp[k+"C"]?esc(rp[k+"C"].split(",").map(x=>TECH_C[x]||x).join("، "))+(rp[k+"D"]?" — ":""):""}${esc(rp[k+"D"]||"")}</div>`).join("");
+  const no=YN_Q.filter(([k])=>rp[k]==="n").map(([k])=>"لا "+YN_FLAG[k].replace(/^حدث /,"شيء ").replace("طلب من الشيخ","طلبات من الشيخ")).join(" · ");
+  return `<div class="rep"><h4>📝 تقرير المحاضرة</h4><div class="rg">${c("دخول الشيخ",t12(rp.sheikhIn),tm.inTxt,tm.inBad)}${c("الإنهاء",t12(rp.sheikhOut),tm.outTxt,tm.outBad)}${c("الحضور على زووم",rp.base?rp.zoomN+" / "+rp.base:rp.zoomN,pc!=null?pc+"%":"")}${rp.sheetN!=null?c("«حضور» في الشيت",rp.sheetN,mismatch(rp)?"فرق كبير عن زووم":"",mismatch(rp)):""}</div>
+  ${flags}${no?`<div class="rok">✓ ${esc(no)}</div>`:""}${rp.progress?`<div class="rn"><b>وصلنا إلى:</b> ${esc(rp.progress)}</div>`:""}
+  <div class="rn"><b>الشير:</b> ${rp.share==="y"?"يوجد — يقوم به "+(rp.shareBy==="org"?"المنظّم":"الشيخ")+(rp.shareBook?" — "+esc(rp.shareBook):""):rp.share==="n"?"لا يوجد":"—"}</div>${rp.notes?`<div class="rn"><b>ملاحظات:</b> ${esc(rp.notes)}</div>`:""}</div>`; }
+// طلبات المشايخ من التقارير: تُحوَّل لمهمة أو يُرد عليها (للمسئول ورئيس القسم)
+function sheikhReqs(){ const ids=new Set(team().map(m=>m.id).concat([S.me.id])), from=addDays(today(),-14);
+  return S.tasks.filter(t=>/^sch_/.test(t.id) && t.report && t.report.v===2 && t.report.req==="y" && (t.due||"")>=from && ids.has(t.assignee) && !S.tasks.some(x=>x.id==="rq_"+t.id)).sort((a,b)=>b.due.localeCompare(a.due)); }
+function sheikhReqCard(){ const L=sheikhReqs(); if(!L.length) return ""; const ppl=[S.me].concat(team().filter(m=>m.active!==false));
+  return `<div class="card"><h2>🗣 طلبات من المشايخ (${L.length})</h2>${L.map(t=>`<div class="item"><div class="what"><b>${esc(t.title||"")}</b><small>${esc(fmtDay(t.due))} · ${esc(nameOf(t.assignee))}</small><div class="prob">${esc(t.report.reqD||"")}</div>
+    <div class="row" style="margin-top:6px;flex-wrap:wrap;gap:6px"><select id="rqm_${esc(t.id)}" style="width:auto">${ppl.map(m=>`<option value="${esc(m.id)}">${m.id===S.me.id?"أنا":esc(m.name)}</option>`).join("")}</select><button class="btn sm" data-a="rqTask" data-id="${esc(t.id)}">حوّله لمهمة</button>
+    <input id="rqr_${esc(t.id)}" placeholder="أو اكتب ما تم" class="grow" style="width:auto;min-width:140px"><button class="btn sm ghost" data-a="rqDone" data-id="${esc(t.id)}">✓ تم</button></div></div></div>`).join("")}</div>`; }
+// سجل المجلس + تقرير المشايخ الشهري
+function lecReportsOf(lec){ return S.tasks.filter(t=>/^sch_/.test(t.id) && t.report && (slotOfTask(t)||{}).lec===lec).sort((a,b)=>b.due.localeCompare(a.due)); }
+function lecHistory(lec){ const l=S.lectures.find(x=>x.id===lec)||{}, L=lecReportsOf(lec);
+  return `<h2>📖 سجل ${esc(l.name||"المحاضرة")}</h2><p class="sub">${esc(l.sheikh||"")} · ${L.length} تقرير</p>${L.length?`<div class="tsw-scroll"><table class="dt"><thead><tr><th>التاريخ</th><th>المنظّم</th><th>دخول الشيخ</th><th>الإنهاء</th><th>الحضور</th><th>وصلنا إلى</th><th></th></tr></thead><tbody>${L.map(t=>{ const rp=t.report, s=slotOfTask(t)||l, tm=timing(s,rp), pc=attPct(rp), f=repFlags(rp);
+    return `<tr><td class="tm">${esc(fmtDay(t.due))}</td><td>${esc(nameOf(t.assignee))}</td><td>${esc(t12(rp.sheikhIn||""))}${tm.inTxt?`<small class="${tm.inBad?"late":"sub"}"> ${esc(tm.inTxt)}</small>`:""}</td><td>${esc(t12(rp.sheikhOut||""))}${tm.outTxt?`<small class="${tm.outBad?"late":"sub"}"> ${esc(tm.outTxt)}</small>`:""}</td><td>${rp.zoomN!=null?rp.zoomN:"—"}${rp.base?" / "+rp.base:""}${pc!=null?` <small class="sub">${pc}%</small>`:""}</td><td>${esc(rp.progress||"")}</td><td>${f.length?`<span class="pill bad" title="${esc(f.join("، "))}">⚠️ ${f.length}</span>`:""}</td></tr>`; }).join("")}</tbody></table></div>`:`<div class="empty">لا توجد تقارير بعد.</div>`}<div class="row" style="margin-top:10px"><button class="btn ghost" data-a="close">إغلاق</button></div>`; }
+function sheikhMonthly(list){ const g={};
+  list.filter(t=>t.report && t.report.v===2).forEach(t=>{ const s=slotOfTask(t), l=lecOf(s)||{}, k=(l.sheikh||"—").trim(); const rp=t.report, tm=timing(s||{},rp), pc=attPct(rp);
+    const o=g[k]||(g[k]={n:0,on:0,lateSum:0,lateN:0,pcs:[],tech:0,end:0}); o.n++; if(tm.late!=null){ if(tm.late<=GRACE) o.on++; else { o.lateSum+=tm.late; o.lateN++; } } if(pc!=null) o.pcs.push(pc); if(rp.techSh==="y") o.tech++; if(tm.outBad) o.end++; });
+  const rows=Object.entries(g).sort((a,b)=>b[1].n-a[1].n);
+  return rows.length?`<div class="card"><h2>👳 تقرير المشايخ — الشهر</h2><div class="tsw-scroll"><table class="dt"><thead><tr><th>الشيخ</th><th>محاضرات</th><th>الالتزام بموعد الدخول</th><th>متوسط التأخير</th><th>متوسط الحضور</th><th>إنهاء خارج الموعد</th><th>مشاكل تقنية لديه</th></tr></thead><tbody>${rows.map(([k,o])=>`<tr><td><b>${esc(k)}</b></td><td>${o.n}</td><td><span class="pill ${o.on/o.n>=.9?"ok":o.on/o.n>=.7?"gold":"bad"}">${Math.round(o.on*100/o.n)}%</span></td><td>${o.lateN?Math.round(o.lateSum/o.lateN)+" د":"—"}</td><td>${o.pcs.length?Math.round(o.pcs.reduce((a,b)=>a+b,0)/o.pcs.length)+"%":"—"}</td><td>${o.end||"—"}</td><td>${o.tech||"—"}</td></tr>`).join("")}</tbody></table></div><p class="sub" style="font-size:12.5px">من التقارير الجديدة فقط · سماح ${GRACE} دقائق.</p></div>`:""; }
 // المحاضرة المفتوحة: أول محاضرة لم تنتهِ بعد (خطواتها + إنهاء دوامها)؛ والباقي مطويّ ويُفتح بالضغط (قرار المستخدم 6 نوفمبر)
 const LOPEN = new Set(), LCLOSED = new Set();
 function lecFinished(mid, d, s){ const off=slotOff(mid,d,s.id);
@@ -836,7 +910,7 @@ function slotRow(d,s,mid,mine){
       const lbl=stepLabel(st,s), q=(lbl.match(/«([^»]+)»/)||[])[1], cp=q||lbl;
       const inner = `<span class="bx">${v?"✓":ix+1}</span><span class="tx">${esc(lbl)}</span><span class="tm">${esc(tm)}</span>${tag?`<span class="tg">${tag}</span>`:""}${svTag(s.id+":"+k)}`;
       return mine ? `<div class="stp ${ss}" role="button" tabindex="0" data-a="${k==="report"?"report":"mark"}" data-id="${esc(s.id)}" data-k="${k}" aria-pressed="${!!v}">${inner}</div>` : `<span class="stp ${ss}">${inner}</span>`; }).join("")}</div>
-    ${repLine((slotTask(d,s.id)||{}).report)}${pr.map(probHtml).join("")}</div>`; }
+    ${repLine((slotTask(d,s.id)||{}).report, s)}${pr.map(probHtml).join("")}</div>`; }
   const hasDuty = !!s.start && d>=SLOT_DUTY_SINCE;
   return `<div class="item ${done?"done":""}">
     ${mine && !hasDuty?`<button class="chk ${done?"on":""}" data-a="slot" data-id="${esc(s.id)}" aria-label="تم">✓</button>`:`<span class="chk ${done?"on":""}" aria-hidden="true">✓</span>`}
@@ -946,10 +1020,10 @@ function dayTable(d){
     const pill = off ? (off.kind==="sheikh" ? `<span class="pill gray">اعتذر الشيخ</span>` : /^emg_/.test(off.id||"") ? `<span class="pill gold">بديل طارئ</span>` : `<span class="pill gray">${esc(okLabel(off))}</span>`)
       : done ? `<span class="pill ok">✓ تمت</span>` : late ? `<span class="pill bad">خطوات متأخرة</span>` : st==="on" ? `<span class="pill acct">في الدوام</span>`
       : isNow ? `<span class="pill bad">الآن — لم يبدأ</span>` : past ? `<span class="pill bad">لم تُنجز</span>` : `<span class="pill">لم يبدأ</span>`;
-    const l=lec?lecOf(s):null, z=l&&safeUrl(l.zoom), sh=l&&safeUrl(l.sheet);
+    const l=lec?lecOf(s):null, z=l&&safeUrl(l.zoom), sh=l&&safeUrl(l.sheet), rf=off?[]:repFlags((slotTask(d,s.id)||{}).report);
     return `<tr class="${isNow&&!off?"nowr":""}${off||done?" dim":""}"><td class="tm">${s.start?esc(t12(s.start))+(s.end?`<small>${esc(t12(s.end))}</small>`:""):"—"}</td>
       <td><b>${lec?"🎓 ":""}${esc(s.label)}</b>${l&&l.sheikh?` <span class="shk">${esc(l.sheikh)}</span>`:""}${s.cover?` <span class="pill gold">بديل عن ${esc(nameOf(s.cover))}</span>`:""}</td>
-      <td class="who">${avatar(m,ix(m.id))}${esc(m.name)}</td><td>${pill}</td>
+      <td class="who">${avatar(m,ix(m.id))}${esc(m.name)}</td><td>${pill}${rf.length?` <span class="pill bad" title="${esc(rf.join("، "))}">⚠️ ${rf.length} في التقرير</span>`:""}</td>
       <td class="lk">${z?`<a href="${esc(z)}" target="_blank" rel="noopener noreferrer" title="فتح زووم">🎥</a>`:""}${sh?`<a href="${esc(sh)}" target="_blank" rel="noopener noreferrer" title="شيت الحضور">📊</a>`:""}${asBtn(m.id).replace("👁 شاشته","👁")}</td></tr>`; }).join("");
   const seg = isAdmin() ? `<div class="seg sm" style="width:auto">${[["all","الكل"],["lec","المحاضرات"],["sa","شئون الطلاب"]].map(([k,l])=>`<button class="${k===f?"on":""}" data-a="dtf" data-v="${k}">${l}</button>`).join("")}</div>` : "";
   return `<div class="card dtab"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><h2 class="grow" style="margin:0">📋 جدول ${d===today()?"اليوم":esc(fmtDay(d))} <small class="sub">· ${rows.length}</small></h2>${seg}</div>
@@ -968,10 +1042,11 @@ function viewTeamToday(){
   ${d===today()?riskCard():""}
   ${reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button></div></div></div>`).join("")}</div>`:""}
   ${needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>`<div class="item"><div class="what"><b>${esc(m.name)}</b><div class="prob">${esc(p.note)}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button></div></div></div>`).join("")}</div>`:""}
+  ${d===today()?sheikhReqCard():""}
   ${mineSl.length?`<div class="card"><h2>شغلي اليوم</h2>${mineSl.map(s=>slotRow(d,s,S.me.id,d===today())).join("")}</div>`:""}
   <div class="card"><h2>الفريق</h2>${rows.length? rows.map(({m,sl,exp,dn,pr,late})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${esc(DEPTS[m.dept]||"")}</small></span>${asBtn(m.id)}${dutyPill(m.id,d)}${pr.length?`<span class="pill gold">⚠️ ${pr.length}</span>`:""}${late?`<span class="pill bad">${late} متأخرة</span>`:""}${exp.length?`<span class="pill ${dn===exp.length?"ok":""}">${dn} من ${exp.length}</span>`:""}</summary>
     <div class="mini">${sl.map(s=>{ const off=slotOff(m.id,d,s.id), ok=isSlotDone(d,s.id), lec=isLecture(s);
-      return `<span class="${ok?"d":"u"}">${off?"—":ok?"✓":"○"} ${s.start?esc(t12(s.start))+" — ":""}${esc(s.label)}${off?` (${off.kind==="sheikh"?"اعتذر الشيخ":"معتذر"})`:lec&&!ok?` (${markCount(d,s.id)} من ${stepsFor(d).length}: ${stepsFor(d).filter(([k])=>!marksOf(d,s.id)[k]).map(x=>stepLabel(x,s)).join("، ")} ناقص)`:""}${repLine((slotTask(d,s.id)||{}).report)}${lec && d>=today() && canEmg(m.id) ? (off && /^emg_/.test(off.id||"") ? ` <button class="btn sm ghost" data-a="emgUndo" data-id="${esc(off.id)}">↩ إلغاء البديل</button>` : off && off.kind==="sheikh" ? ` <button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="">↩ تراجع عن اعتذار الشيخ</button>` : !off && !ok ? ` <button class="btn sm ghost warn" data-a="emgOpen" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}">🚨 بديل طارئ</button> <button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="sheikh">🕌 اعتذر الشيخ</button>` : "") : ""}</span>`; }).join("")}${pr.map(probHtml).join("")}</div></details>`).join("") : `<div class="empty">لا يوجد شغل مجدول للفريق في هذا اليوم.</div>`}</div>`;
+      return `<span class="${ok?"d":"u"}">${off?"—":ok?"✓":"○"} ${s.start?esc(t12(s.start))+" — ":""}${esc(s.label)}${off?` (${off.kind==="sheikh"?"اعتذر الشيخ":"معتذر"})`:lec&&!ok?` (${markCount(d,s.id)} من ${stepsFor(d).length}: ${stepsFor(d).filter(([k])=>!marksOf(d,s.id)[k]).map(x=>stepLabel(x,s)).join("، ")} ناقص)`:""}${repLine((slotTask(d,s.id)||{}).report, s)}${lec && d>=today() && canEmg(m.id) ? (off && /^emg_/.test(off.id||"") ? ` <button class="btn sm ghost" data-a="emgUndo" data-id="${esc(off.id)}">↩ إلغاء البديل</button>` : off && off.kind==="sheikh" ? ` <button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="">↩ تراجع عن اعتذار الشيخ</button>` : !off && !ok ? ` <button class="btn sm ghost warn" data-a="emgOpen" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}">🚨 بديل طارئ</button> <button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="sheikh">🕌 اعتذر الشيخ</button>` : "") : ""}</span>`; }).join("")}${pr.map(probHtml).join("")}</div></details>`).join("") : `<div class="empty">لا يوجد شغل مجدول للفريق في هذا اليوم.</div>`}</div>`;
 }
 
 // ملخص اليوم للمسئول: محاضرات اليوم، تمت، متأخرة الآن، اعتذار الشيخ
@@ -1097,7 +1172,8 @@ function viewLecReports(){
   return `${ptitle("تقارير المحاضرات — "+monthName(month)+(who?" — "+nameOf(who):""))}<div class="row noprint"><div class="grow"><h1>تقارير المحاضرات</h1><p class="sub">${list.length} تقرير في ${esc(monthName(month))}</p></div>
     <select data-a="rmem" style="width:auto"><option value="">كل المنظّمين</option>${ppl.map(m=>`<option value="${esc(m.id)}" ${who===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}</select>
     <input type="month" data-a="month" value="${esc(month)}" style="width:auto"><button class="btn ghost" data-a="print">🖨️ طباعة / PDF</button></div>
-  ${list.length?list.map(t=>`<div class="card lrep"><div class="row"><div class="grow"><b class="lt">${esc(t.title||"محاضرة")}</b><small class="sub">${esc(fmtDay(t.due))} · ${esc(nameOf(t.assignee))}</small></div>${t.excused==="sheikh"?`<span class="pill gray">اعتذر الشيخ${t.marks&&t.marks.tgx?" · أُبلغ الطلاب":""}</span>`:t.status==="done"?`<span class="pill ok">✓ تمت</span>`:""}</div>${repLine(t.report)}</div>`).join(""):`<div class="card empty">لا توجد تقارير في هذا الشهر${who?" لهذا المنظّم":""}.</div>`}`;
+  ${who?"":sheikhMonthly(list)}
+  ${list.length?list.map(t=>`<div class="card lrep"><div class="row"><div class="grow"><b class="lt">${esc(t.title||"محاضرة")}</b><small class="sub">${esc(fmtDay(t.due))} · ${esc(nameOf(t.assignee))}</small></div>${repFlags(t.report).length?`<span class="pill bad" title="${esc(repFlags(t.report).join("، "))}">⚠️ ${repFlags(t.report).length}</span>`:""}${t.excused==="sheikh"?`<span class="pill gray">اعتذر الشيخ</span>`:t.status==="done"?`<span class="pill ok">✓ تمت</span>`:""}${(slotOfTask(t)||{}).lec?`<button class="btn sm ghost noprint" data-a="lecHist" data-id="${esc(slotOfTask(t).lec)}">📖 سجل المجلس</button>`:""}</div>${repLine(t.report, slotOfTask(t))}</div>`).join(""):`<div class="card empty">لا توجد تقارير في هذا الشهر${who?" لهذا المنظّم":""}.</div>`}`;
 }
 // استيراد جدول الشهر: مقارنة صفوف الشيت بالمحاضرات الحالية (لا يُطبَّق شيء إلا باختيار المسئول)
 const nrm = t => String(t||"").replace(/[\u064B-\u0652]/g,"").replace(/[أإآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/^(ش|د|أ|ا)\.\s*/,"").replace(/\s+/g,"");
@@ -1320,11 +1396,19 @@ document.addEventListener("click", async e=>{
     if(!dutyOn(me,d,id)) return toast("ابدأ الدوام لهذه المحاضرة أولًا من زر «بدء الدوام».");
     return open(reportForm(d,s)); }
   if(a==="sendReport"){ const s=S.slots.find(x=>x.id===id); if(!s) return;
-    const report={zoomN:v("r_zoomN"), sheikhIn:v("r_in"), sheikhOut:v("r_out"), quality:v("r_q"), tech:v("r_tech"), students:v("r_st"), notes:v("r_notes")};
-    if(report.zoomN==="" || !report.sheikhIn || !report.sheikhOut || !report.quality) return toast("اكتب عدد الحضور ووقت دخول الشيخ وخروجه وجودة الصوت والصورة.");
+    const report=collectReport(); if(typeof report==="string") return toast(report);
     const marks=Object.assign({}, marksOf(d,id), {report:true}); const all=stepsFor(d).every(([x])=>marks[x]);
-    close(); saveFast("tasks", slotDoneId(d,id), {title:s.label, type:"scheduled", assignee:me, due:d, slot:id, marks, report:Object.assign({at:Date.now()},report,{zoomN:Number(report.zoomN)}), status:all?"done":"todo", doneAt:all?d:null}, all?"وصل التقرير واكتملت خطوات المحاضرة، أحسنت.":"وصل التقرير.", id+":report");
+    close(); saveFast("tasks", slotDoneId(d,id), {title:s.label, type:"scheduled", assignee:me, due:d, slot:id, marks, report:Object.assign({at:Date.now()},report), status:all?"done":"todo", doneAt:all?d:null}, all?"وصل التقرير واكتملت خطوات المحاضرة، أحسنت.":"وصل التقرير.", id+":report");
     return; }
+  if(a==="yn"){ const k=el.dataset.k, val=el.dataset.v, h=document.getElementById("yn_"+k); if(h) h.value=val;
+    el.parentNode.querySelectorAll("button").forEach(b=>b.className=b===el?("on "+(val==="y"?"y":"n")):""); const w=document.getElementById("dw_"+k); if(w) w.hidden=val!=="y"; return; }
+  if(a==="shKeep"){ const keep=el.dataset.v==="1"; document.getElementById("sh_keep").value=keep?"1":""; document.getElementById("sh_ed").hidden=keep;
+    el.parentNode.querySelectorAll("button").forEach(b=>b.className=b===el?"on n":""); return; }
+  if(a==="lecHist"){ e.preventDefault(); open(lecHistory(id)); return; }
+  if(a==="rqTask" || a==="rqDone"){ const t0=S.tasks.find(x=>x.id===id); if(!t0) return; const rq=t0.report||{};
+    if(a==="rqTask"){ const who=v("rqm_"+id)||me; el.disabled=true; await save("tasks","rq_"+id,{title:"طلب الشيخ — "+(t0.title||""), type:"assigned", status:"todo", assignee:who, assigner:me, due:today(), output:rq.reqD||"", createdAt:Date.now()}, false); toast("تم تحويل الطلب لمهمة "+(who===me?"لك":"لـ "+nameOf(who))+"."); return; }
+    const r=v("rqr_"+id); if(!r) return toast("اكتب ما تم.");
+    el.disabled=true; await save("tasks","rq_"+id,{title:"طلب الشيخ — "+(t0.title||""), type:"assigned", status:"done", doneAt:today(), assignee:me, assigner:me, due:today(), output:(rq.reqD||"")+" — ما تم: "+r, createdAt:Date.now()}, false); toast("سُجّل."); return; }
   if(a==="excuse"){ const s=S.slots.find(x=>x.id===id); if(!s) return; const val=el.dataset.v;
     if(val && !el.dataset.sure) return open(`<h2>اعتذر الشيخ؟</h2><p class="sub">«${esc(s.label)}» ستُسجَّل «اعتذر الشيخ» وتُلغى خطواتها، ومسئول اللجنة يبلّغ الطلاب. يظهر ذلك للمسئول.</p><div class="row"><button class="btn" data-a="excuse" data-id="${esc(id)}" data-v="sheikh" data-sure="1">نعم، اعتذر الشيخ</button><button class="btn ghost" data-a="close">إلغاء</button></div>`);
     close(); saveFast("tasks", slotDoneId(d,id), {title:s.label, type:"scheduled", assignee:me, due:d, slot:id, excused:val}, val?"سُجّل اعتذار الشيخ.":"تم التراجع عن اعتذار الشيخ.", id+":excuse");
