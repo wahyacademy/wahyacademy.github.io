@@ -344,7 +344,6 @@ const STEPS = [
   ["report","تقرير المحاضرة","e",0,null,null],
   ["sheet","تسجيل حضور وغياب الطلاب","e",0,null,null]];
 const stepLabel = (st, s) => st[1].replace("{SHEIKH}", ((lecOf(s)||{}).sheikh||"").trim() || "(لقب واسم المحاضر)");
-const EXCUSE_STEP = ["tgx","إبلاغ الطلاب باعتذار الشيخ في جروب تيليجرام","s",-60,"s",15]; // قرار المستخدم 6 نوفمبر
 const REPORT_Q = {good:"ممتازة", ok:"مقبولة", bad:"فيها مشكلة"};
 const stepsFor = date => date>=STEPS_SINCE ? STEPS : MARKS;
 const REQ = {lecture:"اعتذار عن محاضرة", day:"اعتذار عن يوم", leave:"إجازة", fix:"تصحيح يوم سابق", offer:"رغبة في تنظيم مجلس"};
@@ -362,10 +361,12 @@ const pad = n => String(n).padStart(2,"0");
 const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const parse = s => { const [y,m,d] = String(s).split("-").map(Number); return new Date(y,(m||1)-1,d||1); };
 // التاريخ والوقت بتوقيت القاهرة دائمًا (نفس توقيت الخادم)
-function cairoNow(){ const o={}; new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Cairo",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date()).forEach(x=>o[x.type]=x.value); return {date:o.year+"-"+o.month+"-"+o.day, hm:o.hour+":"+o.minute}; }
+// الوقت الحالي مصحَّحًا بساعة الخادم (لو ساعة الجهاز غلط)
+const NOW = () => Date.now() + (S.skew||0);
+function cairoNow(){ const o={}; new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Cairo",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date(NOW())).forEach(x=>o[x.type]=x.value); return {date:o.year+"-"+o.month+"-"+o.day, hm:o.hour+":"+o.minute}; }
 const today = () => cairoNow().date;
 // الثواني بتوقيت القاهرة منذ منتصف الليل (للعدّاد الحي)
-function cairoSec(){ const o={}; new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(new Date()).forEach(x=>o[x.type]=x.value); return (+o.hour)*3600+(+o.minute)*60+(+o.second); }
+function cairoSec(){ const o={}; new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"}).formatToParts(new Date(NOW())).forEach(x=>o[x.type]=x.value); return (+o.hour)*3600+(+o.minute)*60+(+o.second); }
 // التاريخ الهجري (تقويم أم القرى) والميلادي الكامل
 function hijri(ds){ try{ const [y,m,d]=ds.split("-").map(Number); return new Intl.DateTimeFormat("ar-EG-u-ca-islamic-umalqura-nu-latn",{timeZone:"UTC",day:"numeric",month:"long",year:"numeric"}).format(new Date(Date.UTC(y,m-1,d,12))); }catch(e){ return ""; } }
 const gregFull = ds => { const d=parse(ds); return d.getDate()+" "+MONTHS[d.getMonth()]+" "+d.getFullYear()+" م"; };
@@ -484,12 +485,12 @@ function dutyOn(mid, date, sid){ if(date<SLOT_DUTY_SINCE) return !!activeShift(m
 function slotLate(mid, date, s){ const sh=slotShift(mid,date,s.id); if(!sh||!s.start) return 0; const x=toMin(sh.start)-dutyFrom(s); return x>GOAL.grace ? x : 0; }
 function activeShift(mid){ if(today()>=SLOT_DUTY_SINCE) return S.shifts.find(x=>x.member===mid && x.date===today() && x.slot && x.start && !x.end) || null;
   const t=shiftOf(mid,today()); if(t) return t; const y=shiftOf(mid,addDays(today(),-1));
-  return y && !y.end && Date.now()-(y.startAt||0) < 16*36e5 ? y : null; }
+  return y && !y.end && NOW()-(y.startAt||0) < 16*36e5 ? y : null; }
 function shState(sh){ if(!sh) return "none"; if(sh.end) return "ended"; if(sh.slot) return sh.date===today() ? "on" : "open"; if(sh!==activeShift(sh.member)) return "open"; return sh.breakAt ? "break" : "on"; }
 function shMin(sh){ if(!sh) return 0; let m;
   if(sh.end) m=(toMin(sh.end)-toMin(sh.start)+1440)%1440;
   else if(shState(sh)==="open") return 0;
-  else { m=(Date.now()-(sh.startAt||Date.now()))/6e4; if(sh.breakAt) m-=(Date.now()-sh.breakAt)/6e4; }
+  else { m=(NOW()-(sh.startAt||NOW()))/6e4; if(sh.breakAt) m-=(NOW()-sh.breakAt)/6e4; }
   return Math.max(0, Math.round(m-(sh.breakMin||0))); }
 function firstStart(mid, date){ const st=slotsOf(mid,date).filter(s=>s.start && !slotOff(mid,date,s.id)).map(s=>toMin(s.start)); return st.length?Math.min(...st):null; }
 function lateBy(mid, date){ const sh=shiftOf(mid,date), f=firstStart(mid,date); if(!sh||f==null) return 0; const x=toMin(sh.start)-(f-GOAL.before); return x>GOAL.grace ? x : 0; }
@@ -516,10 +517,11 @@ async function api(action, payload={}){
     return d;
   } catch(e){ if(e && e.reason) throw e; throw {reason:"network"}; } finally { clearTimeout(tm); }
 }
-function apply(d){ if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals"].forEach(k => S[k]=d[k]||[]); S.phase="app"; }
+function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.mailLeft=d.mailLeft; S.phase="app"; }
 async function refresh(quiet){
   const f=document.activeElement; if(quiet && f && /INPUT|TEXTAREA|SELECT/.test(f.tagName) && f.value) return; // لا نمسح ما يكتبه
-  try { const d = await api("load"); if(d.ok){ apply(d); render(); notifyNew(); } else if(d.reason==="not_registered") logout("حسابك ليس ضمن الفريق النشط. راجع مسئول اللجنة."); }
+  if(quiet && PENDING) return; // حفظ جارٍ: لا نكتب فوقه ببيانات أقدم
+  try { const d = await api("load"); if(quiet && PENDING) return; if(d.ok){ apply(d); render(); notifyNew(); } else if(d.reason==="not_registered") logout("حسابك ليس ضمن الفريق النشط. راجع مسئول اللجنة."); }
   catch(e){ if(!quiet && e.reason==="network"){ S.msg="تعذّر الاتصال بالخادم. تأكد من الإنترنت ثم أعد فتح الصفحة."; render(); } }
 }
 // حفظ فوري على الشاشة ثم في الخلفية (بالترتيب لكل عنصر)؛ يرجع كما كان إن فشل الحفظ
@@ -546,7 +548,7 @@ function saveFast(col, id, data, okMsg, tag){ tag=tag||id; SAVING[tag]=(SAVING[t
 const CLOCK_MSG={already_started:"الدوام بدأ بالفعل.", already_ended:"الدوام انتهى بالفعل.", not_started:"لم تبدأ الدوام بعد.", not_today:"هذه المهمة ليست اليوم.", forbidden:"هذه المهمة ليست في جدولك.", paused:"هذه المحاضرة موقوفة مؤقتًا.", marks_missing:"أكمل خطوات التنظيم أولًا."};
 function clockFast(op, slot){ const me=S.me.id, d=today(), id="sh_"+me+"_"+d+"_"+slot, tag="clk:"+slot, now=cairoNow().hm;
   const i=S.shifts.findIndex(x=>x.id===id), prev=i>=0?S.shifts[i]:null;
-  const local=op==="start" ? {id, member:me, date:d, slot, start:now, startAt:Date.now()} : Object.assign({}, prev||{id, member:me, date:d, slot}, {end:now, endAt:Date.now()});
+  const local=op==="start" ? {id, member:me, date:d, slot, start:now, startAt:NOW()} : Object.assign({}, prev||{id, member:me, date:d, slot}, {end:now, endAt:Date.now()});
   if(i>=0) S.shifts[i]=local; else S.shifts.push(local);
   SAVING[tag]=(SAVING[tag]||0)+1; PENDING++; savingUi(); render();
   const run=async()=>{ try { const r=await api("clock",{op,slot}); if(!r.ok) throw r;
@@ -569,11 +571,11 @@ async function remove(col, id){
   try { const d = await api("delete", {col, id}); if(d.ok){ S[col]=S[col].filter(x=>x.id!==id); render(); } else toast("لم يُحذف."); }
   catch(e){ toast("لا يوجد اتصال؛ لم يُحذف."); }
 }
-function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=null; S.dayAt=null; NEWSEEN=null; S.phase="login"; S.msg=msg||""; render(); checkUpdate(true); }
+function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=null; S.as=null; S.asBack=null; S.dayAt=null; NEWSEEN=null; S.phase="login"; S.msg=msg||""; render(); checkUpdate(true); }
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="572d97467eae"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="f1825628df1e"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -610,13 +612,18 @@ function otpBox(){ const o=S.otp||{};
   if(!o.sent) return `<div class="otpq"><label>إيميلك المسجّل لدى مسئول اللجنة<input id="otp_e" type="email" dir="ltr" autocomplete="email" value="${esc(o.email||"")}"></label><div class="row"><button class="btn" data-a="otpSend">أرسل الكود</button></div></div>`;
   return `<div class="otpq"><p class="sub" style="margin:0">أرسلنا كودًا من 6 أرقام إلى <b dir="ltr">${esc(o.email)}</b> (راجع الرسائل غير المرغوب فيها أيضًا).</p><label>الكود<input id="otp_c" inputmode="numeric" maxlength="6" dir="ltr" autocomplete="one-time-code" style="letter-spacing:6px;text-align:center;font-size:20px"></label><div class="row"><button class="btn" data-a="otpVerify">دخول</button><button class="btn ghost" data-a="otpSend" data-again="1">إرسال كود جديد</button></div></div>`; }
 // ---------- العرض ----------
-function render(){ renderInner(); tick(); }
+// ما يُكتب في خانات الرد/القرار/التعليق يبقى عند إعادة الرسم (لا يُرسل ولا يُخزَّن)
+const KEEP_RE = /^(r_|q_|cv_|rqr_|ack_)/;
+function render(){ const keep={}; document.querySelectorAll("#app textarea[id], #app input[id], #app select[id]").forEach(x=>{ if(KEEP_RE.test(x.id) && x.value && x.type!=="hidden") keep[x.id]=x.value; });
+  renderInner();
+  for(const id in keep){ const x=document.getElementById(id); if(x && !x.value) x.value=keep[id]; }
+  tick(); }
 function renderInner(){
   const app=$("#app"), nav=$("#nav");
   $("#outBox").innerHTML = S.me ? `<button class="out" data-a="logout">خروج</button>` : "";
   if(S.phase==="login"){ nav.hidden=true; $("#hday").hidden=true; $("#hd").textContent="أكاديمية وحي · لجنة شئون الطلاب والتنظيم";
     app.innerHTML = `<div class="card login"><h1>أهلًا بك</h1><p class="sub">ادخل بحساب جوجل المسجّل لدى مسئول اللجنة.</p><div id="gbtn"></div><button class="flag" data-a="gprompt">لم تظهر نافذة الدخول؟</button>${otpBox()}${S.msg?`<div class="banner">${esc(S.msg)}</div>`:""}</div>`; mountGoogle(); return; }
-  if(!S.me){ app.innerHTML = `<div class="card empty">جارٍ التحميل…</div>`; return; }
+  if(!S.me){ app.innerHTML = S.msg ? `<div class="card empty">${esc(S.msg)}<div class="row" style="justify-content:center;margin-top:12px"><button class="btn" data-a="retryLoad">⟳ إعادة المحاولة</button></div></div>` : `<div class="card empty">جارٍ التحميل…</div>`; return; }
   $("#hd").textContent = S.me.name + " · " + (ROLES[S.me.role]||"");
   const td=today(), hday=$("#hday"); hday.hidden=false;
   hday.innerHTML = `<div class="hd-date"><b>${DAYS[dayIdx(parse(td))]}</b><span>${esc(gregFull(td))}<i>◆</i>${esc(hijri(td))}</span></div><div class="hclk" aria-label="الساعة بتوقيت القاهرة"><span class="ic"></span><span class="hm" data-live="hm"></span><span class="sx"><span class="ss" data-live="ss"></span><span class="ap" data-live="ap"></span></span></div>`;
@@ -753,21 +760,13 @@ function weekCard(mid){
     <button class="btn sm ghost" data-a="wk" data-v="-1">‹ السابق</button>${S.wk?`<button class="btn sm ghost" data-a="wk" data-v="0">هذا الأسبوع</button>`:""}<button class="btn sm ghost" data-a="wk" data-v="1">التالي ›</button></div>
     <div class="week">${cols}</div></div>`;
 }
-function myStatsCard(mid){
-  const r=monthStats(mid, today().slice(0,7)), at=pc(r.present,r.work), dn=pc(r.dn,r.exp);
-  if(!r.work && !r.exp && !r.mins) return "";
-  const st=(v,l)=>`<div class="stat"><b>${v}</b><small>${l}</small></div>`;
-  return `<div class="card"><h2>إنجازي هذا الشهر</h2><div class="stats">${st(at!=null?at+"%":"—","حضور الدوام · الهدف "+GOAL.attend+"%")}${st(dn!=null?dn+"%":"—","إنجاز الجدول · الهدف "+GOAL.done+"%")}${st(r.weekly!=null?r.weekly:"—","محاضرات أسبوعيًا · الهدف "+GOAL.weekly)}${st(r.mins?dur(r.mins):"—","ساعات الدوام")}</div></div>`;
-}
-// المحاضرة التالية اليوم (لم تبدأ بعد)
-function nextLec(mid){ const d=today(), now=toMin(cairoNow().hm); return slotsOf(mid,d).filter(s=>s.start && toMin(s.start)>now && !slotOff(mid,d,s.id)).sort((a,b)=>toMin(a.start)-toMin(b.start))[0]; }
 // العدّاد الحي: يُحدَّث كل ثانية دون إعادة رسم الصفحة
 function tick(){
   const now=cairoSec();
   document.querySelectorAll("[data-live]").forEach(e=>{ const k=e.dataset.live;
     if(k==="cd"){ const left=Number(e.dataset.t)-now; if(left>0){ e.classList.remove("late"); e.textContent="متبقي على بدء دوامك: "+(left>3600?hmLong(left):hms(left)); } else { e.classList.add("late"); e.textContent="تأخرت عن موعد الدوام "+hmLong(-left); } }
-    if(k==="el"){ const s=Number(e.dataset.s); if(s) e.textContent=hms((Date.now()-s)/1000-Number(e.dataset.b)*60); }
-    if(k==="br"){ e.textContent=hms((Date.now()-Number(e.dataset.a))/1000); }
+    if(k==="el"){ const s=Number(e.dataset.s); if(s) e.textContent=hms((NOW()-s)/1000-Number(e.dataset.b)*60); }
+    if(k==="br"){ e.textContent=hms((NOW()-Number(e.dataset.a))/1000); }
     if(k==="hm"){ const h=Math.floor(now/3600), m=Math.floor(now%3600/60); e.textContent=(h%12||12)+":"+String(m).padStart(2,"0"); }
     if(k==="ss"){ e.textContent=String(now%60).padStart(2,"0"); }
     if(k==="ap"){ e.textContent=Math.floor(now/3600)<12?"ص":"م"; }
@@ -779,17 +778,6 @@ setInterval(tick,1000);
 setInterval(applyUpdate, 15000); setInterval(()=>checkUpdate(), 600000); setTimeout(()=>checkUpdate(true), 30000);
 document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") checkUpdate(); });
 setInterval(()=>{ if(S.me && S.dayAt && today()!==S.dayAt) logout("انتهت جلسة اليوم (الموقع يُغلق يوميًا 12 منتصف الليل). ادخل مرة أخرى."); }, 15000);
-// بطاقة الدوام: بدء ← استراحة ← إنهاء (الوقت يُختم من الخادم)
-function dutyCard(mid){
-  const d=today(), sh=activeShift(mid), st=shState(sh), off=dayOff(mid,d), f=firstStart(mid,d);
-  const hint = f!=null ? `ابدأ قبل أول محاضرة بـ ${GOAL.before} دقيقة (${t12(fromMin(f-GOAL.before))})` : "";
-  if(st==="none") return `<div class="card duty"><div class="st"><b>الدوام</b><small>${off?`اليوم ${esc(okLabel(off))}`:"لم تبدأ بعد"}${hint&&!off?" · "+esc(hint):""}</small>${f!=null&&!off?`<div style="margin-top:4px"><span class="cd" data-live="cd" data-t="${(f-GOAL.before)*60}"></span></div>`:""}</div><button class="btn gold" data-a="clock" data-op="start">▶ بدء الدوام</button></div>`;
-  const since = `بدأت ${esc(t12(sh.start))}${sh.date!==d?" (أمس)":""}`;
-  const nx = nextLec(mid);
-  if(st==="on") return `<div class="card duty"><div class="st"><b><span class="pill ok">في الدوام</span> <span class="live" data-live="el" data-s="${sh.startAt||""}" data-b="${sh.breakMin||0}">${dur(shMin(sh))}</span></b><small>${since}${nx?` · المحاضرة التالية «${esc(nx.label)}» بعد <span class="live" data-live="nx" data-t="${toMin(nx.start)*60}"></span>`:""}</small></div><button class="btn ghost" data-a="clock" data-op="break">☕ استراحة</button><button class="btn" data-a="clock" data-op="end">إنهاء الدوام</button></div>`;
-  if(st==="break") return `<div class="card duty"><div class="st"><b><span class="pill gold">في استراحة</span> <span class="live" data-live="br" data-a="${sh.breakAt}"></span> · منذ ${esc(t12(fromMin(toMin(cairoNow().hm)-Math.round((Date.now()-sh.breakAt)/6e4))))}</b><small>${since} · عملت ${dur(shMin(sh))}</small></div><button class="btn" data-a="clock" data-op="resume">رجوع من الاستراحة</button><button class="btn ghost" data-a="clock" data-op="end">إنهاء الدوام</button></div>`;
-  return `<div class="card duty"><div class="st"><b><span class="pill">أنهيت الدوام</span> ${dur(shMin(sh))}</b><small>${esc(t12(sh.start))} – ${esc(t12(sh.end))}${sh.breakMin?` · استراحة ${dur(sh.breakMin)}`:""}</small></div></div>`;
-}
 // شريط الدوام لكل محاضرة/مهمة
 function dutyBar(d, s, mid, mine){ if(!s.start || d<SLOT_DUTY_SINCE) return "";
   const sh=slotShift(mid,d,s.id), st=shState(sh), from=dutyFrom(s);
@@ -807,6 +795,7 @@ function repLineV1(rp){ if(!rp) return ""; const tl=x=>x?t12(x):"—"; const c=(
 // ===== تقرير المحاضرة الجديد (v2) — قرار المستخدم 13 نوفمبر =====
 const TECH_C = {audio:"انقطاع أو ضعف الصوت", video:"مشكلة في الصورة أو الشاشة", net:"انقطاع الإنترنت", link:"مشكلة في الرابط أو الدخول", rec:"مشكلة في التسجيل", other:"أخرى"};
 const YN_Q = [["techSh","هل حدثت مشكلة تقنية لدى الشيخ؟",true],["techOrg","هل حدثت مشكلة تقنية لدى المنظّم؟",true],["odd","هل حدث في المحاضرة شيء خلاف الطبيعي؟"],["offq","هل سأل أحد الطلاب أسئلة خارج محتوى المحاضرة؟"],["req","هل طلب الشيخ توجيهًا للإدارة أو تنبيهًا للطلاب أو تكليفات؟"]];
+const repTech = rp => !!(rp && (rp.v===2 ? (rp.techSh==="y" || rp.techOrg==="y") : (rp.tech || rp.quality==="bad"))); // يعمل مع التقريرين القديم والجديد
 const YN_FLAG = {techSh:"مشكلة تقنية لدى الشيخ", techOrg:"مشكلة تقنية لدى المنظّم", odd:"حدث خلاف الطبيعي", offq:"أسئلة خارج المحتوى", req:"طلب من الشيخ"};
 const GRACE = 5;
 const hmOf = (v,d) => typeof v==="number" ? fromMin(cairoMinOf(v,d)) : "";
@@ -833,7 +822,7 @@ function reportForm(d,s){ const t=slotTask(d,s.id)||{}, old=t.report||{}, rp=old
   <small class="sub">${mk.rec||mk.close?"مكتوب تلقائيًا من وقت تعليمك للخطوات — عدّله إن لزم. ":""}يُحسب التأخير مقارنةً بموعد المحاضرة.</small>
   <div class="rsec">الحضور</div>
   <label>متوسط عدد الحضور على زووم<input id="r_zoomN" type="number" min="0" inputmode="numeric" value="${rp.zoomN!=null?esc(String(rp.zoomN)):""}"></label>
-  <div class="fx">عدد طلاب ${/مجلس/.test(s.label)?"المجلس":"الدورة"} الأساسي يُحسب تلقائيًا من شيت الحضور${pv.base?` (آخر عدد: <b>${pv.base}</b>)`:""}.</div>
+  <div class="fx">عدد طلاب ${/مجلس/.test(s.label)?"المجلس":"الدورة"} الأساسي يُحسب تلقائيًا من شيت الحضور${pv.base?` (آخر عدد: <b>${esc(String(pv.base))}</b>)`:""}.</div>
   <div class="rsec">سير المحاضرة</div>
   ${YN_Q.map(([k,q,tech])=>ynBlock(k,q,tech,rp)).join("")}
   <div class="rsec">المحتوى</div>
@@ -874,7 +863,7 @@ function sheikhReqCard(){ const L=sheikhReqs(); if(!L.length) return ""; const p
 function lecReportsOf(lec){ return S.tasks.filter(t=>/^sch_/.test(t.id) && t.report && (slotOfTask(t)||{}).lec===lec).sort((a,b)=>b.due.localeCompare(a.due)); }
 function lecHistory(lec){ const l=S.lectures.find(x=>x.id===lec)||{}, L=lecReportsOf(lec);
   return `<h2>📖 سجل ${esc(l.name||"المحاضرة")}</h2><p class="sub">${esc(l.sheikh||"")} · ${L.length} تقرير</p>${L.length?`<div class="tsw-scroll"><table class="dt"><thead><tr><th>التاريخ</th><th>المنظّم</th><th>دخول الشيخ</th><th>الإنهاء</th><th>الحضور</th><th>وصلنا إلى</th><th></th></tr></thead><tbody>${L.map(t=>{ const rp=t.report, s=slotOfTask(t)||l, tm=timing(s,rp), pc=attPct(rp), f=repFlags(rp);
-    return `<tr><td class="tm">${esc(fmtDay(t.due))}</td><td>${esc(nameOf(t.assignee))}</td><td>${esc(t12(rp.sheikhIn||""))}${tm.inTxt?`<small class="${tm.inBad?"late":"sub"}"> ${esc(tm.inTxt)}</small>`:""}</td><td>${esc(t12(rp.sheikhOut||""))}${tm.outTxt?`<small class="${tm.outBad?"late":"sub"}"> ${esc(tm.outTxt)}</small>`:""}</td><td>${rp.zoomN!=null?rp.zoomN:"—"}${rp.base?" / "+rp.base:""}${pc!=null?` <small class="sub">${pc}%</small>`:""}</td><td>${esc(rp.progress||"")}</td><td>${f.length?`<span class="pill bad" title="${esc(f.join("، "))}">⚠️ ${f.length}</span>`:""}</td></tr>`; }).join("")}</tbody></table></div>`:`<div class="empty">لا توجد تقارير بعد.</div>`}<div class="row" style="margin-top:10px"><button class="btn ghost" data-a="close">إغلاق</button></div>`; }
+    return `<tr><td class="tm">${esc(fmtDay(t.due))}</td><td>${esc(nameOf(t.assignee))}</td><td>${esc(t12(rp.sheikhIn||""))}${tm.inTxt?`<small class="${tm.inBad?"late":"sub"}"> ${esc(tm.inTxt)}</small>`:""}</td><td>${esc(t12(rp.sheikhOut||""))}${tm.outTxt?`<small class="${tm.outBad?"late":"sub"}"> ${esc(tm.outTxt)}</small>`:""}</td><td>${rp.zoomN!=null?esc(String(rp.zoomN)):"—"}${rp.base?" / "+esc(String(rp.base)):""}${pc!=null?` <small class="sub">${esc(String(pc))}%</small>`:""}</td><td>${esc(rp.progress||"")}</td><td>${f.length?`<span class="pill bad" title="${esc(f.join("، "))}">⚠️ ${f.length}</span>`:""}</td></tr>`; }).join("")}</tbody></table></div>`:`<div class="empty">لا توجد تقارير بعد.</div>`}<div class="row" style="margin-top:10px"><button class="btn ghost" data-a="close">إغلاق</button></div>`; }
 function sheikhMonthly(list){ const g={};
   list.filter(t=>t.report && t.report.v===2).forEach(t=>{ const s=slotOfTask(t), l=lecOf(s)||{}, k=(l.sheikh||"—").trim(); const rp=t.report, tm=timing(s||{},rp), pc=attPct(rp);
     const o=g[k]||(g[k]={n:0,on:0,lateSum:0,lateN:0,pcs:[],tech:0,end:0}); o.n++; if(tm.late!=null){ if(tm.late<=GRACE) o.on++; else { o.lateSum+=tm.late; o.lateN++; } } if(pc!=null) o.pcs.push(pc); if(rp.techSh==="y") o.tech++; if(tm.outBad) o.end++; });
@@ -963,7 +952,7 @@ function reqForm(kind){
       return `<label class="full">المحاضرة أو المهمة<select id="q_fslot">${po.length?po.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join(""):`<option value="">لا توجد مهام في الأسبوعين الماضيين</option>`}</select></label><label>بدأت الدوام<input type="time" id="q_from"></label><label>أنهيت الدوام<input type="time" id="q_to"></label>`; })()
   }[kind];
   return `<h2>📝 طلب جديد</h2><div class="form">
-    <label class="full">نوع الطلب<select id="q_kind" data-a="reqKind">${Object.entries(REQ).map(([k,l])=>`<option value="${k}" ${k===kind?"selected":""}>${l}</option>`).join("")}</select></label>
+    <label class="full">نوع الطلب<select id="q_kind" data-a="reqKind">${Object.entries(REQ).filter(([k])=>k!=="offer").map(([k,l])=>`<option value="${k}" ${k===kind?"selected":""}>${l}</option>`).join("")}</select></label>
     ${f}
     <label class="full">${kind==="fix"?"ما المطلوب تصحيحه؟":"السبب"}<textarea id="q_note" placeholder="${kind==="fix"?"مثال: نسيت إنهاء الدوام، أو نسيت علامة شيت الحضور لمحاضرة كذا":"اكتب السبب باختصار"}"></textarea></label></div>
     <p class="sub" style="font-size:13px">يصل الطلب للمسئول، ولا يُحتسب إلا بعد موافقته.</p>
@@ -999,6 +988,11 @@ function dutyPillSlots(mid, d){ const ex=dutyExp(mid,d); if(!ex.length){ const o
   const mins=ex.reduce((a,s)=>a+shMin(slotShift(mid,d,s.id)),0);
   return (act?`<span class="pill ok">في الدوام · ${esc(act.label)}</span>`:mins?`<span class="pill">دوام ${dur(mins)}</span>`:"")+(missed?`<span class="pill bad">لم يبدأ ${missed}</span>`:"")+(late?`<span class="pill bad">تأخر في ${late}</span>`:"")+(open?`<span class="pill bad">بلا نهاية ${open}</span>`:""); }
 // محاضرات اليوم المعرّضة للخطر: تبدأ خلال 30 دقيقة (أو بدأت) ومنظّمها لم يبدأ الدوام، أو بلا منظّم أصلًا
+// أعطال النظام (لمسئول اللجنة): ما فشل في الخادم خلال 48 ساعة + رصيد البريد اليومي
+function sysCard(){ if(!isAdmin()) return ""; const since=NOW()-48*36e5, es=(S.errs||[]).filter(e=>Number(e.at)>=since), low=S.mailLeft!=null && S.mailLeft<20;
+  if(!es.length && !low) return "";
+  return `<div class="card"><h2>🛠 تنبيهات النظام</h2>${low?`<div class="banner">رصيد إرسال البريد اليوم منخفض: ${esc(String(S.mailLeft))} رسالة. الإيميلات وأكواد الدخول قد لا تصل حتى الغد.</div>`:""}
+    ${es.length?`<details class="dr"><summary>${es.length} عطل في آخر 48 ساعة</summary>${es.slice(0,20).map(e=>`<div class="item"><div class="what"><b>${esc(e.where||"")}</b><small>${esc(new Date(Number(e.at)).toLocaleString("ar-EG",{timeZone:"Africa/Cairo",dateStyle:"short",timeStyle:"short"}))} · ${esc(e.msg||"")}</small></div></div>`).join("")}</details>`:""}</div>`; }
 function riskCard(){
   const d=today(), now=toMin(cairoNow().hm), items=[];
   team().concat(isMgr()?[S.me]:[]).forEach(m=>{
@@ -1023,7 +1017,7 @@ function emgForm(mid, sid, d){ const s=slotsOf(mid,d).find(x=>x.id===sid); if(!s
   <div class="row"><button class="btn" data-a="emgSave" data-id="${esc(sid)}" data-m="${esc(mid)}">تأكيد</button><button class="btn ghost" data-a="close">إلغاء</button></div></div>`; }
 // «📋 جدول اليوم» (طلب المستخدم 11 نوفمبر): لمسئول اللجنة (الكل) ومسئول القسم (قسمه) — كل شغل اليوم مرتبًا بالوقت مع حالته
 function dayTable(d){
-  const cur = d===today() ? cairoMinOf(Date.now(), d) : d<today() ? 1e9 : -1;
+  const cur = d===today() ? cairoMinOf(NOW(), d) : d<today() ? 1e9 : -1;
   const seen=new Set(), ppl=[S.me].concat(team(), isAdmin()?S.members.filter(m=>m.role==="committee" && m.active!==false):[]).filter(m=>m && !seen.has(m.id) && seen.add(m.id));
   const f = isAdmin() ? (S.dtf||"all") : "all";
   let rows=[]; ppl.forEach(m=>slotsOf(m.id,d).forEach(s=>rows.push({m,s,lec:isLecture(s)})));
@@ -1055,7 +1049,7 @@ function viewTeamToday(){
   ${d===today()?heldAdminCard():""}
   ${daySummary(d)}
   ${dayTable(d)}
-  ${d===today()?riskCard():""}
+  ${d===today()?sysCard()+riskCard():""}
   ${reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button></div></div></div>`).join("")}</div>`:""}
   ${needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>`<div class="item"><div class="what"><b>${esc(m.name)}</b><div class="prob">${esc(p.note)}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button></div></div></div>`).join("")}</div>`:""}
   ${d===today()?sheikhReqCard():""}
@@ -1102,7 +1096,7 @@ function periodStats(mid, from, to){
     const sh=shiftOf(mid,ds), perSlot=ds>=SLOT_DUTY_SINCE; if(!perSlot){ mins+=shMin(sh); if(shState(sh)==="open") noEnd++; }
     slotsOf(mid,ds).forEach(s=>{ const o=slotOff(mid,ds,s.id); if(o && o.kind==="sheikh") exc++; });
     const es=slotsOf(mid,ds).filter(s=>!slotOff(mid,ds,s.id));
-    if(ds>=STEPS_SINCE) es.filter(isLecture).forEach(s=>{ if(ds===t0 && !isSlotDone(ds,s.id)) return; repNeed++; const rp=(slotTask(ds,s.id)||{}).report; if(rp){ repCnt++; repZoom+=Number(rp.zoomN)||0; if(rp.tech||rp.quality==="bad") tech++; } });
+    if(ds>=STEPS_SINCE) es.filter(isLecture).forEach(s=>{ if(ds===t0 && !isSlotDone(ds,s.id)) return; repNeed++; const rp=(slotTask(ds,s.id)||{}).report; if(rp){ repCnt++; repZoom+=Number(rp.zoomN)||0; if(repTech(rp)) tech++; } });
     if(perSlot){ const nowM=toMin(cairoNow().hm); dutyExp(mid,ds).forEach(s=>{ const x=slotShift(mid,ds,s.id); if(ds===t0 && !x && nowM<=dutyFrom(s)+GOAL.grace) return;
         work++; if(x){ present++; mins+=shMin(x); if(slotLate(mid,ds,s)) lates++; if(shState(x)==="open") noEnd++; } }); }
     else if(es.length && ds>=GOAL.since && !(ds===t0 && !sh)){ work++; if(sh){ present++; if(lateBy(mid,ds)) lates++; } }
@@ -1151,7 +1145,7 @@ function dayDetail(mid, d){ const sl=slotsOf(mid,d); if(!sl.length) return `<div
     let steps="—", rep="—";
     if(lec){ const mk=marksOf(d,s.id), L=stepsFor(d); let on=0, lt=0; L.forEach(st=>{ const v=mk[st[0]]; if(!v) return; if(stepState(d,s,st,v)==="lateDone") lt++; else on++; });
       const n=on+lt; steps=`<span class="pill ${n===L.length?"ok":n?"gold":"bad"}">${n}/${L.length}</span>${lt?`<br><small class="late">متأخرة ${lt}</small>`:""}`;
-      const rp=(slotTask(d,s.id)||{}).report; rep = rp ? `✓ <small class="sub">حضور ${esc(String(rp.zoomN))}</small>${rp.tech?`<br><small class="late">مشكلة تقنية</small>`:""}` : (d<=today()?`<span class="late">لم يُرسل</span>`:"—"); }
+      const rp=(slotTask(d,s.id)||{}).report; rep = rp ? `✓ <small class="sub">حضور ${esc(String(rp.zoomN))}</small>${repTech(rp)?`<br><small class="late">مشكلة تقنية</small>`:""}` : (d<=today()?`<span class="late">لم يُرسل</span>`:"—"); }
     else steps = isSlotDone(d,s.id) ? `<span class="pill ok">✓ تم</span>` : `<span class="pill">لم يتم</span>`;
     const pr=problemsOf(mid,d).filter(p=>p.slot===s.id).length;
     return `<tr><td>${name}</td><td class="c">${duty}</td><td class="c">${steps}</td><td class="c">${rep}</td><td class="c">${pr?`<span class="pill gold">⚠️ ${pr}</span>`:"—"}</td></tr>`; }).join("");
@@ -1277,7 +1271,7 @@ const monthName = m => { const [y,mo]=m.split("-").map(Number); return MONTHS[mo
 const SCORE = ["","ضعيف","يحتاج تحسين","جيد","جيد جدًا","ممتاز"];
 const MET = {yes:["تحقق","ok"], partly:["تحقق جزئيًا","gold"], no:["لم يتحقق","bad"]};
 function metricsHtml(x){ if(!x) return "";
-  const cell=(l,v,g)=>`<div class="card" style="padding:10px;text-align:center"><small class="sub">${l}</small><div style="font-weight:700;font-size:18px">${v}</div>${g?`<small class="sub">${g}</small>`:""}</div>`;
+  const cell=(l,v,g)=>`<div class="card" style="padding:10px;text-align:center"><small class="sub">${l}</small><div style="font-weight:700;font-size:18px">${esc(String(v))}</div>${g?`<small class="sub">${g}</small>`:""}</div>`;
   return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px">${[
     x.attend!=null?cell("حضور الدوام",x.attend+"%","الهدف "+GOAL.attend+"%"):"", x.done!=null?cell("إنجاز الجدول",x.done+"%","الهدف "+GOAL.done+"%"):"",
     x.weekly!=null?cell("محاضرات أسبوعيًا",x.weekly,"الهدف "+GOAL.weekly):"", x.steps!=null?cell("الخطوات في موعدها",x.steps+"%","الهدف "+GOAL.done+"%"):"", x.hours?cell("ساعات الدوام",dur(x.hours)):"", x.onTime!=null?cell("المهام في موعدها",x.onTime+"%"):"", x.reports?cell("تقارير المحاضرات",x.reports):"", x.lates?cell("مرات التأخير",x.lates):""].join("")}</div>`; }
@@ -1294,17 +1288,6 @@ function evalForm(mid, month){
   ${e.ack?`<div class="banner">✓ اطّلع على التقييم${e.ackNote?`: «${esc(e.ackNote)}»`:""}</div>`:""}
   <div class="row"><button class="btn" data-a="saveEval" data-id="${esc(mid)}" data-month="${esc(month)}">حفظ وإرسال له</button><button class="btn ghost" data-a="close">إلغاء</button></div>`;
 }
-function myEvalCards(me){
-  const mine=S.evals.filter(e=>e.member===me).sort((a,b)=>(b.month||"").localeCompare(a.month||""));
-  const pend=mine.find(e=>!e.ack), last=mine[0];
-  let h="";
-  if(pend) h+=`<div class="card" style="border-color:var(--gold)"><h2>📊 تقييمك لشهر ${esc(monthName(pend.month))}</h2>${metricsHtml(pend.metrics)}
-    <div class="row" style="margin-top:8px">${pend.quality?`<span class="pill">جودة العمل: ${esc(SCORE[pend.quality])}</span>`:""}${pend.coop?`<span class="pill">التعاون والالتزام: ${esc(SCORE[pend.coop])}</span>`:""}${MET[pend.goalMet]?`<span class="pill ${MET[pend.goalMet][1]}">هدف الشهر الماضي: ${MET[pend.goalMet][0]}</span>`:""}</div>
-    ${pend.headNote?`<p style="margin:8px 0 0"><b>ملاحظة المسئول:</b> ${esc(pend.headNote)}</p>`:""}${pend.goal&&pend.goal.text?`<p style="margin:6px 0 0"><b>هدفك للشهر القادم:</b> ${esc(pend.goal.text)}</p>`:""}
-    <label style="margin-top:8px">تعليقك (اختياري)<input id="ack_note"></label><div class="row" style="margin-top:6px"><button class="btn" data-a="ackEval" data-id="${esc(pend.id)}">اطّلعت</button></div></div>`;
-  else if(last && last.goal && last.goal.text) h+=`<div class="banner">🎯 <b>هدفك هذا الشهر:</b> ${esc(last.goal.text)}</div>`;
-  return h;
-}
 
 // آخر دخول (قرار المستخدم 8 نوفمبر): يختمه الخادم، ويظهر لمسئول اللجنة فقط
 function seenCell(m){
@@ -1313,7 +1296,7 @@ function seenCell(m){
   const hm=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit",hour12:false}).format(t);
   const y=new Date(parse(today()).getTime()-864e5), yk=y.getFullYear()+"-"+String(y.getMonth()+1).padStart(2,"0")+"-"+String(y.getDate()).padStart(2,"0");
   const day=dk===today()?"اليوم":dk===yk?"أمس":fmtDay(dk), via=m.loginVia==="code"?" · كود":m.loginVia==="google"?" · Google":"";
-  const old=(Date.now()-Number(m.lastSeen))>3*864e5;
+  const old=(NOW()-Number(m.lastSeen))>3*864e5;
   return `<span class="${old?"late":""}" style="font-size:13px;white-space:nowrap">${esc(day)} ${esc(t12(hm))}${via}</span>`; }
 // الفريق والجداول (لمسئول اللجنة)
 function viewTeam(){
@@ -1342,9 +1325,9 @@ function inviteText(m){ return `السلام عليكم ${m.name}،
 تمت إضافتك في منظومة الإشراف — أكاديمية وحي.
 الرابط: https://wahyacademy.github.io/supervision/
 ادخل بحساب جوجل: ${m.email}
-• ابدأ الدوام من الزر أعلى الصفحة قبل أول محاضرة بنصف ساعة.
-• اتبع خطوات تنظيم كل محاضرة في مواعيدها، وضع ✓ على كل خطوة عند إتمامها؛ لا يُنهى الدوام قبل إتمامها كلها.
-• للاعتذار أو الإجازة استخدم زر «طلب اعتذار أو إجازة».`; }
+• في تبويب «يومي» تجد محاضراتك ومهامك: اضغط «▶ بدء الدوام» على كل محاضرة قبل موعدها بنصف ساعة.
+• اتبع خطوات التنظيم وضع ✓ على كل خطوة عند إتمامها؛ لا يُنهى دوام المحاضرة قبل إتمامها كلها.
+• للاعتذار أو الإجازة: تبويب «طلباتي» ← «📝 طلب جديد».`; }
 function transferForm(mid){
   const ls=weeklyLecs(mid).sort((a,b)=>(Number(a.day)-Number(b.day))||(a.start||"").localeCompare(b.start||""));
   const ppl=S.members.filter(m=>m.active!==false && m.role!=="committee" && m.id!==mid);
@@ -1442,7 +1425,7 @@ document.addEventListener("click", async e=>{
   if(a==="otpSend"){ const em=(el.dataset.again?(S.otp||{}).email:v("otp_e")||"").trim().toLowerCase(); if(!/^\S+@\S+\.\S+$/.test(em)) return toast("اكتب إيميلك صحيحًا.");
     el.disabled=true; try { const r=await api("otpSend",{email:em});
       if(r.ok){ S.otp={open:true,sent:true,email:em}; S.msg=""; render(); toast("لو الإيميل مسجّل هيوصلك الكود خلال دقيقة."); }
-      else { toast({wait:"استنى دقيقة قبل ما تطلب كود جديد.", too_many:"طلبات كتير؛ حاول بعد ساعة.", bad_email:"الإيميل غير صحيح."}[r.reason]||"تعذّر الإرسال، حاول مرة أخرى."); el.disabled=false; } }
+      else { toast({wait:"استنى دقيقة قبل ما تطلب كود جديد.", too_many:"طلبات كتير؛ حاول بعد ساعة.", bad_email:"الإيميل غير صحيح.", mail:"تعذّر إرسال الكود الآن (حد البريد اليومي). ادخل بزر جوجل أو حاول غدًا، أو تواصل مع مسئول اللجنة."}[r.reason]||"تعذّر الإرسال، حاول مرة أخرى."); el.disabled=false; } }
     catch(e){ toast("تعذّر الاتصال بالخادم."); el.disabled=false; } return; }
   if(a==="otpVerify"){ const o=S.otp||{}, code=v("otp_c").replace(/\D/g,""); if(code.length!==6) return toast("اكتب الكود (6 أرقام).");
     el.disabled=true; try { const d=await api("otpVerify",{email:o.email, code});
@@ -1470,6 +1453,7 @@ document.addEventListener("click", async e=>{
         if(doc){ n++; if(data.start!==undefined||data.end!==undefined) for(const s of lecSlots(doc.id)) await save("slots", s.id, {day:doc.day, start:doc.start||"", end:doc.end||"", label:doc.name}, true); } } }
     close(); toast(`تم تطبيق ${n} تعديل. راجع «بلا منظّم» لتكليف الجديد.`); return; }
   if(a==="newReq") return open(reqForm("lecture"));
+  if(a==="retryLoad"){ S.msg=""; render(); await refresh(false); return; }
   if(a==="sendReq"){ const k=el.dataset.k, note=v("q_note"); const data={kind:k, note, status:"pending", at:Date.now()};
     if(k==="lecture"){ const x=v("q_slot"); if(!x) return toast("اختر المحاضرة."); [data.date,data.slot]=x.split("|"); const n=Number(v("q_times")||1); if(n>1) data.dateTo=addDays(data.date,7*(n-1)); }
     else { data.date=v("q_date"); if(!data.date) return toast("اختر اليوم."); }
@@ -1591,11 +1575,16 @@ document.addEventListener("click", async e=>{
     if(data.noOrg && data.offer) return toast("اختر واحدة: «لا يحتاج منظّم» أو «عرضه على المنظّمين».");
     if(!data.name) return toast("اكتب اسم المحاضرة."); if(!!data.pauseFrom!==!!data.pauseTo) return toast("اكتب تاريخ بداية الإيقاف ونهايته معًا، أو اتركهما فارغين."); if(data.pauseFrom && data.pauseTo<data.pauseFrom) return toast("تاريخ نهاية الإيقاف قبل بدايته."); if(data.end && !data.start) return toast("اكتب وقت البداية.");
     if(data.zoom && !safeUrl(data.zoom)) return toast("رابط زووم يجب أن يبدأ بـ https://"); if(data.sheet && !safeUrl(data.sheet)) return toast("رابط الشيت يجب أن يبدأ بـ https://");
+    const oldName=(S.lectures.find(x=>x.id===id)||{}).name;
     el.disabled=true; const doc=await save("lectures", id||("lc_"+rid()), data, !!id);
-    if(doc){ for(const s of lecSlots(doc.id)) await save("slots", s.id, {day:doc.day, start:doc.start||"", end:doc.end||"", label:doc.name}, true); close(); toast("حُفظت المحاضرة."); } else el.disabled=false; return; }
+    if(doc){ for(const s of lecSlots(doc.id)) await save("slots", s.id, {day:doc.day, start:doc.start||"", end:doc.end||"", label:doc.name}, true);
+      // خانات البدلاء القادمة تتبع الموعد الجديد (والاسم إن كان هو اسم المحاضرة نفسه)
+      for(const s of S.slots.filter(x=>x.lec===doc.id && x.date && x.date>=today())){ const up={start:doc.start||"", end:doc.end||""}; if(oldName && s.label===oldName) up.label=doc.name;
+        if(up.start!==(s.start||"") || up.end!==(s.end||"") || up.label) await save("slots", s.id, up, true); }
+      close(); toast("حُفظت المحاضرة."); } else el.disabled=false; return; }
   if(a==="delLec"){ if(!el.dataset.sure){ el.dataset.sure="1"; el.textContent="اضغط مرة أخرى للتأكيد"; return; }
     for(const s of S.slots.filter(x=>x.lec===id)) await remove("slots", s.id); await remove("lectures", id); close(); toast("حُذفت المحاضرة."); return; }
-  if(a==="saveAssign"){ const l=S.lectures.find(x=>x.id===id); const want=[...document.querySelectorAll(".as_m:checked")].map(x=>x.value); const have=S.slots.filter(s=>s.lec===id);
+  if(a==="saveAssign"){ const l=S.lectures.find(x=>x.id===id); const want=[...document.querySelectorAll(".as_m:checked")].map(x=>x.value); const have=S.slots.filter(s=>s.lec===id && !s.date); // خانات البدلاء (بتاريخ) لا تُمس
     el.disabled=true;
     for(const s of have) if(!want.includes(s.owner)) await remove("slots", s.id);
     for(const mid of want) if(!have.some(s=>s.owner===mid)) await save("slots", "lec_"+id+"_"+mid, lecSlotData(l,mid), false);
@@ -1612,7 +1601,8 @@ window.addEventListener("hashchange", ()=>{ S.view=location.hash.slice(1)||"toda
   S.session=store.get("wahy_sup_session");
   if(!S.session){ S.phase="login"; render(); return; }
   render(); await refresh(false);
-  if(!S.me && S.phase!=="login"){ S.phase="login"; render(); }
+  for(let i=0; i<4 && !S.me && S.session && S.phase!=="login"; i++){ await new Promise(r=>setTimeout(r, 4000*(i+1))); await refresh(false); } // انقطاع مؤقت: نعيد المحاولة والجلسة باقية
+  if(!S.me && S.phase!=="login"){ S.msg=S.session?"تعذّر الاتصال بالخادم. تأكد من الإنترنت ثم أعد تحميل الصفحة.":S.msg; render(); }
   setInterval(()=>{ if(document.visibilityState==="visible" && S.me) refresh(true); }, 60000);
   document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible" && S.me) refresh(true); });
 })();
