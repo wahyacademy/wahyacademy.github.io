@@ -569,7 +569,21 @@ async function remove(col, id){
   try { const d = await api("delete", {col, id}); if(d.ok){ S[col]=S[col].filter(x=>x.id!==id); render(); } else toast("لم يُحذف."); }
   catch(e){ toast("لا يوجد اتصال؛ لم يُحذف."); }
 }
-function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=null; S.dayAt=null; NEWSEEN=null; S.phase="login"; S.msg=msg||""; render(); }
+function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=null; S.dayAt=null; NEWSEEN=null; S.phase="login"; S.msg=msg||""; render(); checkUpdate(true); }
+// ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
+// الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
+// (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
+const BUILD="572d97467eae"; const UPD={lm:null, nb:null, at:0, told:false};
+async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
+  try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
+    if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
+      if(m){ UPD.lm=lm; UPD.nb = m[1]!==BUILD ? m[1] : null; } } } catch(e){}
+  applyUpdate(); }
+function updSafe(){ const ae=(document.activeElement||{}).tagName||""; if(/^(INPUT|TEXTAREA|SELECT)$/.test(ae)) return false;
+  if(S.phase==="login") return !S.otp; return !$("#modal").innerHTML && PENDING===0; }
+function applyUpdate(){ if(!UPD.nb) return;
+  if(new URLSearchParams(location.search).get("v")===UPD.nb){ if(!UPD.told){ UPD.told=true; toast("يوجد تحديث للموقع — حدّث الصفحة (اسحبها لأسفل أو Ctrl+F5)."); } return; }
+  if(updSafe()) location.replace(location.pathname+"?v="+UPD.nb+location.hash); }
 
 // ---------- الدخول بجوجل ----------
 let gsiBusy=false;
@@ -762,6 +776,8 @@ function tick(){
   });
 }
 setInterval(tick,1000);
+setInterval(applyUpdate, 15000); setInterval(()=>checkUpdate(), 600000); setTimeout(()=>checkUpdate(true), 30000);
+document.addEventListener("visibilitychange", ()=>{ if(document.visibilityState==="visible") checkUpdate(); });
 setInterval(()=>{ if(S.me && S.dayAt && today()!==S.dayAt) logout("انتهت جلسة اليوم (الموقع يُغلق يوميًا 12 منتصف الليل). ادخل مرة أخرى."); }, 15000);
 // بطاقة الدوام: بدء ← استراحة ← إنهاء (الوقت يُختم من الخادم)
 function dutyCard(mid){
