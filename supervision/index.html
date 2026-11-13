@@ -530,7 +530,8 @@ function saveFast(col, id, data, okMsg, tag){ tag=tag||id; SAVING[tag]=(SAVING[t
       const j=S[col].findIndex(x=>x.id===id); if(j>=0) S[col][j]=Object.assign({}, S[col][j], d.doc); else S[col].push(d.doc);
       if(okMsg) toast(okMsg); }
     catch(e){ const j=S[col].findIndex(x=>x.id===id); if(prev){ if(j>=0) S[col][j]=prev; } else if(j>=0) S[col].splice(j,1);
-      toast(e.reason==="network"?"لا يوجد اتصال؛ لم يُحفظ آخر تعديل.":e.reason==="forbidden"?"ليست لديك صلاحية لهذا.":"لم يُحفظ آخر تعديل، حاول مرة أخرى."); }
+      if(e.reason==="sheet_check") open(`<h2>📊 شيت الحضور لم يُسجَّل بعد</h2><p style="line-height:1.9">${esc(e.message||"")}</p><div class="row"><button class="btn" data-a="close">حسنًا</button></div>`);
+      else toast(e.reason==="network"?"لا يوجد اتصال؛ لم يُحفظ آخر تعديل.":e.reason==="forbidden"?"ليست لديك صلاحية لهذا.":"لم يُحفظ آخر تعديل، حاول مرة أخرى."); }
     finally { PENDING--; if(!--SAVING[tag]) delete SAVING[tag]; render(); } };
   SAVEQ[col+id]=(SAVEQ[col+id]||Promise.resolve()).then(run);
   return SAVEQ[col+id]; }
