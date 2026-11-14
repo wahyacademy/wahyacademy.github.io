@@ -773,6 +773,7 @@ function sendRate(e){e.preventDefault();var f=e.target,m=document.getElementById
   apiPost(url,o).then(function(d){b.disabled=false;
     if(d&&d.ok){STU.rated=d.rated||[];var c=meCached();if(c){c.rated=STU.rated;lsSet(ME_CACHE,JSON.stringify(c));}renderAll();m.className="mmsg good";m.textContent="جزاك الله خيرًا، وصل تقييمك ✓";setTimeout(closeRate,1400);}
     else if(d&&d.reason==="missing"){m.className="mmsg bad";m.textContent="من فضلك أجب عن كل الأسئلة.";}
+    else if(d&&d.reason==="admin"){m.className="mmsg bad";m.textContent="حساب الإدارة للمشاهدة فقط، والتقييم للطلاب المشتركين.";}
     else if(d&&d.reason==="not_yet"){m.className="mmsg bad";m.textContent="يُفتح تقييم المحاضرة مع بدء موعدها.";}
     else if(d&&(d.reason==="expired"||d.reason==="not_registered")){m.className="mmsg bad";m.textContent="انتهت جلستك، ادخل مرة أخرى بحساب جوجل.";setStu(null);meClear();meApply();}
     else{m.className="mmsg bad";m.textContent="تعذّر الإرسال الآن، حاول بعد قليل.";}
