@@ -360,7 +360,7 @@ const REPORT_Q = {good:"ممتازة", ok:"مقبولة", bad:"فيها مشكل
 const stepsFor = date => date>=STEPS_SINCE ? STEPS : MARKS;
 const REQ = {lecture:"اعتذار عن محاضرة", day:"اعتذار عن يوم", leave:"إجازة", fix:"تصحيح يوم سابق", offer:"رغبة في تنظيم مجلس"};
 const REQ_ST = {pending:["ينتظر الرد","gold"], accepted:["مقبول","ok"], rejected:["مرفوض","bad"], cancelled:["ملغى",""]};
-const GOAL = {attend:90, done:95, weekly:5, before:30, grace:5, since:"2026-11-04"}; // since: أول يوم يُحسب فيه حضور الدوام
+const GOAL = {att:95, attend:90, done:95, weekly:5, before:30, grace:5, since:"2026-11-04"}; // since: أول يوم يُحسب فيه حضور الدوام
 const okLabel = r => r.kind==="sheikh" ? "اعتذر الشيخ" : /^emg_/.test(r.id||"") ? "بديل طارئ" : REQ[r.kind]+(r.kind==="leave"?" معتمدة":" معتمد"); // أهداف ثابتة من «سجل دوام المشرفين»
 const MONTHS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
@@ -589,7 +589,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="7cd246ad81f6"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="63a7fffd668e"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1092,6 +1092,8 @@ const arId = rid => "ar_"+rid;
 const arDoc = rid => S.evals.find(e=>e.id===arId(rid));
 const arKey = it => String(it.no)+"|"+String(it.n);
 const arNum = s => { const n=parseFloat(String(s||"").replace("٫",".").replace(/[^\d.]/g,"")); return isNaN(n)?null:n; };
+const AR_W = {"خطأ":1, "لم يُسجَّل":1, "ناقص تنويه":0.5}; // وزن كل ملاحظة معتمدة في دقة المنظّم؛ المستبعد صح (قرار المستخدم 14 نوفمبر)
+function arAcc(total, items, st){ const t=Number(total)||0; if(!t) return null; let w=0; (items||[]).forEach(it=>{ if((st?st[arKey(it)]:it.st)==='y') w+=AR_W[it.j]||0; }); return Math.round(Math.max(0,(t-w))*1000/t)/10; }
 const arHidden = e => /^ar_/.test(e.id||"") && !((e.metrics||{}).sent); // مسودة المسئول لا تظهر للمنظّم
 function arSelf(e){ try { const x=JSON.parse(e.selfNote||"{}"); return {d:x.d||[], r:x.r||{}}; } catch(_){ return {d:[], r:{}}; } }
 function loadAR(force){ if(!isAdmin() || S.arLoading) return; S.arLoading=true;
@@ -1109,7 +1111,7 @@ function viewAttRev(){
   if(!S.ar) return `<div class="card empty">${S.arErr?`تعذّر تحميل المراجعات${S.arErr==="review_sheet"?" (شيت المراجعة غير متاح لحساب الأكاديمية)":""}. <button class="btn sm" data-a="arReload">⟳ إعادة المحاولة</button>`:"جارٍ تحميل المراجعة…"}</div>`;
   const rv=S.ar.find(r=>r.id===S.arId) || S.ar[S.ar.length-1]; if(!rv) return `<div class="card empty">لا توجد مراجعات بعد.</div>`;
   S.arId=rv.id; const dec=arDec(rv), doc=arDoc(rv.id), sent=doc&&doc.metrics&&doc.metrics.sent, self=doc?arSelf(doc):{d:[],r:{}}, f=S.arF||"need";
-  const prev=S.ar.filter(r=>r.lec===rv.lec && r.date<rv.date).sort((a,b)=>b.date.localeCompare(a.date))[0], acc=arNum(rv.acc), pacc=prev?arNum(prev.acc):null;
+  const prev=S.ar.filter(r=>r.lec===rv.lec && r.date<rv.date).sort((a,b)=>b.date.localeCompare(a.date))[0], acc=arAcc(rv.total, rv.items, dec.st), pd=prev&&arDoc(prev.id), pacc=pd&&pd.metrics&&pd.metrics.sent?arAcc(pd.metrics.total, pd.metrics.items):null;
   const cnt=t=>rv.items.filter(i=>i.j===t).length, unc=rv.items.filter(i=>i.conf==="مرجّح").length;
   const segs=[["need","يحتاج قرارك",rv.items.filter(i=>!dec.st[arKey(i)]).length],["خطأ","خطأ",cnt("خطأ")],["ناقص تنويه","ناقص تنويه",cnt("ناقص تنويه")],["لم يُسجَّل","لم يُسجَّلوا",cnt("لم يُسجَّل")],["unc","مطابقة غير مؤكدة",unc],["all","الكل",rv.items.length],["unk","أسماء زووم مجهولة",rv.unknown.length]];
   const list=rv.items.filter(i=>f==="all"||(f==="need"&&!dec.st[arKey(i)])||(f==="unc"&&i.conf==="مرجّح")||i.j===f);
@@ -1129,7 +1131,8 @@ function viewAttRev(){
     <button class="btn sm ghost" data-a="arReload">⟳ تحديث</button><button class="btn sm ghost" data-a="arBack">↩ رجوع</button></div>
   ${sent?`<div class="banner">📤 أُرسلت للمنظّم ${esc(nameOf(doc.member))} · صحّح <b>${sentFix}</b> من ${sentN}${doc.ack?` · ✓ علّم «صحّحت الكل»${doc.ackNote?`: ${esc(doc.ackNote)}`:""}`:""}</div>`:""}
   <div class="kq6"><div class="kq"><b>${esc(rv.total)}</b><small>طالب</small></div><div class="kq ok"><b>${esc(rv.ok)}</b><small>صح</small></div><div class="kq bad"><b>${esc(rv.bad)}</b><small>خطأ</small></div><div class="kq gold"><b>${esc(rv.note)}</b><small>ناقص تنويه</small></div><div class="kq gray"><b>${esc(rv.unreg||0)}</b><small>لم يُسجَّلوا</small></div></div>
-  <div class="arbar"><span>دقة التسجيل</span><div class="bar"><i style="width:${acc||0}%"></i></div><b>${esc(rv.acc)}</b>${pacc!=null?`<small class="${acc>=pacc?"up":"late"}">${acc>=pacc?"▲":"▼"} من ${pacc}% في المراجعة السابقة</small>`:""}</div>
+  <div class="arbar"><span>دقة المنظّم <small class="sub">(للتقييم · الهدف ${GOAL.att}%)</small></span><div class="bar"><i style="width:${acc||0}%"></i></div><b style="color:${acc>=GOAL.att?"var(--ok)":"var(--bad)"}">${acc}%</b>${pacc!=null?`<small class="${acc>=pacc?"up":"late"}">${acc>=pacc?"▲":"▼"} من ${pacc}% في المراجعة السابقة</small>`:""}</div>
+  <p class="sub" style="font-size:12.5px;margin:-6px 0 0">من شيت المنظّم كما سلّمه أول مرة قبل أي تصحيح: كل ملاحظة تعتمدها تُحسب عليه (ناقص التنويه بنصف)، والمستبعد يُحسب صح. قبل قرارك: ${esc(rv.acc)} من مقارنة Claude.</p>
   <div class="arseg">${segs.filter(s=>s[2]||s[0]==="need").map(([k,l,n])=>`<button class="${f===k?"on":""}" data-a="arF" data-v="${esc(k)}">${l} (${n})</button>`).join("")}</div>
   ${f==="unk"?`<div class="card"><h2>أسماء في زووم لم يُعرف أصحابها</h2>${rv.unknown.length?rv.unknown.map(u=>`<div class="item"><div class="what"><b>${esc(u.n)}</b><small>${esc(u.min)} دقيقة داخل فترة الشيخ</small></div></div>`).join(""):`<div class="empty">لا يوجد.</div>`}<p class="sub" style="font-size:13px">لو عرفت أصحابها بلّغ Claude لتُضاف في المراجعة القادمة.</p></div>`
    : (groups || `<div class="card empty">✓ لا يوجد شيء هنا.</div>`)}
@@ -1140,7 +1143,7 @@ function viewAttRev(){
     <button class="btn ghost" data-a="arSave" data-v="0">💾 حفظ</button><button class="btn gold" data-a="arSave" data-v="1">📤 ${sent?"تحديث الإرسال":"إرسال للمنظّم"} (${nY})</button></div>`; }
 function arMetrics(rv, dec, sent){ const old=(arDoc(rv.id)||{}).metrics||{};
   return {kind:"att", rid:rv.id, title:rv.title, date:rv.date, sheikh:rv.sheikh, mins:rv.mins, th:rv.th, total:rv.total, ok:rv.ok, bad:rv.bad, note:rv.note, unreg:rv.unreg, acc:rv.acc,
-    sent:!!(sent||old.sent), sentAt:sent?Date.now():(old.sentAt||null), items:rv.items.map(it=>Object.assign({}, it, {st:dec.st[arKey(it)]||""}))}; }
+    accEff:arAcc(rv.total, rv.items, dec.st), sent:!!(sent||old.sent), sentAt:sent?Date.now():(old.sentAt||null), items:rv.items.map(it=>Object.assign({}, it, {st:dec.st[arKey(it)]||""}))}; }
 // نص الملاحظة للمنظّم
 function arLine(it, x){ const m=Number(it.min)||0;
   if(it.k==="دخل المحاضرة ومتسجل غياب") return `مكتوب غياب — دخل ${m} دقيقة${it.zn&&it.zn!=="—"?` باسم ${it.zn}`:""} ← يُكتب حضور${m<=arNum(x.th)?" مع تنويه إنه حضر أقل من النص":""}`;
@@ -1159,8 +1162,8 @@ function arFollow(me){ return S.evals.filter(e=>e.member===me && /^ar_/.test(e.i
 // للتقارير: دقة تسجيل الحضور للمنظّم في الفترة (من المراجعات المرسلة فقط)
 function arStats(mid, from, to){ const ds=S.evals.filter(e=>e.member===mid && /^ar_/.test(e.id) && !arHidden(e) && (e.month||"")>=from && (e.month||"")<=to);
   if(!ds.length) return null; let acc=0, n=0, tot=0, fix=0;
-  ds.forEach(e=>{ const x=e.metrics||{}, a=arNum(x.acc), self=arSelf(e); if(a!=null){ acc+=a; n++; } (x.items||[]).filter(i=>i.st==="y").forEach(i=>{ tot++; if(e.ack||self.d.includes(arKey(i))) fix++; }); });
-  return {revs:ds.length, acc:n?Math.round(acc/n):null, tot, fix}; }
+  ds.forEach(e=>{ const x=e.metrics||{}, a=arAcc(x.total, x.items), self=arSelf(e); if(a!=null){ acc+=a; n++; } (x.items||[]).filter(i=>i.st==="y").forEach(i=>{ tot++; if(e.ack||self.d.includes(arKey(i))) fix++; }); });
+  return {revs:ds.length, acc:n?Math.round(acc*10/n)/10:null, tot, fix}; }
 async function arAct(a, el, id){
   const rv=(S.ar||[]).find(r=>r.id===S.arId);
   if(a==="arOpen"){ S.arId=id; S.arF="need"; location.hash="attrev"; S.view="attrev"; render(); window.scrollTo(0,0); return true; }
@@ -1272,7 +1275,7 @@ function dayDetail(mid, d){ const sl=slotsOf(mid,d); if(!sl.length) return `<div
 // جدول الفترة (أسبوع/شهر) مع إرسال التقرير لصاحبه
 function periodTable(P, rows){
   const month=P.month;
-  return `<div class="card" style="overflow-x:auto"><table><thead><tr><th>المشرف</th><th class="c">حضور الدوام<br><small>الهدف ${GOAL.attend}%</small></th><th class="c">إنجاز الجدول<br><small>الهدف ${GOAL.done}%</small></th><th class="c">محاضرات منظّمة<br><small>الهدف ${GOAL.weekly} أسبوعيًا</small></th><th class="c">الخطوات في موعدها<br><small>الهدف ${GOAL.done}%</small></th><th class="c">ساعات الدوام</th><th class="c">المهام في موعدها</th><th class="c">مشكلات رُفعت</th><th class="c">دقة تسجيل الحضور<br><small>من مراجعة زووم</small></th><th class="c">ملاحظات الحضور اتصلّحت</th>${month?`<th class="c">التقييم</th>`:""}<th class="c noprint">إرسال له</th></tr></thead><tbody>${rows.map(r=>{ const at=pc(r.present,r.work), a=pc(r.dn,r.exp), b=pc(r.onTime,r.tk);
+  return `<div class="card" style="overflow-x:auto"><table><thead><tr><th>المشرف</th><th class="c">حضور الدوام<br><small>الهدف ${GOAL.attend}%</small></th><th class="c">إنجاز الجدول<br><small>الهدف ${GOAL.done}%</small></th><th class="c">محاضرات منظّمة<br><small>الهدف ${GOAL.weekly} أسبوعيًا</small></th><th class="c">الخطوات في موعدها<br><small>الهدف ${GOAL.done}%</small></th><th class="c">ساعات الدوام</th><th class="c">المهام في موعدها</th><th class="c">مشكلات رُفعت</th><th class="c">دقة تسجيل الحضور<br><small>الهدف ${GOAL.att}% · من أول تسليم</small></th><th class="c">ملاحظات الحضور اتصلّحت</th>${month?`<th class="c">التقييم</th>`:""}<th class="c noprint">إرسال له</th></tr></thead><tbody>${rows.map(r=>{ const at=pc(r.present,r.work), a=pc(r.dn,r.exp), b=pc(r.onTime,r.tk);
     const notes=[r.lates?`تأخر ${r.lates}`:"", r.noEnd?`بلا نهاية ${r.noEnd}`:""].filter(Boolean).join(" · ");
     const sent=S.evals.find(e=>e.id===repId(r.m.id,P.key));
     return `<tr><td><b>${esc(r.m.name)}</b></td>
@@ -1281,12 +1284,12 @@ function periodTable(P, rows){
     <td class="c">${r.weekly!=null?`<span class="pill ${r.weekly>=GOAL.weekly?"ok":r.weekly>=GOAL.weekly-1?"gold":"bad"}">${r.weekly}</span> <small class="sub">${r.lecDone} في الفترة</small>`:"—"}</td>
     <td class="c">${r.stepAll?`<span class="pill ${tone(pc(r.stepOn,r.stepAll),GOAL.done)}">${pc(r.stepOn,r.stepAll)}%</span> <small class="sub">${r.stepOn}/${r.stepAll}</small>${r.stepLate?`<br><small class="late">متأخرة ${r.stepLate}</small>`:""}`:"—"}</td>
     <td class="c">${r.mins?dur(r.mins):"—"}</td>
-    <td class="c">${r.tk?`<span class="pill ${tone(b,90)}">${b}%</span> <small class="sub">${r.onTime}/${r.tk}</small>`:"—"}</td><td class="c">${r.pr||"—"}</td>${(()=>{ const q=arStats(r.m.id,P.from,P.to); return q?`<td class="c">${q.acc!=null?`<span class="pill ${tone(q.acc,90)}">${q.acc}%</span>`:"—"} <small class="sub">${q.revs} محاضرة</small></td><td class="c">${q.tot?`<span class="pill ${q.fix===q.tot?"ok":"gold"}">${q.fix} من ${q.tot}</span>`:"—"}</td>`:`<td class="c"><small class="sub">لم تُراجع</small></td><td class="c">—</td>`; })()}${month?`<td class="c">${(()=>{ const e=evalOf(r.m.id,month); return e?`<button class="btn sm ghost" data-a="evalM" data-id="${esc(r.m.id)}">${e.ack?"✓ اطّلع":"✓ قُيّم"}</button>`:`<button class="btn sm" data-a="evalM" data-id="${esc(r.m.id)}">تقييم</button>`; })()}</td>`:""}
+    <td class="c">${r.tk?`<span class="pill ${tone(b,90)}">${b}%</span> <small class="sub">${r.onTime}/${r.tk}</small>`:"—"}</td><td class="c">${r.pr||"—"}</td>${(()=>{ const q=arStats(r.m.id,P.from,P.to); return q?`<td class="c">${q.acc!=null?`<span class="pill ${tone(q.acc,GOAL.att)}">${q.acc}%</span>`:"—"} <small class="sub">${q.revs} محاضرة</small></td><td class="c">${q.tot?`<span class="pill ${q.fix===q.tot?"ok":"gold"}">${q.fix} من ${q.tot}</span>`:"—"}</td>`:`<td class="c"><small class="sub">لم تُراجع</small></td><td class="c">—</td>`; })()}${month?`<td class="c">${(()=>{ const e=evalOf(r.m.id,month); return e?`<button class="btn sm ghost" data-a="evalM" data-id="${esc(r.m.id)}">${e.ack?"✓ اطّلع":"✓ قُيّم"}</button>`:`<button class="btn sm" data-a="evalM" data-id="${esc(r.m.id)}">تقييم</button>`; })()}</td>`:""}
     <td class="c noprint">${sent?`<button class="btn sm ghost" data-a="sendRep" data-id="${esc(r.m.id)}">${sent.ack?"✓ اطّلع":"✓ أُرسل"}</button>`:`<button class="btn sm" data-a="sendRep" data-id="${esc(r.m.id)}">📤 إرسال</button>`}</td></tr>`; }).join("")}</tbody></table>
   <p class="sub" style="font-size:13px;margin-top:10px">الأخضر = بلغ الهدف · الذهبي = قريب منه · الأحمر = بعيد عنه. «إرسال» يرسل للمشرف أرقامه في هذه الفترة في «يومي» عنده، ويضغط «اطّلعت».</p></div>
   ${rows.some(r=>r.repNeed||r.exc)?`<div class="card" style="overflow-x:auto"><h2>📝 تقارير المحاضرات</h2><table><thead><tr><th>المنظّم</th><th class="c">تقارير مرسلة</th><th class="c">متوسط الحضور على زووم</th><th class="c">اعتذار الشيخ</th><th class="c">مشاكل تقنية</th></tr></thead><tbody>${rows.filter(r=>r.repNeed||r.exc).map(r=>`<tr><td><b>${esc(r.m.name)}</b></td><td class="c">${r.repNeed?`<span class="pill ${tone(pc(r.repCnt,r.repNeed),GOAL.done)}">${r.repCnt}/${r.repNeed}</span>`:"—"}</td><td class="c">${r.repAvg!=null?r.repAvg:"—"}</td><td class="c">${r.exc||"—"}</td><td class="c">${r.tech||"—"}</td></tr>`).join("")}</tbody></table></div>`:""}`;
 }
-function snapPeriod(mid, P){ const r=periodStats(mid,P.from,P.to); return {kind:P.per, label:P.label, from:P.from, to:P.to, attend:pc(r.present,r.work), done:pc(r.dn,r.exp), weekly:r.weekly, hours:r.mins, onTime:pc(r.onTime,r.tk), lates:r.lates, steps:pc(r.stepOn,r.stepAll), reports:r.repNeed?r.repCnt+"/"+r.repNeed:null}; }
+function snapPeriod(mid, P){ const r=periodStats(mid,P.from,P.to); return {kind:P.per, label:P.label, from:P.from, to:P.to, attend:pc(r.present,r.work), done:pc(r.dn,r.exp), weekly:r.weekly, hours:r.mins, onTime:pc(r.onTime,r.tk), lates:r.lates, steps:pc(r.stepOn,r.stepAll), reports:r.repNeed?r.repCnt+"/"+r.repNeed:null, att:(arStats(mid,P.from,P.to)||{}).acc??null}; }
 function sendRepForm(mid){ const P=repPeriod(), x=snapPeriod(mid,P), e=S.evals.find(z=>z.id===repId(mid,P.key))||{};
   return `<h2>📤 إرسال التقرير ${P.per==="week"?"الأسبوعي":"الشهري"} لـ ${esc(nameOf(mid))}</h2><p class="sub">${esc(P.label)}</p>${metricsHtml(x)}
   <label style="margin-top:10px">ملاحظتك له (اختياري)<textarea id="rp_note">${esc(e.headNote||"")}</textarea></label>
@@ -1393,8 +1396,8 @@ function metricsHtml(x){ if(!x) return "";
   const cell=(l,v,g)=>`<div class="card" style="padding:10px;text-align:center"><small class="sub">${l}</small><div style="font-weight:700;font-size:18px">${esc(String(v))}</div>${g?`<small class="sub">${g}</small>`:""}</div>`;
   return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px">${[
     x.attend!=null?cell("حضور الدوام",x.attend+"%","الهدف "+GOAL.attend+"%"):"", x.done!=null?cell("إنجاز الجدول",x.done+"%","الهدف "+GOAL.done+"%"):"",
-    x.weekly!=null?cell("محاضرات أسبوعيًا",x.weekly,"الهدف "+GOAL.weekly):"", x.steps!=null?cell("الخطوات في موعدها",x.steps+"%","الهدف "+GOAL.done+"%"):"", x.hours?cell("ساعات الدوام",dur(x.hours)):"", x.onTime!=null?cell("المهام في موعدها",x.onTime+"%"):"", x.reports?cell("تقارير المحاضرات",x.reports):"", x.lates?cell("مرات التأخير",x.lates):""].join("")}</div>`; }
-function snapMetrics(mid, month){ const r=monthStats(mid,month); return {attend:pc(r.present,r.work), done:pc(r.dn,r.exp), weekly:r.weekly, hours:r.mins, onTime:pc(r.onTime,r.tk), lates:r.lates, steps:pc(r.stepOn,r.stepAll)}; }
+    x.weekly!=null?cell("محاضرات أسبوعيًا",x.weekly,"الهدف "+GOAL.weekly):"", x.steps!=null?cell("الخطوات في موعدها",x.steps+"%","الهدف "+GOAL.done+"%"):"", x.hours?cell("ساعات الدوام",dur(x.hours)):"", x.onTime!=null?cell("المهام في موعدها",x.onTime+"%"):"", x.reports?cell("تقارير المحاضرات",x.reports):"", x.lates?cell("مرات التأخير",x.lates):"", x.att!=null?cell("دقة تسجيل الحضور",x.att+"%","الهدف "+GOAL.att+"%"):""].join("")}</div>`; }
+function snapMetrics(mid, month){ const r=monthStats(mid,month); return {attend:pc(r.present,r.work), done:pc(r.dn,r.exp), weekly:r.weekly, hours:r.mins, onTime:pc(r.onTime,r.tk), lates:r.lates, steps:pc(r.stepOn,r.stepAll), att:(arStats(mid, month+"-01", month+"-31")||{}).acc??null}; }
 function evalForm(mid, month){
   const e=evalOf(mid,month)||{}, prev=evalOf(mid,prevMonth(month)), m=snapMetrics(mid,month);
   const sel=(id,v)=>`<select id="${id}">${SCORE.map((l,i)=>`<option value="${i||""}" ${Number(v)===i&&i?"selected":""}>${i?i+" — "+l:"اختر…"}</option>`).join("")}</select>`;
