@@ -509,14 +509,14 @@ const openTasks = mid => S.tasks.filter(t => t.type!=="scheduled" && t.assignee=
 const problemsOf = (mid, date) => S.checkins.filter(c => c.member===mid && c.date===date && c.mark==="warn");
 
 // ---------- الخادم ----------
-async function api(action, payload={}){
-  const ctl = new AbortController(); const tm = setTimeout(()=>ctl.abort(), 30000);
+async function api(action, payload={}, ms=30000){
+  const ctl = new AbortController(); const tm = setTimeout(()=>ctl.abort(), ms);
   try {
     const r = await fetch(CONFIG.apiUrl, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({action, session:S.session, ...payload}), signal:ctl.signal});
     const d = await r.json();
     if(!d.ok && d.reason==="auth"){ logout("انتهت جلستك، ادخل مرة أخرى."); throw d; }
     return d;
-  } catch(e){ if(e && e.reason) throw e; throw {reason:"network"}; } finally { clearTimeout(tm); }
+  } catch(e){ if(e && e.reason) throw e; throw {reason:"network", timeout:ctl.signal.aborted}; } finally { clearTimeout(tm); }
 }
 function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.mailLeft=d.mailLeft; S.phase="app"; }
 async function refresh(quiet){
@@ -536,11 +536,13 @@ function saveFast(col, id, data, okMsg, tag){ tag=tag||id; SAVING[tag]=(SAVING[t
   const arr=S[col], i=arr.findIndex(x=>x.id===id), prev=i>=0?arr[i]:null;
   const local=Object.assign({}, prev||{id}, data); if(i>=0) arr[i]=local; else arr.push(local); render();
   PENDING++; savingUi();
-  const run=async()=>{ try { const d=await api("save",{col,id,data,merge:true}); if(!d.ok) throw d;
+  // خطوة «شيت الحضور» يفتح فيها الخادم شيت الحضور للتحقق، فقد تتأخر (14 نوفمبر)
+  const run=async()=>{ try { const d=await api("save",{col,id,data,merge:true}, data&&data.marks&&data.marks.sheet?90000:30000); if(!d.ok) throw d;
       const j=S[col].findIndex(x=>x.id===id); if(j>=0) S[col][j]=Object.assign({}, S[col][j], d.doc); else S[col].push(d.doc);
       if(okMsg) toast(okMsg); }
     catch(e){ const j=S[col].findIndex(x=>x.id===id); if(prev){ if(j>=0) S[col][j]=prev; } else if(j>=0) S[col].splice(j,1);
       if(e.reason==="sheet_check") open(`<h2>📊 شيت الحضور لم يُسجَّل بعد</h2><p style="line-height:1.9">${esc(e.message||"")}</p><div class="row"><button class="btn" data-a="close">حسنًا</button></div>`);
+      else if(e.reason==="network" && e.timeout){ toast("الخادم تأخر في الرد؛ جارٍ التحقق هل حُفظ…"); setTimeout(()=>refresh(true), 4000); }
       else toast(e.reason==="network"?"لا يوجد اتصال؛ لم يُحفظ آخر تعديل.":e.reason==="forbidden"?"ليست لديك صلاحية لهذا.":"لم يُحفظ آخر تعديل، حاول مرة أخرى."); }
     finally { PENDING--; if(!--SAVING[tag]) delete SAVING[tag]; render(); } };
   SAVEQ[col+id]=(SAVEQ[col+id]||Promise.resolve()).then(run);
@@ -576,7 +578,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="565557a27f31"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="03e7354c2e72"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
