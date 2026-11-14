@@ -319,7 +319,8 @@ span.mk{cursor:default}
 .arseg{display:flex;gap:6px;flex-wrap:wrap}.arseg button{border:1px solid #DCE5EF;background:#fff;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700;color:var(--brand);cursor:pointer}.arseg button.on{background:var(--brand-deep);color:#fff;border-color:transparent}
 .arg{font-size:14px;font-weight:700;color:var(--brand-deep);margin:4px 0 -4px}.arg em{font-style:normal;font-weight:500;color:var(--muted);font-size:12.5px}
 .ari{background:#fff;border-radius:12px;border:1px solid #E3E9F1;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center}.ari .nm{font-weight:700}.ari .nm small{color:var(--muted);font-weight:500;margin-inline-start:6px}
-.ari .ev{grid-column:1/2;display:flex;gap:8px;flex-wrap:wrap;font-size:13px}.ari .ev span{background:#F4F7FB;border-radius:8px;padding:2px 8px}.ari .ev .o{background:#FEF2F2;color:#991B1B}.ari .ev .z{background:#ECFDF3;color:#166534}.ari .ev .p{background:var(--gold-soft);color:var(--gold-ink)}.ari .ev .rp{background:#EAF1F8;color:var(--brand-deep)}
+.ari .ev{grid-column:1/2;display:flex;gap:8px;flex-wrap:wrap;font-size:13px}.ari .ev span{background:#F4F7FB;border-radius:8px;padding:2px 8px}.ari .ev .o{background:#FEF2F2;color:#991B1B}.ari .ev .z{background:#ECFDF3;color:#166534}.ari .ev .p{background:var(--gold-soft);color:var(--gold-ink)}.ari .ev .rp{background:#EAF1F8;color:var(--brand-deep)}.ari .ev .tg{background:#E8F4FD;color:#0B4F7C}.ari .ev .nt{background:#F5F3FF;color:#4C1D95}
+.arhow{margin:-2px 0 2px;font-size:13px}.arhow summary{cursor:pointer;color:var(--brand);font-weight:700;width:max-content}.arhow p{margin:4px 0;background:#F8FAFC;border-radius:8px;padding:4px 10px}
 .ari .acts{grid-row:1/4;grid-column:2;display:flex;gap:6px}.ab{border:1.5px solid #CBD5E1;background:#fff;border-radius:10px;padding:6px 10px;font:inherit;font-size:13px;font-weight:700;color:#334155;cursor:pointer}.ab.y{border-color:#4ADE80;background:#ECFDF3;color:#166534}.ab.n{color:#991B1B}.ab.n.on{background:#FEF2F2;border-color:#F87171}
 .ari.bad{border-inline-start:4px solid var(--bad)}.ari.warn{border-inline-start:4px solid var(--gold)}.ari.gr{border-inline-start:4px solid #94a3b8}.ari.ex{opacity:.55}
 .arsbar{position:sticky;bottom:0;z-index:5;background:#fff;border-top:2px solid var(--gold);border-radius:12px 12px 0 0;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 -4px 14px rgba(0,50,98,.08)}
@@ -589,7 +590,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="05dc7f36ab6c"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="8034cc1486ea"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1087,7 +1088,18 @@ function daySummary(d){ let tot=0, dn=0, late=0, exc=0;
 // ===== مراجعة الحضور (قرار المستخدم 14 نوفمبر: البديل أ + عمود الدقة) =====
 // Claude يراجع كل محاضرة (زووم مقابل شيت المنظّم) في شيت مستقل؛ الخادم يقرؤه لمسئول اللجنة فقط (attReviews).
 // المسئول يعتمد/يستبعد كل ملاحظة، ثم يرسل المعتمد للمنظّم في evals «ar_<رقم المراجعة>»؛ المنظّم يعلّم «صحّحت» على كل اسم.
-const AR_TYPES=[["دخل المحاضرة ومتسجل غياب","🔴","bad"],["متسجل حضور ومش موجود في زووم","🔴","bad"],["حضور ناقص بدون تنويه","🟡","warn"],["حاضر ولم يُسجَّل","⚪","gr"],["غائب ولم يُسجَّل","⚪","gr"]];
+const AR_TYPES=[["دخل المحاضرة ومتسجل غياب","🔴","bad"],["متسجل حضور ومش موجود في زووم","🔴","bad"],["اعتذر في الجروب ومتسجّل غياب","🔴","bad"],["متسجّل معتذر من غير اعتذار","🔴","bad"],["حضور ناقص بدون تنويه","🟡","warn"],["حاضر ولم يُسجَّل","⚪","gr"],["غائب ولم يُسجَّل","⚪","gr"],["معتذر ولم يُسجَّل","⚪","gr"]];
+// «إزاي أراجع ده؟» لكل نوع (طلب المستخدم 14 نوفمبر): الدليل، يتأكد من إيه، ولو اعتمد المنظّم يعمل إيه
+const AR_HOW={
+ "دخل المحاضرة ومتسجل غياب":["اسمه في زووم ودقائقه داخل فترة الشيخ","الاسم ده بتاعه فعلًا؟ لو «غير مؤكد» اتأكد إنه مش لطالب تاني بنفس الاسم","يكتب «حضور»، ولو أقل من الحد يكتب تنويه"],
+ "متسجل حضور ومش موجود في زووم":["مفيش اسم مطابق له في زووم","ممكن يكون دخل باسم مش معروف (شوف «أسماء زووم مجهولة») أو من جهاز حد تاني؟ لو أيوه استبعد","يكتب «غياب»، أو يرد باسمه في زووم"],
+ "اعتذر في الجروب ومتسجّل غياب":["رسالة منه في جروب الدورة (الوقت مكتوب تحت الاسم)، من يوم قبل المحاضرة لحد 45 دقيقة بعدها","افتح الجروب على الوقت واتأكد إنها اعتذار عن الحضور، مش «هتأخر»","يكتب «اعتذار» بدل «غياب»"],
+ "متسجّل معتذر من غير اعتذار":["المنظّم كاتب «اعتذار» ومفيش منه اعتذار في الجروب ولا على خاص حساب وحي","اعتذر بطريقة تانية؟ للمنظّم مباشرة، أو عنده استثناء؟ لو أيوه استبعد","يكتب «غياب»، أو يرد بمكان الاعتذار"],
+ "حضور ناقص بدون تنويه":["دقائقه في زووم أقل من الحد الأدنى","المنظّم كاتب تنويه في مكان تاني، أو الطالب استأذن؟ لو أيوه استبعد","يضيف تنويه في الملاحظات"],
+ "حاضر ولم يُسجَّل":["دخل زووم وخانته فاضية أو مش موجود في الشيت","هو طالب في الدورة فعلًا؟","يضيفه ويكتب «حضور»"],
+ "غائب ولم يُسجَّل":["خانته فاضية ومش موجود في زووم","كان مشترك وقت المحاضرة، ولا انضم بعدها؟ لو انضم بعدها استبعد","يكتب «غياب»"],
+ "معتذر ولم يُسجَّل":["اعتذر في جروب الدورة ومش مسجّل في الشيت","هو طالب في الدورة؟","يضيفه ويكتب «اعتذار»"]};
+const arHow = t => { const h=AR_HOW[t]; return h?`<details class="arhow"><summary>إزاي أراجع ده؟</summary><p><b>الدليل:</b> ${esc(h[0])}</p><p><b>اتأكد من:</b> ${esc(h[1])}</p><p><b>لو اعتمدت:</b> المنظّم ${esc(h[2])}</p></details>`:""; };
 const arId = rid => "ar_"+rid;
 const arDoc = rid => S.evals.find(e=>e.id===arId(rid));
 const arKey = it => String(it.no)+"|"+String(it.n);
@@ -1105,7 +1117,7 @@ function arDec(rv){ S.arDec=S.arDec||{}; if(!S.arDec[rv.id]){ const doc=arDoc(rv
 function arPending(){ return (S.ar||[]).filter(rv=>rv.items.length && !((arDoc(rv.id)||{}).metrics||{}).sent); }
 function arInbox(){ const p=arPending(); if(!p.length) return "";
   return `<div class="card"><h2>🔎 مراجعة حضور جاهزة (${p.length})</h2>${p.map(rv=>{ const c=t=>rv.items.filter(i=>i.j===t).length;
-    return `<div class="item"><div class="what"><b>${esc(rv.title)} — ${esc(fmtDay(rv.date))}</b><small>راجعها Claude من تقرير زووم · دقة التسجيل <b style="color:var(--ok);display:inline">${esc(rv.acc)}</b> · <span style="color:var(--bad)">${c("خطأ")} خطأ</span> · <span style="color:var(--gold-ink)">${c("ناقص تنويه")} ناقص تنويه</span>${c("لم يُسجَّل")?` · ${c("لم يُسجَّل")} لم يُسجَّلوا`:""}</small></div><button class="btn sm" data-a="arOpen" data-id="${esc(rv.id)}">راجِع</button></div>`; }).join("")}</div>`; }
+    return `<div class="item"><div class="what"><b>${esc(rv.title)} — ${esc(fmtDay(rv.date))}</b><small>راجعها Claude من تقرير زووم وجروب تيليجرام · دقة التسجيل <b style="color:var(--ok);display:inline">${esc(rv.acc)}</b> · <span style="color:var(--bad)">${c("خطأ")} خطأ</span> · <span style="color:var(--gold-ink)">${c("ناقص تنويه")} ناقص تنويه</span>${c("لم يُسجَّل")?` · ${c("لم يُسجَّل")} لم يُسجَّلوا`:""}</small></div><button class="btn sm" data-a="arOpen" data-id="${esc(rv.id)}">راجِع</button></div>`; }).join("")}</div>`; }
 // شاشة المراجعة للمسئول
 function viewAttRev(){
   if(!S.ar) return `<div class="card empty">${S.arErr?`تعذّر تحميل المراجعات${S.arErr==="review_sheet"?" (شيت المراجعة غير متاح لحساب الأكاديمية)":""}. <button class="btn sm" data-a="arReload">⟳ إعادة المحاولة</button>`:"جارٍ تحميل المراجعة…"}</div>`;
@@ -1120,9 +1132,10 @@ function viewAttRev(){
     const zm=Number(it.min)>0?`<span class="${Number(it.min)>arNum(rv.th)?"z":"p"}">زووم: ${esc(it.min)} من ${esc(rv.mins)} د</span>`:`<span>زووم: لا يوجد اسم مطابق</span>`;
     return `<div class="ari ${typ[2]} ${st==="n"?"ex":""}"><div class="nm">${esc(it.n)} <small>م ${esc(it.no)}</small>${sent&&st==="y"?(fixed?` <span class="pill ok">✓ صحّحه المنظّم</span>`:` <span class="pill gold">لم يُصحَّح بعد</span>`):""}</div>
       <div class="ev">${man}${zm}${it.zn&&it.zn!=="—"?`<span>باسم «${esc(it.zn)}»</span>`:""}${it.conf==="مرجّح"?`<span class="p">غير مؤكد</span>`:it.conf==="مؤكد"?`<span>مؤكد</span>`:""}</div>
+      ${it.tg||it.k==="متسجّل معتذر من غير اعتذار"?`<div class="ev"><span class="tg">📩 تيليجرام: ${esc(it.tg||"مفيش اعتذار")}</span>${it.note?`<span class="nt">${esc(it.note)}</span>`:""}</div>`:it.note?`<div class="ev"><span class="nt">ℹ️ ${esc(it.note)}</span></div>`:""}
       ${rep?`<div class="ev"><span class="rp">رد المنظّم: ${esc(rep)}</span></div>`:""}
       <div class="acts"><button class="ab ${st==="y"?"y":""}" data-a="arSt" data-k="${esc(k)}" data-v="y">✓ اعتمد</button><button class="ab n ${st==="n"?"on":""}" data-a="arSt" data-k="${esc(k)}" data-v="n">✗ استبعد</button></div></div>`; };
-  const groups=AR_TYPES.map(([t,ic])=>{ const g=list.filter(i=>i.k===t); return g.length?`<div class="arg">${ic} ${esc(t)} <em>${g.length}</em></div>${g.map(item).join("")}`:""; }).join("");
+  const groups=AR_TYPES.map(([t,ic])=>{ const g=list.filter(i=>i.k===t); return g.length?`<div class="arg">${ic} ${esc(t)} <em>${g.length}</em></div>${arHow(t)}${g.map(item).join("")}`:""; }).join("");
   const nY=rv.items.filter(i=>dec.st[arKey(i)]==="y").length, orgs=S.members.filter(m=>m.active!==false && m.role!=="committee");
   const sentFix=sent?(doc.metrics.items||[]).filter(i=>i.st==="y"&&self.d.includes(arKey(i))).length:0, sentN=sent?(doc.metrics.items||[]).filter(i=>i.st==="y").length:0;
   return `<div class="row" style="align-items:flex-start"><div class="grow"><h1 style="font-size:24px">مراجعة الحضور — ${esc(rv.title)}</h1>
@@ -1143,12 +1156,15 @@ function viewAttRev(){
     <button class="btn ghost" data-a="arSave" data-v="0">💾 حفظ</button><button class="btn gold" data-a="arSave" data-v="1">📤 ${sent?"تحديث الإرسال":"إرسال للمنظّم"} (${nY})</button></div>`; }
 function arMetrics(rv, dec, sent){ const old=(arDoc(rv.id)||{}).metrics||{};
   return {kind:"att", rid:rv.id, title:rv.title, date:rv.date, sheikh:rv.sheikh, mins:rv.mins, th:rv.th, total:rv.total, ok:rv.ok, bad:rv.bad, note:rv.note, unreg:rv.unreg, acc:rv.acc,
-    accEff:arAcc(rv.total, rv.items, dec.st), unk:old.unk||{}, sent:!!(sent||old.sent), sentAt:sent?Date.now():(old.sentAt||null), items:rv.items.map(it=>Object.assign({}, it, {st:dec.st[arKey(it)]||""}))}; }
+    accEff:arAcc(rv.total, rv.items, dec.st), unk:old.unk||{}, sent:!!(sent||old.sent), sentAt:sent?Date.now():(old.sentAt||null), items:rv.items.map(it=>{ const o=Object.assign({}, it, {st:dec.st[arKey(it)]||""}); delete o.note; return o; })}; } // ملاحظة المراجعة للمسئول فقط، لا تُرسل للمنظّم
 // نص الملاحظة للمنظّم
 function arLine(it, x){ const m=Number(it.min)||0;
   if(it.k==="دخل المحاضرة ومتسجل غياب") return `مكتوب غياب — دخل ${m} دقيقة${it.zn&&it.zn!=="—"?` باسم ${it.zn}`:""} ← يُكتب حضور${m<=arNum(x.th)?" مع تنويه إنه حضر أقل من النص":""}`;
   if(it.k==="متسجل حضور ومش موجود في زووم") return `مكتوب حضور — مش موجود في زووم. لو تعرف اسمه في زووم اكتبه`;
   if(it.k==="حضور ناقص بدون تنويه") return `حضر ${m} دقيقة بس من ${x.mins} ← اكتب تنويه في الملاحظات`;
+  if(it.k==="اعتذر في الجروب ومتسجّل غياب") return `مكتوب غياب — اعتذر في جروب الدورة ← يُكتب اعتذار`;
+  if(it.k==="متسجّل معتذر من غير اعتذار") return `مكتوب اعتذار — مفيش اعتذار منه في الجروب ← يُكتب غياب. لو اعتذر لك بطريقة تانية اكتب ده في الرد`;
+  if(it.k==="معتذر ولم يُسجَّل") return `مش متسجل — اعتذر في جروب الدورة ← يُضاف ويُكتب اعتذار`;
   if(it.k==="حاضر ولم يُسجَّل") return `مش متسجل — دخل ${m} دقيقة${it.zn&&it.zn!=="—"?` باسم ${it.zn}`:""} ← يُكتب حضور`;
   return `مش متسجل — مش موجود في زووم ← يُكتب غياب`; }
 // بطاقة المنظّم في «يومي»
@@ -1156,7 +1172,7 @@ function arFollow(me){ return S.evals.filter(e=>e.member===me && /^ar_/.test(e.i
   return `<div class="card follow arf"><h2>📋 ملاحظات على حضور «${esc(x.title||"")}»</h2><p class="sub" style="margin:-4px 0 6px;font-size:13.5px">${esc(fmtDay(x.date||e.month))} · من المسئول · صحّح شيت الحضور وعلّم على كل اسم</p>
     ${e.headNote?`<p style="margin:0 0 6px"><b>ملاحظة المسئول:</b> ${esc(e.headNote)}</p>`:""}
     ${its.map((it,i)=>{ const k=arKey(it), on=self.d.includes(k); return `<div class="item ${on?"done":""}"><button class="chk ${on?"on":""}" data-a="arFix" data-id="${esc(e.id)}" data-k="${esc(k)}" aria-label="صحّحت">${on?"✓":""}</button><div class="what"><b>${esc(it.n)}</b><small>${esc(arLine(it,x))}</small>
-      ${it.k==="متسجل حضور ومش موجود في زووم"?`<div class="row" style="margin-top:4px"><input id="arr_${esc(e.id)}_${i}" placeholder="ردّك (اختياري)" value="${esc(self.r[k]||"")}" class="grow" style="width:auto"><button class="btn sm ghost" data-a="arRep" data-id="${esc(e.id)}" data-k="${esc(k)}" data-i="${i}">إرسال</button></div>`:""}</div></div>`; }).join("")}
+      ${(it.k==="متسجل حضور ومش موجود في زووم"||it.k==="متسجّل معتذر من غير اعتذار")?`<div class="row" style="margin-top:4px"><input id="arr_${esc(e.id)}_${i}" placeholder="ردّك (اختياري)" value="${esc(self.r[k]||"")}" class="grow" style="width:auto"><button class="btn sm ghost" data-a="arRep" data-id="${esc(e.id)}" data-k="${esc(k)}" data-i="${i}">إرسال</button></div>`:""}</div></div>`; }).join("")}
     <label style="margin-top:8px">تعليقك (اختياري)<input id="ack_${esc(e.id)}"></label>
     <div class="row" style="margin-top:6px"><span class="grow sub">${dn} من ${its.length} تم</span><button class="btn" data-a="arDone" data-id="${esc(e.id)}">✓ صحّحت الكل</button></div></div>`; }).join(""); }
 // للتقارير: دقة تسجيل الحضور للمنظّم في الفترة (من المراجعات المرسلة فقط)
