@@ -589,7 +589,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="63a7fffd668e"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="05dc7f36ab6c"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -627,7 +627,7 @@ function otpBox(){ const o=S.otp||{};
   return `<div class="otpq"><p class="sub" style="margin:0">أرسلنا كودًا من 6 أرقام إلى <b dir="ltr">${esc(o.email)}</b> (راجع الرسائل غير المرغوب فيها أيضًا).</p><label>الكود<input id="otp_c" inputmode="numeric" maxlength="6" dir="ltr" autocomplete="one-time-code" style="letter-spacing:6px;text-align:center;font-size:20px"></label><div class="row"><button class="btn" data-a="otpVerify">دخول</button><button class="btn ghost" data-a="otpSend" data-again="1">إرسال كود جديد</button></div></div>`; }
 // ---------- العرض ----------
 // ما يُكتب في خانات الرد/القرار/التعليق يبقى عند إعادة الرسم (لا يُرسل ولا يُخزَّن)
-const KEEP_RE = /^(r_|q_|cv_|rqr_|ack_|arr_|arn_)/;
+const KEEP_RE = /^(r_|q_|cv_|rqr_|ack_|arr_|arn_|aru_)/;
 function render(){ const keep={}; document.querySelectorAll("#app textarea[id], #app input[id], #app select[id]").forEach(x=>{ if(KEEP_RE.test(x.id) && x.value && x.type!=="hidden") keep[x.id]=x.value; });
   renderInner();
   for(const id in keep){ const x=document.getElementById(id); if(x && !x.value) x.value=keep[id]; }
@@ -1134,7 +1134,7 @@ function viewAttRev(){
   <div class="arbar"><span>دقة المنظّم <small class="sub">(للتقييم · الهدف ${GOAL.att}%)</small></span><div class="bar"><i style="width:${acc||0}%"></i></div><b style="color:${acc>=GOAL.att?"var(--ok)":"var(--bad)"}">${acc}%</b>${pacc!=null?`<small class="${acc>=pacc?"up":"late"}">${acc>=pacc?"▲":"▼"} من ${pacc}% في المراجعة السابقة</small>`:""}</div>
   <p class="sub" style="font-size:12.5px;margin:-6px 0 0">من شيت المنظّم كما سلّمه أول مرة قبل أي تصحيح: كل ملاحظة تعتمدها تُحسب عليه (ناقص التنويه بنصف)، والمستبعد يُحسب صح. قبل قرارك: ${esc(rv.acc)} من مقارنة Claude.</p>
   <div class="arseg">${segs.filter(s=>s[2]||s[0]==="need").map(([k,l,n])=>`<button class="${f===k?"on":""}" data-a="arF" data-v="${esc(k)}">${l} (${n})</button>`).join("")}</div>
-  ${f==="unk"?`<div class="card"><h2>أسماء في زووم لم يُعرف أصحابها</h2>${rv.unknown.length?rv.unknown.map(u=>`<div class="item"><div class="what"><b>${esc(u.n)}</b><small>${esc(u.min)} دقيقة داخل فترة الشيخ</small></div></div>`).join(""):`<div class="empty">لا يوجد.</div>`}<p class="sub" style="font-size:13px">لو عرفت أصحابها بلّغ Claude لتُضاف في المراجعة القادمة.</p></div>`
+  ${f==="unk"?`<div class="card"><h2>أسماء في زووم لم يُعرف أصحابها</h2>${rv.unknown.length?rv.unknown.map((u,i)=>{ const got=(((doc||{}).metrics||{}).unk||{})[u.n]||""; return `<div class="item"><div class="what"><b>${esc(u.n)}</b><small>${esc(u.min)} دقيقة داخل فترة الشيخ</small>${got?` <span class="pill ok">✓ اتسجّل</span>`:""}</div><input id="aru_${esc(rv.id)}_${i}" placeholder="مين صاحبه؟ (رقمه أو اسمه في الشيت)" value="${esc(got)}" style="width:auto;min-width:220px"><button class="btn sm" data-a="arUnk" data-i="${i}">حفظ</button></div>`; }).join(""):`<div class="empty">لا يوجد.</div>`}<p class="sub" style="font-size:13px">لو عرفت صاحب اسم اكتب رقمه أو اسمه في الشيت واضغط «حفظ»، وClaude يستخدمه في المراجعة القادمة.</p></div>`
    : (groups || `<div class="card empty">✓ لا يوجد شيء هنا.</div>`)}
   <p class="sub" style="font-size:13px">«✗ استبعد» لما تكون ملاحظة Claude غلط (مثلًا الطالب دخل باسم تعرفه). المستبعد لا يصل للمنظّم.</p>
   <div class="arsbar"><span class="grow">اعتمدت <b>${nY}</b> من ${rv.items.length} · <a role="button" tabindex="0" data-a="arAll" style="cursor:pointer;color:var(--brand);text-decoration:underline">اعتماد الكل</a></span>
@@ -1143,7 +1143,7 @@ function viewAttRev(){
     <button class="btn ghost" data-a="arSave" data-v="0">💾 حفظ</button><button class="btn gold" data-a="arSave" data-v="1">📤 ${sent?"تحديث الإرسال":"إرسال للمنظّم"} (${nY})</button></div>`; }
 function arMetrics(rv, dec, sent){ const old=(arDoc(rv.id)||{}).metrics||{};
   return {kind:"att", rid:rv.id, title:rv.title, date:rv.date, sheikh:rv.sheikh, mins:rv.mins, th:rv.th, total:rv.total, ok:rv.ok, bad:rv.bad, note:rv.note, unreg:rv.unreg, acc:rv.acc,
-    accEff:arAcc(rv.total, rv.items, dec.st), sent:!!(sent||old.sent), sentAt:sent?Date.now():(old.sentAt||null), items:rv.items.map(it=>Object.assign({}, it, {st:dec.st[arKey(it)]||""}))}; }
+    accEff:arAcc(rv.total, rv.items, dec.st), unk:old.unk||{}, sent:!!(sent||old.sent), sentAt:sent?Date.now():(old.sentAt||null), items:rv.items.map(it=>Object.assign({}, it, {st:dec.st[arKey(it)]||""}))}; }
 // نص الملاحظة للمنظّم
 function arLine(it, x){ const m=Number(it.min)||0;
   if(it.k==="دخل المحاضرة ومتسجل غياب") return `مكتوب غياب — دخل ${m} دقيقة${it.zn&&it.zn!=="—"?` باسم ${it.zn}`:""} ← يُكتب حضور${m<=arNum(x.th)?" مع تنويه إنه حضر أقل من النص":""}`;
@@ -1180,6 +1180,12 @@ async function arAct(a, el, id){
     el.disabled=true;
     const ok=await save("evals", arId(rv.id), {member:d.org, month:rv.date, evaluator:S.me.id, headNote:d.note, metrics:arMetrics(rv,d,send)}, true);
     el.disabled=false; if(ok){ toast(send?"أُرسلت؛ ستظهر للمنظّم في «يومي».":"حُفظت المسودة."); render(); } return true; }
+  if(a==="arUnk"){ if(!rv) return true; const d=arDec(rv), i=Number(el.dataset.i), u=rv.unknown[i]; if(!u) return true; d.org=v("ar_org")||d.org; d.note=v("arn_note")||d.note;
+    if(!d.org) return toast("اختر المنظّم أولًا (في الشريط السفلي)."), true;
+    const old=arDoc(rv.id); if(old && old.member && old.member!==d.org) return toast("المراجعة مرتبطة بمنظّم آخر."), true;
+    const t=v("aru_"+rv.id+"_"+i).slice(0,120), mx=arMetrics(rv,d,false); mx.unk=Object.assign({}, mx.unk); if(t) mx.unk[u.n]=t; else delete mx.unk[u.n];
+    el.disabled=true; const ok=await save("evals", arId(rv.id), {member:d.org, month:rv.date, evaluator:S.me.id, headNote:d.note, metrics:mx}, true); el.disabled=false;
+    if(ok){ toast(t?"اتسجّل، شكرًا.":"اتمسح."); render(); } return true; }
   if(a==="arFix"||a==="arRep"){ const e=S.evals.find(x=>x.id===id); if(!e) return true; const s=arSelf(e), k=el.dataset.k;
     if(a==="arFix"){ s.d = s.d.includes(k) ? s.d.filter(x=>x!==k) : s.d.concat([k]); }
     else { const t=v("arr_"+id+"_"+el.dataset.i); if(!t) return toast("اكتب ردّك."), true; s.r[k]=t.slice(0,300); }
