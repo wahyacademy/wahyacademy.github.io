@@ -314,6 +314,17 @@ span.mk{cursor:default}
 .chkl input{width:auto}
 .login{text-align:center;align-items:center;display:flex;flex-direction:column;gap:12px;padding:28px 18px}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.kq6{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.kq{background:#fff;border-radius:12px;padding:8px 10px;border:1px solid #E3E9F1;border-inline-start:5px solid var(--brand)}.kq b{display:block;font-size:22px;line-height:1.2;color:var(--brand-deep)}.kq small{color:var(--muted);font-size:12px}.kq.ok{border-inline-start-color:var(--ok)}.kq.ok b{color:var(--ok)}.kq.bad{border-inline-start-color:var(--bad)}.kq.bad b{color:var(--bad)}.kq.gold{border-inline-start-color:var(--gold)}.kq.gold b{color:var(--gold-ink)}.kq.gray{border-inline-start-color:#94a3b8}
+.arbar{display:flex;align-items:center;gap:12px;background:#fff;border-radius:12px;padding:10px 14px;border:1px solid #E3E9F1;flex-wrap:wrap}.arbar .bar{flex:1;min-width:120px;height:10px;background:#EEF2F7;border-radius:99px;overflow:hidden}.arbar .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--ok),#2BB3A3)}.arbar b{font-size:20px;color:var(--ok)}.arbar small{font-size:12.5px}.up{color:var(--ok);font-weight:700}
+.arseg{display:flex;gap:6px;flex-wrap:wrap}.arseg button{border:1px solid #DCE5EF;background:#fff;border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700;color:var(--brand);cursor:pointer}.arseg button.on{background:var(--brand-deep);color:#fff;border-color:transparent}
+.arg{font-size:14px;font-weight:700;color:var(--brand-deep);margin:4px 0 -4px}.arg em{font-style:normal;font-weight:500;color:var(--muted);font-size:12.5px}
+.ari{background:#fff;border-radius:12px;border:1px solid #E3E9F1;padding:10px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center}.ari .nm{font-weight:700}.ari .nm small{color:var(--muted);font-weight:500;margin-inline-start:6px}
+.ari .ev{grid-column:1/2;display:flex;gap:8px;flex-wrap:wrap;font-size:13px}.ari .ev span{background:#F4F7FB;border-radius:8px;padding:2px 8px}.ari .ev .o{background:#FEF2F2;color:#991B1B}.ari .ev .z{background:#ECFDF3;color:#166534}.ari .ev .p{background:var(--gold-soft);color:var(--gold-ink)}.ari .ev .rp{background:#EAF1F8;color:var(--brand-deep)}
+.ari .acts{grid-row:1/4;grid-column:2;display:flex;gap:6px}.ab{border:1.5px solid #CBD5E1;background:#fff;border-radius:10px;padding:6px 10px;font:inherit;font-size:13px;font-weight:700;color:#334155;cursor:pointer}.ab.y{border-color:#4ADE80;background:#ECFDF3;color:#166534}.ab.n{color:#991B1B}.ab.n.on{background:#FEF2F2;border-color:#F87171}
+.ari.bad{border-inline-start:4px solid var(--bad)}.ari.warn{border-inline-start:4px solid var(--gold)}.ari.gr{border-inline-start:4px solid #94a3b8}.ari.ex{opacity:.55}
+.arsbar{position:sticky;bottom:0;z-index:5;background:#fff;border-top:2px solid var(--gold);border-radius:12px 12px 0 0;padding:10px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 -4px 14px rgba(0,50,98,.08)}
+.arf .item.done b{text-decoration:line-through;opacity:.7}.arf .chk{width:24px;height:24px;border:2px solid #CBD5E1;border-radius:6px;background:#fff;display:inline-grid;place-items:center;flex:none;color:#fff;cursor:pointer;padding:0}.arf .chk.on{background:var(--ok);border-color:var(--ok)}
+@media(max-width:640px){.kq6{grid-template-columns:repeat(3,1fr)}.ari{grid-template-columns:1fr}.ari .acts{grid-row:auto;grid-column:1}}
 </style>
 </head>
 <body>
@@ -518,7 +529,7 @@ async function api(action, payload={}, ms=30000){
     return d;
   } catch(e){ if(e && e.reason) throw e; throw {reason:"network", timeout:ctl.signal.aborted}; } finally { clearTimeout(tm); }
 }
-function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.mailLeft=d.mailLeft; S.phase="app"; }
+function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && d.me.role==="committee" && !S.ar) setTimeout(()=>loadAR(false),0); }
 async function refresh(quiet){
   const f=document.activeElement; if(quiet && f && /INPUT|TEXTAREA|SELECT/.test(f.tagName) && f.value) return; // لا نمسح ما يكتبه
   if(quiet && PENDING) return; // حفظ جارٍ: لا نكتب فوقه ببيانات أقدم
@@ -578,7 +589,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="03e7354c2e72"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="7cd246ad81f6"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -616,7 +627,7 @@ function otpBox(){ const o=S.otp||{};
   return `<div class="otpq"><p class="sub" style="margin:0">أرسلنا كودًا من 6 أرقام إلى <b dir="ltr">${esc(o.email)}</b> (راجع الرسائل غير المرغوب فيها أيضًا).</p><label>الكود<input id="otp_c" inputmode="numeric" maxlength="6" dir="ltr" autocomplete="one-time-code" style="letter-spacing:6px;text-align:center;font-size:20px"></label><div class="row"><button class="btn" data-a="otpVerify">دخول</button><button class="btn ghost" data-a="otpSend" data-again="1">إرسال كود جديد</button></div></div>`; }
 // ---------- العرض ----------
 // ما يُكتب في خانات الرد/القرار/التعليق يبقى عند إعادة الرسم (لا يُرسل ولا يُخزَّن)
-const KEEP_RE = /^(r_|q_|cv_|rqr_|ack_)/;
+const KEEP_RE = /^(r_|q_|cv_|rqr_|ack_|arr_|arn_)/;
 function render(){ const keep={}; document.querySelectorAll("#app textarea[id], #app input[id], #app select[id]").forEach(x=>{ if(KEEP_RE.test(x.id) && x.value && x.type!=="hidden") keep[x.id]=x.value; });
   renderInner();
   for(const id in keep){ const x=document.getElementById(id); if(x && !x.value) x.value=keep[id]; }
@@ -632,17 +643,17 @@ function renderInner(){
   hday.innerHTML = `<div class="hd-date"><b>${DAYS[dayIdx(parse(td))]}</b><span>${esc(gregFull(td))}<i>◆</i>${esc(hijri(td))}</span></div><div class="hclk" aria-label="الساعة بتوقيت القاهرة"><span class="ic"></span><span class="hm" data-live="hm"></span><span class="sx"><span class="ss" data-live="ss"></span><span class="ap" data-live="ap"></span></span></div>`;
   const banner = S.msg ? `<div class="banner">${esc(S.msg)}</div>` : "";
   const asv=VIEWER(); document.body.classList.toggle("asmode", !!asv);
-  if(!isMgr() || asv){ const me=meId(), mt=[["today","يومي",S.evals.filter(e=>e.member===me&&!e.ack).length+newTasks(me).length],["week","جدولي الأسبوعي",0],["mine","تقريري",0],["reqs","طلباتي",0]];
+  if(!isMgr() || asv){ const me=meId(), mt=[["today","يومي",S.evals.filter(e=>e.member===me&&!e.ack&&!arHidden(e)).length+newTasks(me).length],["week","جدولي الأسبوعي",0],["mine","تقريري",0],["reqs","طلباتي",0]];
     if(!mt.some(t=>t[0]===S.view)) S.view="today";
     const asBar = asv ? `<div class="asbar noprint"><span>👁 أنت تشاهد شاشة <b>${esc(nameOf(asv))}</b> كما تظهر له — <b>للعرض فقط</b></span><button class="btn sm" data-a="asExit">↩ رجوع</button></div>` : "";
     nav.hidden=false; $("#tabs").innerHTML = mt.map(([k,l,n])=>`<a href="#${k}" class="${S.view===k?"on":""}">${l}${n?`<span class="n">${n}</span>`:""}</a>`).join("");
     app.innerHTML = asBar + banner + ({today:viewMine, week:()=>weekCard(me), mine:viewMyReport, reqs:viewMyReqs}[S.view])(); return; }
   const pend = team().reduce((n,m)=>n+problemsOf(m.id,today()).filter(c=>!c.reply).length,0) + pendingReqs().length;
   const tabs = [["today","اليوم",pend],["tasks","المهام",0],["sched","جداول الفريق",0],["report","التقارير",0],["lreps","تقارير المحاضرات",0]].concat(isAdmin()?[["academy","جدول الأكاديمية",unassigned().length],["team","الفريق والجداول",0]]:[]);
-  if(!tabs.some(t=>t[0]===S.view)) S.view="today";
+  if(!tabs.some(t=>t[0]===S.view) && !(S.view==="attrev" && isAdmin())) S.view="today";
   nav.hidden=false;
   $("#tabs").innerHTML = tabs.map(([k,l,n])=>`<a href="#${k}" class="${S.view===k?"on":""}">${l}${n?`<span class="n">${n}</span>`:""}</a>`).join("");
-  app.innerHTML = banner + ({today:viewTeamToday, tasks:viewTasks, report:viewReport, lreps:viewLecReports, academy:viewAcademy, team:viewTeam, sched:viewTeamSched}[S.view])();
+  app.innerHTML = banner + ({today:viewTeamToday, tasks:viewTasks, report:viewReport, lreps:viewLecReports, academy:viewAcademy, team:viewTeam, sched:viewTeamSched, attrev:viewAttRev}[S.view])();
 }
 
 // جداول الفريق (قرار المستخدم 9 نوفمبر): للمسئول، ولمسئول القسم لقسمه فقط — عرض «يوم» (خط زمني) و«أسبوع»
@@ -735,7 +746,7 @@ function viewMyReport(){ const me=meId(), d=S.myday||today(), st=periodStats(me,
   <div class="card"><h2>التفاصيل</h2>${dayDetail(me,d)}</div>`; }
 // متابعات المسئول في «يومي»: التقارير المرسلة (أسبوعي/شهري) والتقييم الشهري
 function followCards(me){
-  const mine=S.evals.filter(e=>e.member===me), pend=mine.filter(e=>!e.ack).sort((a,b)=>(b.month||"").localeCompare(a.month||""));
+  const mine=S.evals.filter(e=>e.member===me && !/^ar_/.test(e.id||"")), pend=mine.filter(e=>!e.ack).sort((a,b)=>(b.month||"").localeCompare(a.month||""));
   let h=pend.map(e=>{ const isRep=/^rp_/.test(e.id), x=e.metrics||{};
     const title = isRep ? `📈 تقريرك ${x.kind==="week"?"الأسبوعي":"الشهري"} — ${esc(x.label||"")}` : `📊 تقييمك لشهر ${esc(monthName(e.month))}`;
     return `<div class="card follow"><h2>${title}</h2>${metricsHtml(x)}
@@ -744,7 +755,7 @@ function followCards(me){
     <label style="margin-top:8px">تعليقك (اختياري)<input id="ack_${esc(e.id)}"></label><div class="row" style="margin-top:6px"><button class="btn" data-a="ackEval" data-id="${esc(e.id)}">اطّلعت</button></div></div>`; }).join("");
   const goal=mine.filter(e=>/^ev_/.test(e.id)).sort((a,b)=>(b.month||"").localeCompare(a.month||""))[0];
   if(!pend.length && goal && goal.goal && goal.goal.text) h+=`<div class="banner">🎯 <b>هدفك هذا الشهر:</b> ${esc(goal.goal.text)}</div>`;
-  return h; }
+  return arFollow(me)+h; }
 // طلباتي
 function viewMyReqs(){ const me=meId(), r=myReqs(me);
   return `<div class="row"><div class="grow"><h1>طلباتي</h1><p class="sub">الاعتذار عن محاضرة أو يوم، والإجازات، وتصحيح يوم سابق</p></div><button class="btn" data-a="newReq">📝 طلب جديد</button></div>${r||`<div class="card"><div class="empty">لا توجد طلبات حديثة.</div></div>`}`; }
@@ -1056,10 +1067,10 @@ function viewTeamToday(){
   ${dayTable(d)}
   <details class="card teamd"><summary><h2 style="display:inline">الفريق — تفاصيل كل شخص</h2></summary>${teamRows(d, rows)}</details>`; }
 function inboxCard(d, reqs, needReply){
-  const parts = [d===today()?sysCard()+riskCard():"", reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button></div></div></div>`).join("")}</div>`:"",
+  const parts = [d===today()?sysCard()+riskCard()+arInbox():"", reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button></div></div></div>`).join("")}</div>`:"",
   needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>`<div class="item"><div class="what"><b>${esc(m.name)}</b><div class="prob">${esc(p.note)}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button></div></div></div>`).join("")}</div>`:"",
   d===today()?sheikhReqCard():""].join("").trim();
-  const n = reqs.length + needReply.length + (d===today()?sheikhReqs().length:0);
+  const n = reqs.length + needReply.length + (d===today()?sheikhReqs().length+arPending().length:0);
   return parts ? `<div class="card inbox"><h2>يحتاج تدخّلك${n?` (${n})`:""}</h2>${parts}</div>` : `<div class="card inbox"><h2>يحتاج تدخّلك</h2><div class="empty">✓ لا شيء يحتاج تدخّلك الآن.</div></div>`; }
 function teamRows(d, rows){ return `${rows.length? rows.map(({m,sl,exp,dn,pr,late})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${esc(DEPTS[m.dept]||"")}</small></span>${asBtn(m.id)}${dutyPill(m.id,d)}${pr.length?`<span class="pill gold">⚠️ ${pr.length}</span>`:""}${late?`<span class="pill bad">${late} متأخرة</span>`:""}${exp.length?`<span class="pill ${dn===exp.length?"ok":""}">${dn} من ${exp.length}</span>`:""}</summary>
     <div class="mini">${sl.map(s=>{ const off=slotOff(m.id,d,s.id), ok=isSlotDone(d,s.id), lec=isLecture(s);
@@ -1073,6 +1084,107 @@ function daySummary(d){ let tot=0, dn=0, late=0, exc=0;
     if(isSlotDone(d,s.id)){ dn++; return; } if(adminLec(s)) return; const mk=marksOf(d,s.id); if(stepsFor(d).some(st=>stepState(d,s,st,mk[st[0]])==="late")) late++; }));
   const t=(n,l,c)=>`<div class="kpi ${c}"><b>${n}</b><small>${l}</small></div>`;
   return `<div class="kpis">${t(tot,"محاضرات اليوم","")}${t(dn,"تمت","ok")}${t(late,"فيها خطوات متأخرة",late?"bad":"")}${t(exc,"اعتذر الشيخ","gray")}</div>`; }
+// ===== مراجعة الحضور (قرار المستخدم 14 نوفمبر: البديل أ + عمود الدقة) =====
+// Claude يراجع كل محاضرة (زووم مقابل شيت المنظّم) في شيت مستقل؛ الخادم يقرؤه لمسئول اللجنة فقط (attReviews).
+// المسئول يعتمد/يستبعد كل ملاحظة، ثم يرسل المعتمد للمنظّم في evals «ar_<رقم المراجعة>»؛ المنظّم يعلّم «صحّحت» على كل اسم.
+const AR_TYPES=[["دخل المحاضرة ومتسجل غياب","🔴","bad"],["متسجل حضور ومش موجود في زووم","🔴","bad"],["حضور ناقص بدون تنويه","🟡","warn"],["حاضر ولم يُسجَّل","⚪","gr"],["غائب ولم يُسجَّل","⚪","gr"]];
+const arId = rid => "ar_"+rid;
+const arDoc = rid => S.evals.find(e=>e.id===arId(rid));
+const arKey = it => String(it.no)+"|"+String(it.n);
+const arNum = s => { const n=parseFloat(String(s||"").replace("٫",".").replace(/[^\d.]/g,"")); return isNaN(n)?null:n; };
+const arHidden = e => /^ar_/.test(e.id||"") && !((e.metrics||{}).sent); // مسودة المسئول لا تظهر للمنظّم
+function arSelf(e){ try { const x=JSON.parse(e.selfNote||"{}"); return {d:x.d||[], r:x.r||{}}; } catch(_){ return {d:[], r:{}}; } }
+function loadAR(force){ if(!isAdmin() || S.arLoading) return; S.arLoading=true;
+  api("attReviews",{force:!!force}).then(d=>{ S.arLoading=false; if(d.ok){ S.ar=d.reviews||[]; S.arErr=""; } else S.arErr=d.reason||"err"; render(); })
+    .catch(()=>{ S.arLoading=false; S.arErr="network"; render(); }); }
+function arOrg(rv){ const doc=arDoc(rv.id); if(doc && doc.member) return doc.member; const sl=S.slots.find(s=>s.lec && s.lec===rv.lec && !s.cover); return sl?sl.owner:""; }
+function arDec(rv){ S.arDec=S.arDec||{}; if(!S.arDec[rv.id]){ const doc=arDoc(rv.id), st={}; ((doc&&doc.metrics&&doc.metrics.items)||[]).forEach(it=>{ if(it.st) st[arKey(it)]=it.st; }); S.arDec[rv.id]={st, org:arOrg(rv), note:(doc&&doc.headNote)||""}; } return S.arDec[rv.id]; }
+// سطر في «يحتاج تدخّلك»: كل مراجعة لم تُرسل بعد
+function arPending(){ return (S.ar||[]).filter(rv=>rv.items.length && !((arDoc(rv.id)||{}).metrics||{}).sent); }
+function arInbox(){ const p=arPending(); if(!p.length) return "";
+  return `<div class="card"><h2>🔎 مراجعة حضور جاهزة (${p.length})</h2>${p.map(rv=>{ const c=t=>rv.items.filter(i=>i.j===t).length;
+    return `<div class="item"><div class="what"><b>${esc(rv.title)} — ${esc(fmtDay(rv.date))}</b><small>راجعها Claude من تقرير زووم · دقة التسجيل <b style="color:var(--ok);display:inline">${esc(rv.acc)}</b> · <span style="color:var(--bad)">${c("خطأ")} خطأ</span> · <span style="color:var(--gold-ink)">${c("ناقص تنويه")} ناقص تنويه</span>${c("لم يُسجَّل")?` · ${c("لم يُسجَّل")} لم يُسجَّلوا`:""}</small></div><button class="btn sm" data-a="arOpen" data-id="${esc(rv.id)}">راجِع</button></div>`; }).join("")}</div>`; }
+// شاشة المراجعة للمسئول
+function viewAttRev(){
+  if(!S.ar) return `<div class="card empty">${S.arErr?`تعذّر تحميل المراجعات${S.arErr==="review_sheet"?" (شيت المراجعة غير متاح لحساب الأكاديمية)":""}. <button class="btn sm" data-a="arReload">⟳ إعادة المحاولة</button>`:"جارٍ تحميل المراجعة…"}</div>`;
+  const rv=S.ar.find(r=>r.id===S.arId) || S.ar[S.ar.length-1]; if(!rv) return `<div class="card empty">لا توجد مراجعات بعد.</div>`;
+  S.arId=rv.id; const dec=arDec(rv), doc=arDoc(rv.id), sent=doc&&doc.metrics&&doc.metrics.sent, self=doc?arSelf(doc):{d:[],r:{}}, f=S.arF||"need";
+  const prev=S.ar.filter(r=>r.lec===rv.lec && r.date<rv.date).sort((a,b)=>b.date.localeCompare(a.date))[0], acc=arNum(rv.acc), pacc=prev?arNum(prev.acc):null;
+  const cnt=t=>rv.items.filter(i=>i.j===t).length, unc=rv.items.filter(i=>i.conf==="مرجّح").length;
+  const segs=[["need","يحتاج قرارك",rv.items.filter(i=>!dec.st[arKey(i)]).length],["خطأ","خطأ",cnt("خطأ")],["ناقص تنويه","ناقص تنويه",cnt("ناقص تنويه")],["لم يُسجَّل","لم يُسجَّلوا",cnt("لم يُسجَّل")],["unc","مطابقة غير مؤكدة",unc],["all","الكل",rv.items.length],["unk","أسماء زووم مجهولة",rv.unknown.length]];
+  const list=rv.items.filter(i=>f==="all"||(f==="need"&&!dec.st[arKey(i)])||(f==="unc"&&i.conf==="مرجّح")||i.j===f);
+  const item=it=>{ const k=arKey(it), st=dec.st[k]||"", fixed=self.d.includes(k), rep=self.r[k], typ=AR_TYPES.find(t=>t[0]===it.k)||["","","gr"];
+    const man=it.man?`<span class="${it.j==="ناقص تنويه"?"":"o"}">المنظّم: ${esc(it.man)}</span>`:`<span class="o">المنظّم: لم يسجّل</span>`;
+    const zm=Number(it.min)>0?`<span class="${Number(it.min)>arNum(rv.th)?"z":"p"}">زووم: ${esc(it.min)} من ${esc(rv.mins)} د</span>`:`<span>زووم: لا يوجد اسم مطابق</span>`;
+    return `<div class="ari ${typ[2]} ${st==="n"?"ex":""}"><div class="nm">${esc(it.n)} <small>م ${esc(it.no)}</small>${sent&&st==="y"?(fixed?` <span class="pill ok">✓ صحّحه المنظّم</span>`:` <span class="pill gold">لم يُصحَّح بعد</span>`):""}</div>
+      <div class="ev">${man}${zm}${it.zn&&it.zn!=="—"?`<span>باسم «${esc(it.zn)}»</span>`:""}${it.conf==="مرجّح"?`<span class="p">غير مؤكد</span>`:it.conf==="مؤكد"?`<span>مؤكد</span>`:""}</div>
+      ${rep?`<div class="ev"><span class="rp">رد المنظّم: ${esc(rep)}</span></div>`:""}
+      <div class="acts"><button class="ab ${st==="y"?"y":""}" data-a="arSt" data-k="${esc(k)}" data-v="y">✓ اعتمد</button><button class="ab n ${st==="n"?"on":""}" data-a="arSt" data-k="${esc(k)}" data-v="n">✗ استبعد</button></div></div>`; };
+  const groups=AR_TYPES.map(([t,ic])=>{ const g=list.filter(i=>i.k===t); return g.length?`<div class="arg">${ic} ${esc(t)} <em>${g.length}</em></div>${g.map(item).join("")}`:""; }).join("");
+  const nY=rv.items.filter(i=>dec.st[arKey(i)]==="y").length, orgs=S.members.filter(m=>m.active!==false && m.role!=="committee");
+  const sentFix=sent?(doc.metrics.items||[]).filter(i=>i.st==="y"&&self.d.includes(arKey(i))).length:0, sentN=sent?(doc.metrics.items||[]).filter(i=>i.st==="y").length:0;
+  return `<div class="row" style="align-items:flex-start"><div class="grow"><h1 style="font-size:24px">مراجعة الحضور — ${esc(rv.title)}</h1>
+    <p class="sub">${esc(fmtDay(rv.date))} · الشيخ ${esc(rv.sheikh)} ${esc(rv.from)}–${esc(rv.to)} (${esc(rv.mins)} د) · الحد الأدنى ${esc(rv.th)} د</p></div>
+    ${S.ar.length>1?`<select data-a="arPick" style="width:auto">${S.ar.slice().reverse().map(r=>`<option value="${esc(r.id)}" ${r.id===rv.id?"selected":""}>${esc(r.id)} · ${esc(fmtDay(r.date))}</option>`).join("")}</select>`:""}
+    <button class="btn sm ghost" data-a="arReload">⟳ تحديث</button><button class="btn sm ghost" data-a="arBack">↩ رجوع</button></div>
+  ${sent?`<div class="banner">📤 أُرسلت للمنظّم ${esc(nameOf(doc.member))} · صحّح <b>${sentFix}</b> من ${sentN}${doc.ack?` · ✓ علّم «صحّحت الكل»${doc.ackNote?`: ${esc(doc.ackNote)}`:""}`:""}</div>`:""}
+  <div class="kq6"><div class="kq"><b>${esc(rv.total)}</b><small>طالب</small></div><div class="kq ok"><b>${esc(rv.ok)}</b><small>صح</small></div><div class="kq bad"><b>${esc(rv.bad)}</b><small>خطأ</small></div><div class="kq gold"><b>${esc(rv.note)}</b><small>ناقص تنويه</small></div><div class="kq gray"><b>${esc(rv.unreg||0)}</b><small>لم يُسجَّلوا</small></div></div>
+  <div class="arbar"><span>دقة التسجيل</span><div class="bar"><i style="width:${acc||0}%"></i></div><b>${esc(rv.acc)}</b>${pacc!=null?`<small class="${acc>=pacc?"up":"late"}">${acc>=pacc?"▲":"▼"} من ${pacc}% في المراجعة السابقة</small>`:""}</div>
+  <div class="arseg">${segs.filter(s=>s[2]||s[0]==="need").map(([k,l,n])=>`<button class="${f===k?"on":""}" data-a="arF" data-v="${esc(k)}">${l} (${n})</button>`).join("")}</div>
+  ${f==="unk"?`<div class="card"><h2>أسماء في زووم لم يُعرف أصحابها</h2>${rv.unknown.length?rv.unknown.map(u=>`<div class="item"><div class="what"><b>${esc(u.n)}</b><small>${esc(u.min)} دقيقة داخل فترة الشيخ</small></div></div>`).join(""):`<div class="empty">لا يوجد.</div>`}<p class="sub" style="font-size:13px">لو عرفت أصحابها بلّغ Claude لتُضاف في المراجعة القادمة.</p></div>`
+   : (groups || `<div class="card empty">✓ لا يوجد شيء هنا.</div>`)}
+  <p class="sub" style="font-size:13px">«✗ استبعد» لما تكون ملاحظة Claude غلط (مثلًا الطالب دخل باسم تعرفه). المستبعد لا يصل للمنظّم.</p>
+  <div class="arsbar"><span class="grow">اعتمدت <b>${nY}</b> من ${rv.items.length} · <a role="button" tabindex="0" data-a="arAll" style="cursor:pointer;color:var(--brand);text-decoration:underline">اعتماد الكل</a></span>
+    <label class="pick">المنظّم <select id="ar_org">${`<option value="">اختر…</option>`+orgs.map(m=>`<option value="${esc(m.id)}" ${m.id===dec.org?"selected":""}>${esc(m.name)}</option>`).join("")}</select></label>
+    <input id="arn_note" placeholder="ملاحظة للمنظّم (اختياري)" value="${esc(dec.note)}" style="width:auto;min-width:200px">
+    <button class="btn ghost" data-a="arSave" data-v="0">💾 حفظ</button><button class="btn gold" data-a="arSave" data-v="1">📤 ${sent?"تحديث الإرسال":"إرسال للمنظّم"} (${nY})</button></div>`; }
+function arMetrics(rv, dec, sent){ const old=(arDoc(rv.id)||{}).metrics||{};
+  return {kind:"att", rid:rv.id, title:rv.title, date:rv.date, sheikh:rv.sheikh, mins:rv.mins, th:rv.th, total:rv.total, ok:rv.ok, bad:rv.bad, note:rv.note, unreg:rv.unreg, acc:rv.acc,
+    sent:!!(sent||old.sent), sentAt:sent?Date.now():(old.sentAt||null), items:rv.items.map(it=>Object.assign({}, it, {st:dec.st[arKey(it)]||""}))}; }
+// نص الملاحظة للمنظّم
+function arLine(it, x){ const m=Number(it.min)||0;
+  if(it.k==="دخل المحاضرة ومتسجل غياب") return `مكتوب غياب — دخل ${m} دقيقة${it.zn&&it.zn!=="—"?` باسم ${it.zn}`:""} ← يُكتب حضور${m<=arNum(x.th)?" مع تنويه إنه حضر أقل من النص":""}`;
+  if(it.k==="متسجل حضور ومش موجود في زووم") return `مكتوب حضور — مش موجود في زووم. لو تعرف اسمه في زووم اكتبه`;
+  if(it.k==="حضور ناقص بدون تنويه") return `حضر ${m} دقيقة بس من ${x.mins} ← اكتب تنويه في الملاحظات`;
+  if(it.k==="حاضر ولم يُسجَّل") return `مش متسجل — دخل ${m} دقيقة${it.zn&&it.zn!=="—"?` باسم ${it.zn}`:""} ← يُكتب حضور`;
+  return `مش متسجل — مش موجود في زووم ← يُكتب غياب`; }
+// بطاقة المنظّم في «يومي»
+function arFollow(me){ return S.evals.filter(e=>e.member===me && /^ar_/.test(e.id) && !arHidden(e) && !e.ack).map(e=>{ const x=e.metrics||{}, its=(x.items||[]).filter(i=>i.st==="y"), self=arSelf(e), dn=its.filter(i=>self.d.includes(arKey(i))).length;
+  return `<div class="card follow arf"><h2>📋 ملاحظات على حضور «${esc(x.title||"")}»</h2><p class="sub" style="margin:-4px 0 6px;font-size:13.5px">${esc(fmtDay(x.date||e.month))} · من المسئول · صحّح شيت الحضور وعلّم على كل اسم</p>
+    ${e.headNote?`<p style="margin:0 0 6px"><b>ملاحظة المسئول:</b> ${esc(e.headNote)}</p>`:""}
+    ${its.map((it,i)=>{ const k=arKey(it), on=self.d.includes(k); return `<div class="item ${on?"done":""}"><button class="chk ${on?"on":""}" data-a="arFix" data-id="${esc(e.id)}" data-k="${esc(k)}" aria-label="صحّحت">${on?"✓":""}</button><div class="what"><b>${esc(it.n)}</b><small>${esc(arLine(it,x))}</small>
+      ${it.k==="متسجل حضور ومش موجود في زووم"?`<div class="row" style="margin-top:4px"><input id="arr_${esc(e.id)}_${i}" placeholder="ردّك (اختياري)" value="${esc(self.r[k]||"")}" class="grow" style="width:auto"><button class="btn sm ghost" data-a="arRep" data-id="${esc(e.id)}" data-k="${esc(k)}" data-i="${i}">إرسال</button></div>`:""}</div></div>`; }).join("")}
+    <label style="margin-top:8px">تعليقك (اختياري)<input id="ack_${esc(e.id)}"></label>
+    <div class="row" style="margin-top:6px"><span class="grow sub">${dn} من ${its.length} تم</span><button class="btn" data-a="arDone" data-id="${esc(e.id)}">✓ صحّحت الكل</button></div></div>`; }).join(""); }
+// للتقارير: دقة تسجيل الحضور للمنظّم في الفترة (من المراجعات المرسلة فقط)
+function arStats(mid, from, to){ const ds=S.evals.filter(e=>e.member===mid && /^ar_/.test(e.id) && !arHidden(e) && (e.month||"")>=from && (e.month||"")<=to);
+  if(!ds.length) return null; let acc=0, n=0, tot=0, fix=0;
+  ds.forEach(e=>{ const x=e.metrics||{}, a=arNum(x.acc), self=arSelf(e); if(a!=null){ acc+=a; n++; } (x.items||[]).filter(i=>i.st==="y").forEach(i=>{ tot++; if(e.ack||self.d.includes(arKey(i))) fix++; }); });
+  return {revs:ds.length, acc:n?Math.round(acc/n):null, tot, fix}; }
+async function arAct(a, el, id){
+  const rv=(S.ar||[]).find(r=>r.id===S.arId);
+  if(a==="arOpen"){ S.arId=id; S.arF="need"; location.hash="attrev"; S.view="attrev"; render(); window.scrollTo(0,0); return true; }
+  if(a==="arBack"){ location.hash="today"; S.view="today"; render(); return true; }
+  if(a==="arReload"){ S.ar=null; S.arErr=""; render(); loadAR(true); return true; }
+  if(a==="arF"){ S.arF=el.dataset.v; render(); return true; }
+  if(!rv && /^ar(St|All|Save)$/.test(a)) return true;
+  if(a==="arSt"){ const d=arDec(rv), k=el.dataset.k; d.org=v("ar_org")||d.org; d.note=v("arn_note"); d.st[k]= d.st[k]===el.dataset.v ? "" : el.dataset.v; render(); return true; }
+  if(a==="arAll"){ const d=arDec(rv); d.org=v("ar_org")||d.org; d.note=v("arn_note"); rv.items.forEach(it=>{ if(!d.st[arKey(it)]) d.st[arKey(it)]="y"; }); render(); return true; }
+  if(a==="arSave"){ const d=arDec(rv), send=el.dataset.v==="1"; d.org=v("ar_org"); d.note=v("arn_note");
+    if(!d.org) return toast("اختر المنظّم."), true;
+    if(send && !rv.items.some(it=>d.st[arKey(it)]==="y")) return toast("اعتمد ملاحظة واحدة على الأقل."), true;
+    const old=arDoc(rv.id); if(old && old.member && old.member!==d.org) return toast("المراجعة مرتبطة بمنظّم آخر؛ لا يمكن تغييره بعد الحفظ."), true;
+    el.disabled=true;
+    const ok=await save("evals", arId(rv.id), {member:d.org, month:rv.date, evaluator:S.me.id, headNote:d.note, metrics:arMetrics(rv,d,send)}, true);
+    el.disabled=false; if(ok){ toast(send?"أُرسلت؛ ستظهر للمنظّم في «يومي».":"حُفظت المسودة."); render(); } return true; }
+  if(a==="arFix"||a==="arRep"){ const e=S.evals.find(x=>x.id===id); if(!e) return true; const s=arSelf(e), k=el.dataset.k;
+    if(a==="arFix"){ s.d = s.d.includes(k) ? s.d.filter(x=>x!==k) : s.d.concat([k]); }
+    else { const t=v("arr_"+id+"_"+el.dataset.i); if(!t) return toast("اكتب ردّك."), true; s.r[k]=t.slice(0,300); }
+    saveFast("evals", id, {selfNote:JSON.stringify(s)}, a==="arRep"?"أُرسل ردّك.":null, "ar:"+id); return true; }
+  if(a==="arDone"){ const e=S.evals.find(x=>x.id===id); if(!e) return true; const s=arSelf(e); ((e.metrics||{}).items||[]).filter(i=>i.st==="y").forEach(i=>{ const k=arKey(i); if(!s.d.includes(k)) s.d.push(k); });
+    el.disabled=true; const n=document.getElementById("ack_"+id); await save("evals", id, {ack:true, ackAt:today(), ackNote:n?n.value.trim():"", selfNote:JSON.stringify(s)}); toast("جزاك الله خيرًا، وصل للمسئول."); return true; }
+  return false; }
+
 // المهام
 function viewTasks(){
   const ids=team().map(m=>m.id); const list=S.tasks.filter(t=>t.type!=="scheduled" && t.status!=="done" && (ids.includes(t.assignee)||t.assignee===S.me.id)).sort((a,b)=>(a.due||"").localeCompare(b.due||""));
@@ -1160,7 +1272,7 @@ function dayDetail(mid, d){ const sl=slotsOf(mid,d); if(!sl.length) return `<div
 // جدول الفترة (أسبوع/شهر) مع إرسال التقرير لصاحبه
 function periodTable(P, rows){
   const month=P.month;
-  return `<div class="card" style="overflow-x:auto"><table><thead><tr><th>المشرف</th><th class="c">حضور الدوام<br><small>الهدف ${GOAL.attend}%</small></th><th class="c">إنجاز الجدول<br><small>الهدف ${GOAL.done}%</small></th><th class="c">محاضرات منظّمة<br><small>الهدف ${GOAL.weekly} أسبوعيًا</small></th><th class="c">الخطوات في موعدها<br><small>الهدف ${GOAL.done}%</small></th><th class="c">ساعات الدوام</th><th class="c">المهام في موعدها</th><th class="c">مشكلات رُفعت</th>${month?`<th class="c">التقييم</th>`:""}<th class="c noprint">إرسال له</th></tr></thead><tbody>${rows.map(r=>{ const at=pc(r.present,r.work), a=pc(r.dn,r.exp), b=pc(r.onTime,r.tk);
+  return `<div class="card" style="overflow-x:auto"><table><thead><tr><th>المشرف</th><th class="c">حضور الدوام<br><small>الهدف ${GOAL.attend}%</small></th><th class="c">إنجاز الجدول<br><small>الهدف ${GOAL.done}%</small></th><th class="c">محاضرات منظّمة<br><small>الهدف ${GOAL.weekly} أسبوعيًا</small></th><th class="c">الخطوات في موعدها<br><small>الهدف ${GOAL.done}%</small></th><th class="c">ساعات الدوام</th><th class="c">المهام في موعدها</th><th class="c">مشكلات رُفعت</th><th class="c">دقة تسجيل الحضور<br><small>من مراجعة زووم</small></th><th class="c">ملاحظات الحضور اتصلّحت</th>${month?`<th class="c">التقييم</th>`:""}<th class="c noprint">إرسال له</th></tr></thead><tbody>${rows.map(r=>{ const at=pc(r.present,r.work), a=pc(r.dn,r.exp), b=pc(r.onTime,r.tk);
     const notes=[r.lates?`تأخر ${r.lates}`:"", r.noEnd?`بلا نهاية ${r.noEnd}`:""].filter(Boolean).join(" · ");
     const sent=S.evals.find(e=>e.id===repId(r.m.id,P.key));
     return `<tr><td><b>${esc(r.m.name)}</b></td>
@@ -1169,7 +1281,7 @@ function periodTable(P, rows){
     <td class="c">${r.weekly!=null?`<span class="pill ${r.weekly>=GOAL.weekly?"ok":r.weekly>=GOAL.weekly-1?"gold":"bad"}">${r.weekly}</span> <small class="sub">${r.lecDone} في الفترة</small>`:"—"}</td>
     <td class="c">${r.stepAll?`<span class="pill ${tone(pc(r.stepOn,r.stepAll),GOAL.done)}">${pc(r.stepOn,r.stepAll)}%</span> <small class="sub">${r.stepOn}/${r.stepAll}</small>${r.stepLate?`<br><small class="late">متأخرة ${r.stepLate}</small>`:""}`:"—"}</td>
     <td class="c">${r.mins?dur(r.mins):"—"}</td>
-    <td class="c">${r.tk?`<span class="pill ${tone(b,90)}">${b}%</span> <small class="sub">${r.onTime}/${r.tk}</small>`:"—"}</td><td class="c">${r.pr||"—"}</td>${month?`<td class="c">${(()=>{ const e=evalOf(r.m.id,month); return e?`<button class="btn sm ghost" data-a="evalM" data-id="${esc(r.m.id)}">${e.ack?"✓ اطّلع":"✓ قُيّم"}</button>`:`<button class="btn sm" data-a="evalM" data-id="${esc(r.m.id)}">تقييم</button>`; })()}</td>`:""}
+    <td class="c">${r.tk?`<span class="pill ${tone(b,90)}">${b}%</span> <small class="sub">${r.onTime}/${r.tk}</small>`:"—"}</td><td class="c">${r.pr||"—"}</td>${(()=>{ const q=arStats(r.m.id,P.from,P.to); return q?`<td class="c">${q.acc!=null?`<span class="pill ${tone(q.acc,90)}">${q.acc}%</span>`:"—"} <small class="sub">${q.revs} محاضرة</small></td><td class="c">${q.tot?`<span class="pill ${q.fix===q.tot?"ok":"gold"}">${q.fix} من ${q.tot}</span>`:"—"}</td>`:`<td class="c"><small class="sub">لم تُراجع</small></td><td class="c">—</td>`; })()}${month?`<td class="c">${(()=>{ const e=evalOf(r.m.id,month); return e?`<button class="btn sm ghost" data-a="evalM" data-id="${esc(r.m.id)}">${e.ack?"✓ اطّلع":"✓ قُيّم"}</button>`:`<button class="btn sm" data-a="evalM" data-id="${esc(r.m.id)}">تقييم</button>`; })()}</td>`:""}
     <td class="c noprint">${sent?`<button class="btn sm ghost" data-a="sendRep" data-id="${esc(r.m.id)}">${sent.ack?"✓ اطّلع":"✓ أُرسل"}</button>`:`<button class="btn sm" data-a="sendRep" data-id="${esc(r.m.id)}">📤 إرسال</button>`}</td></tr>`; }).join("")}</tbody></table>
   <p class="sub" style="font-size:13px;margin-top:10px">الأخضر = بلغ الهدف · الذهبي = قريب منه · الأحمر = بعيد عنه. «إرسال» يرسل للمشرف أرقامه في هذه الفترة في «يومي» عنده، ويضغط «اطّلعت».</p></div>
   ${rows.some(r=>r.repNeed||r.exc)?`<div class="card" style="overflow-x:auto"><h2>📝 تقارير المحاضرات</h2><table><thead><tr><th>المنظّم</th><th class="c">تقارير مرسلة</th><th class="c">متوسط الحضور على زووم</th><th class="c">اعتذار الشيخ</th><th class="c">مشاكل تقنية</th></tr></thead><tbody>${rows.filter(r=>r.repNeed||r.exc).map(r=>`<tr><td><b>${esc(r.m.name)}</b></td><td class="c">${r.repNeed?`<span class="pill ${tone(pc(r.repCnt,r.repNeed),GOAL.done)}">${r.repCnt}/${r.repNeed}</span>`:"—"}</td><td class="c">${r.repAvg!=null?r.repAvg:"—"}</td><td class="c">${r.exc||"—"}</td><td class="c">${r.tech||"—"}</td></tr>`).join("")}</tbody></table></div>`:""}`;
@@ -1563,6 +1675,7 @@ document.addEventListener("click", async e=>{
     const met=document.getElementById("ev_met"); if(met) data.goalMet=met.value;
     if(!data.quality||!data.coop) return toast("اختر تقدير الجودة والتعاون.");
     el.disabled=true; if(await save("evals", evalId(mid,month), data, true)){ close(); toast("حُفظ التقييم، وسيظهر له في صفحته."); } else el.disabled=false; return; }
+  if(/^ar[A-Z]/.test(a) && await arAct(a, el, id)) return;
   if(a==="ackEval"){ el.disabled=true; const n=document.getElementById("ack_"+id); await save("evals", id, {ack:true, ackAt:today(), ackNote:n?n.value.trim():""}); toast("شكرًا، سُجّل اطّلاعك."); return; }
   if(a==="sched") return open(schedForm(id));
   if(a==="addSlot"){ const m=el.dataset.m; const data={owner:m, day:Number(v("s_day")), start:v("s_from"), end:v("s_to"), kind:"fixed", label:v("s_label"), lecture:false};
@@ -1598,7 +1711,7 @@ document.addEventListener("click", async e=>{
     close(); toast(want.length?"تم التكليف.":"أُلغي التكليف."); return; }
   if(a==="delSlot"){ const m=el.dataset.m; await remove("slots", id); open(schedForm(m)); return; }
 });
-document.addEventListener("change", e=>{ const a=e.target.dataset.a; if(a==="reqKind"){ open(reqForm(e.target.value)); return; } if(a==="day"){ S.day=e.target.value||today(); render(); } if(a==="month"){ S.month=e.target.value||today().slice(0,7); render(); } if(a==="sper"){ S.sper=e.target.value; render(); return; } if(a==="rmem"){ S.rmem=e.target.value; render(); } if(a==="rday"){ S.rday=e.target.value||today(); render(); } if(a==="myday"){ S.myday=e.target.value||today(); render(); } });
+document.addEventListener("change", e=>{ const a=e.target.dataset.a; if(a==="reqKind"){ open(reqForm(e.target.value)); return; } if(a==="day"){ S.day=e.target.value||today(); render(); } if(a==="month"){ S.month=e.target.value||today().slice(0,7); render(); } if(a==="sper"){ S.sper=e.target.value; render(); return; } if(a==="rmem"){ S.rmem=e.target.value; render(); } if(a==="rday"){ S.rday=e.target.value||today(); render(); } if(a==="myday"){ S.myday=e.target.value||today(); render(); } if(a==="arPick"){ S.arId=e.target.value; S.arF="need"; render(); } });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") close();
   const t=e.target; if((e.key==="Enter"||e.key===" ") && t && t.getAttribute && t.getAttribute("role")==="button" && t.dataset.a){ e.preventDefault(); t.click(); } });
 window.addEventListener("hashchange", ()=>{ S.view=location.hash.slice(1)||"today"; render(); });
