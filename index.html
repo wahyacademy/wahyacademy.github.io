@@ -206,6 +206,11 @@ button.btn{font:inherit;cursor:pointer}
 .tg.off{pointer-events:none}.tg.off .go{background:var(--line);color:var(--muted)}
 .recent{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--ok-soft);border:1px solid #bfe3de;border-radius:14px;padding:12px 16px}
 .recent .acts{margin:0;margin-inline-start:auto}
+.recent .rh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1 1 100%}
+.recent .seen{margin-inline-start:auto;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:4px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.recent .seen:hover{border-color:var(--brand);color:var(--brand)}
+.recent .nw{background:var(--gold);color:var(--ink);font-weight:700;font-size:13px;border-radius:999px;padding:3px 11px}
+.recent.has{background:var(--gold-soft);border-color:var(--gold);box-shadow:0 0 0 3px rgba(251,180,49,.18)}
 .qbtn{display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px;text-decoration:none;color:var(--ink);font-weight:600}
 .qbtn:hover{border-color:var(--brand)}
 .qbtn .i{width:34px;height:34px;border-radius:9px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
@@ -308,6 +313,7 @@ details[open] .chev{transform:rotate(180deg)}
   .tg .go{padding:7px 12px}
   .recent{flex-direction:column;align-items:stretch}
   .recent .acts{margin:0}
+  .recent .rh .nw{order:-2}.recent .rh .seen{order:-1}.recent .rh>span:not(.nw){order:0;flex:1 1 100%}
   .faq summary{padding:12px;font-size:15px}
   .faq .a{padding-inline-start:16px}
   .facts b{font-size:21px}
@@ -591,9 +597,15 @@ function quick(){
   var tail = stu ? (u?'<span class="go">انضم ←</span>':'<span class="go">قريبًا</span>') : '<span class="go">🔒 للمشتركين</span>';
   var attrs = stu&&u ? 'href="'+esc(u)+'" target="_blank" rel="noopener"' : (stu?'':'href="#" data-login');
   html+='<a class="tg'+(stu&&!u?" off":"")+(stu?"":" locked")+'" '+attrs+'><span class="i">✈</span><span><b>مجموعة التيليجرام الخاصة بالدورة</b><small>'+(stu?'رابط الحضور قبل كل محاضرة بنصف ساعة · التنبيهات والمتابعات · الأسئلة والنقاش':'متاحة للطلاب المشتركين فقط · ادخل بحساب جوجل من زر «مسجّل بالفعل؟»')+'</small></span>'+tail+'</a>';
-  for(var i=L.length-1;i>=0;i--){ var l=L[i], e=start(l)+DUR;
-    if(now>=e && now<e+3*864e5){
-      html+='<div class="recent"><span>✔ انتهت محاضرة <b>'+esc(l.field)+'</b> — شاهد التسجيل وشاركنا تقييمك</span><span class="acts">'+vidBtn(l,"▶ التسجيل")+rateBtn(l)+trBtn(l)+bookBtn(l)+'</span></div>';
+  for(var i=L.length-1;i>=0;i--){ var l=L[i], e=start(l)+DUR, nx=L[i+1], until=nx?start(nx):e+7*864e5;
+    if(now>=e && now<until){
+      var got=stu?[recOf(l)?"التسجيل":"",trOf(l)?"تفريغ المحاضرة":"",bookOf(l)?"ترشيحات ومراجع":""].filter(Boolean):[];
+      var head=got.length
+        ? '<span class="nw">جديد</span><span>أُضيف إلى محاضرة <b>'+esc(l.field)+'</b>: '+got.join(" · ")+'</span>'
+        : '<span>✔ انتهت محاضرة <b>'+esc(l.field)+'</b> — '+(stu?'التسجيل يُضاف قريبًا، وشاركنا تقييمك الآن':'شاهد التسجيل وشاركنا تقييمك')+'</span>';
+      var sk=l.id+":"+got.join("|"), seen="";try{seen=localStorage.getItem("wahy_humanities_seen")||"";}catch(_){}
+      if(stu && seen===sk) break;
+      html+='<div class="recent'+(got.length?' has':'')+'"><div class="rh">'+head+(stu?'<button type="button" class="seen" data-seen="'+esc(sk)+'" title="إخفاء التنويه">✓ شفته</button>':'')+'</div><span class="acts">'+vidBtn(l,"▶ التسجيل")+rateBtn(l)+trBtn(l)+bookBtn(l)+'</span></div>';
       break; } }
   document.getElementById("quick").innerHTML=html;
 }
@@ -607,6 +619,7 @@ function icsEv(l){var s0=start(l);return ["BEGIN:VEVENT","UID:wahy-humanities-"+
 function icsDownload(ids,name){var evs=L.filter(function(l){return ids.indexOf(l.id)>-1;}).map(icsEv).join("\r\n");
  var txt="BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Wahy Academy//Humanities//AR\r\nCALSCALE:GREGORIAN\r\n"+evs+"\r\nEND:VCALENDAR\r\n";
  var url=URL.createObjectURL(new Blob([txt],{type:"text/calendar;charset=utf-8"}));var x=document.createElement("a");x.href=url;x.download=name;document.body.appendChild(x);x.click();setTimeout(function(){URL.revokeObjectURL(url);x.remove();},1000);}
+document.addEventListener("click",function(e){var sb=e.target.closest&&e.target.closest("[data-seen]");if(sb){e.preventDefault();try{localStorage.setItem("wahy_humanities_seen",sb.getAttribute("data-seen"));}catch(_){}var bx=sb.closest(".recent");if(bx)bx.remove();return;}});
 document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest("[data-ics]");if(!t)return;e.preventDefault();var v=t.getAttribute("data-ics");
  if(v==="all") icsDownload(L.map(function(l){return l.id;}),"wahy-humanities-all.ics"); else icsDownload([v],"wahy-"+v+".ics");});
 function calBtns(l){return '<a class="btn" href="'+esc(gcal(l))+'" target="_blank" rel="noopener">📅 تقويم جوجل</a><a class="btn" href="#" data-ics="'+l.id+'">📅 آيفون / Outlook</a><span class="calmini">أضف الموعد لتقويمك ليذكّرك قبل المحاضرة — جوجل لأندرويد، والآخر للآيفون وOutlook</span>';}
