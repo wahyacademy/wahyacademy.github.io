@@ -72,6 +72,7 @@ h2{font-size:18px;margin:0 0 10px;color:var(--brand-deep)}
 .dt tr{display:grid;grid-template-columns:58px 1fr auto;grid-template-areas:"tm ti ti" "tm wh wh" "tm st lk";column-gap:10px;row-gap:6px;padding:11px 6px;border-bottom:1px solid #EDF1F6}
 .dt td{border:0;padding:0;background:none!important}.dt td.tm{grid-area:tm}.dt td:nth-child(2){grid-area:ti}.dt td.who{grid-area:wh;font-size:13px;color:#475569}.dt td:nth-child(4){grid-area:st}.dt td.lk{grid-area:lk}
 .dt tr.nowr{background:#EAF3FB;box-shadow:inset -4px 0 0 #F7B717}.dt tr.nowr td.tm{box-shadow:none}}.dt tr.nowr td.tm{box-shadow:inset -4px 0 0 #F7B717}.dt tr.dim td{opacity:.62}.dt .shk{font-size:12px}
+.rerr{background:#FEF2F2;color:#991B1B;border:1.5px solid #FCA5A5;border-radius:10px;padding:8px 12px;font-weight:700;margin-top:12px}.rmiss{outline:2px solid #DC2626;outline-offset:2px;border-radius:10px;background:#FEF2F2}
 .rsec{font-size:12.5px;color:#64748B;margin:16px 0 4px;border-top:1px solid #E2E8F0;padding-top:10px}.q{margin:12px 0 4px;font-weight:700;font-size:14.5px}
 .yn{display:flex;gap:6px;margin:4px 0}.yn button{flex:1;border:1.5px solid #CBD5E1;background:#fff;border-radius:10px;padding:8px;font:inherit;font-weight:700;color:#334155;cursor:pointer}
 .yn button.on.y{background:#FEF2F2;border-color:#F87171;color:#991B1B}.yn button.on.n{background:#ECFDF3;border-color:#4ADE80;color:#166534}
@@ -590,7 +591,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="8034cc1486ea"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="eede24550439"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -849,15 +850,21 @@ function reportForm(d,s){ const t=slotTask(d,s.id)||{}, old=t.report||{}, rp=old
     <div id="dw_share" ${sh.share==="y"?"":"hidden"}><div class="row"><label class="grow">يقوم به<select id="r_shBy"><option value="sheikh" ${sh.shareBy!=="org"?"selected":""}>الشيخ</option><option value="org" ${sh.shareBy==="org"?"selected":""}>المنظّم</option></select></label><label class="grow">اسم الكتاب<input id="r_shBook" value="${esc(sh.shareBook||"")}"></label></div></div></div>
   <input type="hidden" id="sh_keep" value="${keep?"1":""}" data-share="${esc(pv.share||"")}" data-by="${esc(pv.shareBy||"")}" data-book="${esc(pv.shareBook||"")}">
   <label style="margin-top:10px">ملاحظات عن محاضرة اليوم (اختياري)<textarea id="r_notes">${esc(rp.notes||"")}</textarea></label>
+  <div id="r_err" class="rerr" role="alert" hidden></div>
   <div class="row" style="margin-top:12px"><button class="btn" data-a="sendReport" data-id="${esc(s.id)}">إرسال التقرير</button><button class="btn ghost" data-a="close">إلغاء</button></div>`; }
-function collectReport(){ const r={v:2, zoomN:v("r_zoomN"), sheikhIn:v("r_in"), sheikhOut:v("r_out"), progress:v("r_prog"), notes:v("r_notes")};
-  if(r.zoomN==="" || !r.sheikhIn || !r.sheikhOut) return "اكتب وقت دخول الشيخ وإنهائه ومتوسط عدد الحضور على زووم.";
-  for(const [k,q,tech] of YN_Q){ const a=v("yn_"+k); if(!a) return "أجب عن: "+q; r[k]=a;
+let REP_ERR=""; // الخانة الناقصة في التقرير (تُلوَّن ويُنزل عليها) — طلب المستخدم 15 نوفمبر
+function repErr(msg){ const b=document.getElementById("r_err"); if(b){ b.textContent="⚠️ "+msg; b.hidden=false; } else toast(msg);
+  document.querySelectorAll("#modal .rmiss").forEach(x=>x.classList.remove("rmiss"));
+  let el=REP_ERR && document.getElementById(REP_ERR); if(el && el.type==="hidden") el=el.nextElementSibling;
+  if(el){ el.classList.add("rmiss"); el.scrollIntoView({block:"center", behavior:"smooth"}); if(el.focus && el.tagName!=="DIV") el.focus({preventScroll:true}); } }
+function collectReport(){ const r={v:2, zoomN:v("r_zoomN"), sheikhIn:v("r_in"), sheikhOut:v("r_out"), progress:v("r_prog"), notes:v("r_notes")}; REP_ERR="";
+  if(r.zoomN==="" || !r.sheikhIn || !r.sheikhOut){ REP_ERR=!r.sheikhIn?"r_in":!r.sheikhOut?"r_out":"r_zoomN"; return "اكتب وقت دخول الشيخ وإنهائه ومتوسط عدد الحضور على زووم."; }
+  for(const [k,q,tech] of YN_Q){ const a=v("yn_"+k); if(!a){ REP_ERR="yn_"+k; return "أجب عن: "+q; } r[k]=a;
     if(a==="y"){ r[k+"D"]=v("d_"+k); if(tech) r[k+"C"]=[...document.querySelectorAll(".tc_"+k+":checked")].map(x=>x.value).join(",");
-      if(!r[k+"D"] && !(tech && r[k+"C"])) return "اكتب تفاصيل: "+q; } }
+      if(!r[k+"D"] && !(tech && r[k+"C"])){ REP_ERR="d_"+k; return "اكتب تفاصيل: "+q; } } }
   const kp=document.getElementById("sh_keep");
   if(kp && kp.value==="1"){ r.share=kp.dataset.share; if(r.share==="y"){ r.shareBy=kp.dataset.by; r.shareBook=kp.dataset.book; } }
-  else { r.share=v("yn_share"); if(!r.share) return "أجب: هل يوجد شير؟"; if(r.share==="y"){ r.shareBy=v("r_shBy"); r.shareBook=v("r_shBook"); } }
+  else { r.share=v("yn_share"); if(!r.share){ REP_ERR="yn_share"; return "أجب: هل يوجد شير؟"; } if(r.share==="y"){ r.shareBy=v("r_shBy"); r.shareBook=v("r_shBook"); } }
   r.zoomN=Number(r.zoomN); return r; }
 // عرض التقرير
 function repLine(rp, s){ if(!rp) return ""; if(rp.v!==2) return repLineV1(rp);
@@ -1539,11 +1546,11 @@ document.addEventListener("click", async e=>{
     if(!dutyOn(me,d,id)) return toast("ابدأ الدوام لهذه المحاضرة أولًا من زر «بدء الدوام».");
     return open(reportForm(d,s)); }
   if(a==="sendReport"){ const s=S.slots.find(x=>x.id===id); if(!s) return;
-    const report=collectReport(); if(typeof report==="string") return toast(report);
+    const report=collectReport(); if(typeof report==="string") return repErr(report);
     const marks=Object.assign({}, marksOf(d,id), {report:true}); const all=stepsFor(d).every(([x])=>marks[x]);
     close(); saveFast("tasks", slotDoneId(d,id), {title:s.label, type:"scheduled", assignee:me, due:d, slot:id, marks, report:Object.assign({at:Date.now()},report), status:all?"done":"todo", doneAt:all?d:null}, all?"وصل التقرير واكتملت خطوات المحاضرة، أحسنت.":"وصل التقرير.", id+":report");
     return; }
-  if(a==="yn"){ const k=el.dataset.k, val=el.dataset.v, h=document.getElementById("yn_"+k); if(h) h.value=val;
+  if(a==="yn"){ const k=el.dataset.k, val=el.dataset.v, h=document.getElementById("yn_"+k); if(h) h.value=val; el.parentNode.classList.remove("rmiss");
     el.parentNode.querySelectorAll("button").forEach(b=>b.className=b===el?("on "+(val==="y"?"y":"n")):""); const w=document.getElementById("dw_"+k); if(w) w.hidden=val!=="y"; return; }
   if(a==="shKeep"){ const keep=el.dataset.v==="1"; document.getElementById("sh_keep").value=keep?"1":""; document.getElementById("sh_ed").hidden=keep;
     el.parentNode.querySelectorAll("button").forEach(b=>b.className=b===el?"on n":""); return; }
