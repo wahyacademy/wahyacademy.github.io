@@ -381,7 +381,7 @@ const GOAL = {att:95, attend:90, done:95, weekly:5, before:30, grace:5, since:"2
 const okLabel = r => r.kind==="sheikh" ? "اعتذر الشيخ" : /^emg_/.test(r.id||"") ? "بديل طارئ" : r.kind==="hours" ? "مستأذن "+t12(r.start)+" – "+t12(r.end) : REQ[r.kind]+(r.kind==="leave"?" معتمدة":" معتمد"); // أهداف ثابتة من «سجل دوام المشرفين»
 const MONTHS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
-const S = {session:null, me:null, members:[], tasks:[], slots:[], checkins:[], shifts:[], requests:[], lectures:[], evals:[], fwds:[], showInactive:false, wk:0, view:"today", day:null, month:null, phase:"boot", msg:""};
+const S = {session:null, me:null, members:[], tasks:[], slots:[], checkins:[], shifts:[], requests:[], lectures:[], evals:[], fwds:[], lecreqs:[], showInactive:false, wk:0, view:"today", day:null, month:null, phase:"boot", msg:""};
 
 // ---------- أدوات ----------
 const $ = s => document.querySelector(s);
@@ -578,7 +578,7 @@ async function api(action, payload={}, ms=30000){
     return d;
   } catch(e){ if(e && e.reason) throw e; throw {reason:"network", timeout:ctl.signal.aborted}; } finally { clearTimeout(tm); }
 }
-function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals","fwds"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="org")) && !S.ar) setTimeout(()=>loadAR(false),0); if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="sa")) && !S.tfq) setTimeout(()=>loadTFQ(false),0); }
+function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals","fwds","lecreqs"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="org")) && !S.ar) setTimeout(()=>loadAR(false),0); if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="sa")) && !S.tfq) setTimeout(()=>loadTFQ(false),0); }
 async function refresh(quiet){
   const f=document.activeElement; if(quiet && f && /INPUT|TEXTAREA|SELECT/.test(f.tagName) && f.value) return; // لا نمسح ما يكتبه
   if(quiet && PENDING) return; // حفظ جارٍ: لا نكتب فوقه ببيانات أقدم
@@ -638,7 +638,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="f17a0e41b2c9"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="a83c5d27e910"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -697,7 +697,7 @@ function renderInner(){
     const asBar = asv ? `<div class="asbar noprint"><span>👁 أنت تشاهد شاشة <b>${esc(nameOf(asv))}</b> كما تظهر له — <b>للعرض فقط</b></span><button class="btn sm" data-a="asExit">↩ رجوع</button></div>` : "";
     nav.hidden=false; $("#tabs").innerHTML = mt.map(([k,l,n])=>`<a href="#${k}" class="${S.view===k?"on":""}">${l}${n?`<span class="n">${n}</span>`:""}</a>`).join("");
     app.innerHTML = asBar + banner + ({today:viewMine, week:()=>weekCard(me), mine:viewMyReport, reqs:viewMyReqs}[S.view])(); return; }
-  const pend = ckTeam().filter(ckWaitMe).length + pendingReqs().length + (isOrgHead()?arPending().length:0) + (isAdmin()?fwdOpen().length:fwdNew().length);
+  const pend = ckTeam().filter(ckWaitMe).length + pendingReqs().length + (isOrgHead()?arPending().length:0) + (isAdmin()?fwdOpen().length+lrPend().length:fwdNew().length+lrNew().length);
   const tabs = [["today","اليوم",pend]].concat(canTFQ()?[["tfq","التفقدات",tfqAttn().length]]:[],[["tasks","المهام",0]]).concat([["sched","جداول الفريق",0],["report","التقارير",0],["lreps","تقارير المحاضرات",0]]).concat(isMgr()?[["academy","جدول الأكاديمية",lecEd()?unassigned().length:0],["team","الفريق والجداول",0]]:[]);
   if(!tabs.some(t=>t[0]===S.view) && !(S.view==="attrev" && canAR())) S.view="today";
   nav.hidden=false;
@@ -1180,11 +1180,11 @@ function viewTeamToday(){
   <details class="card teamd"><summary><h2 style="display:inline">الفريق — تفاصيل كل شخص</h2></summary>${teamRows(d, rows)}</details>
   ${d===today()?ckAllCard():""}`; }
 function inboxCard(d, reqs, needReply){
-  const parts = [d===today()?fwdCard()+sysCard()+riskCard()+arInbox()+stepMissCard()+tfqInbox():"", reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button>${fwdBtn("request",r.id,nameOf(r.member)+" · "+(REQ[r.kind]||"")+" — "+reqDesc(r),true)}</div></div></div>`).join("")}</div>`:"",
+  const parts = [d===today()?lrCard()+fwdCard()+sysCard()+riskCard()+arInbox()+stepMissCard()+tfqInbox():"", reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button>${fwdBtn("request",r.id,nameOf(r.member)+" · "+(REQ[r.kind]||"")+" — "+reqDesc(r),true)}</div></div></div>`).join("")}</div>`:"",
   needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>{ const n=ckMsgs(p).length; return `<div class="item"><div class="what"><b>${n>1?"💬 رد جديد — ":"⚠️ "}${esc(m.name)}</b><small>${esc(fmtDay(p.date))} · ${esc(ckAgo(ckLast(p).at))}</small><div class="prob">${esc(p.note)}${n>1?`<span class="rep"><b>${esc(m.name)}:</b> ${esc(ckLastText(p))}</span>`:""}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button><button class="btn sm ghost" data-a="ckOpen" data-id="${esc(p.id)}">💬 النقاش${n>1?" ("+n+")":""}</button></div></div></div>`; }).join("")}</div>`:"",
   d===today()&&ckTeam().filter(ckWaitClose).length?`<div class="card"><h2>⏳ مستنية تأكيد القفل (${ckTeam().filter(ckWaitClose).length})</h2><p class="sub" style="font-size:13px">اتردّ عليها من أكتر من 3 أيام، وصاحبتها ما ردّتش ولا قفلتها.</p>${ckTeam().filter(ckWaitClose).map(ckRow).join("")}</div>`:"",
   d===today()?sheikhReqCard():""].join("").trim();
-  const n = reqs.length + needReply.length + (d===today()?(isAdmin()?fwdOpen().length:0)+sheikhReqs().length+arPending().length+ckTeam().filter(ckWaitClose).length+stepMiss().length+tfqAttn().length:0);
+  const n = reqs.length + needReply.length + (d===today()?(isAdmin()?fwdOpen().length+lrPend().length:0)+sheikhReqs().length+arPending().length+ckTeam().filter(ckWaitClose).length+stepMiss().length+tfqAttn().length:0);
   return parts ? `<div class="card inbox"><h2>يحتاج تدخّلك${n?` (${n})`:""}</h2>${parts}</div>` : `<div class="card inbox"><h2>يحتاج تدخّلك</h2><div class="empty">✓ لا شيء يحتاج تدخّلك الآن.</div></div>`; }
 function teamRows(d, rows){ return `${rows.length? rows.map(({m,sl,exp,dn,pr,late})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${esc(DEPTS[m.dept]||"")}</small></span>${asBtn(m.id)}${dutyPill(m.id,d)}${pr.length?`<span class="pill gold">⚠️ ${pr.length}</span>`:""}${late?`<span class="pill bad">${late} متأخرة</span>`:""}${exp.length?`<span class="pill ${dn===exp.length?"ok":""}">${dn} من ${exp.length}</span>`:""}</summary>
     <div class="mini">${sl.map(s=>{ const off=slotOff(m.id,d,s.id), ok=isSlotDone(d,s.id), lec=isLecture(s);
@@ -1566,6 +1566,20 @@ function arDueLine(e){ const due=arFixDue(e); if(!due) return ""; const left=due
 // تصحيحات المنظّمين المفتوحة (لمسئول التنظيم): مُرسلة ولم يُعلَّم «صحّحت الكل»
 function arOpenFix(){ const ids=new Set(team().map(m=>m.id)), from=NOW()-14*864e5; return S.evals.filter(e=>/^ar_/.test(e.id||"") && ids.has(e.member) && !arHidden(e) && !e.ack && Number((e.metrics||{}).sentAt||0)>=from); }
 const arIsLate = e => { const d=arFixDue(e); return !!d && NOW()>d && !e.ack; };
+
+// ===== طلبات تعديل المحاضرات (موافقة المستخدم 17 نوفمبر 8:14 م) =====
+const LRL = {name:"الاسم", sheikh:"الشيخ", day:"اليوم", start:"من", end:"إلى", zoom:"رابط زووم", sheet:"شيت الحضور", account:"حساب زووم", pauseFrom:"إيقاف من", pauseTo:"إيقاف إلى", noOrg:"لا يحتاج منظّم", offer:"معروض على المنظّمين", startFrom:"يبدأ من", hold:"محجوز", showDays:"يظهر قبلها بـ (أيام)"};
+const lrV = (k,v) => k==="day" ? (DAYS[Number(v)]||String(v)) : (k==="noOrg"||k==="offer"||k==="hold") ? (v===true?"نعم":"لا") : ((k==="start"||k==="end") && v) ? t12(v) : (v===""||v==null?"—":String(v));
+const lrPend = () => (S.lecreqs||[]).filter(r=>r.status==="pending").sort((a,b)=>(a.at||0)-(b.at||0));
+const lrPendOf = lid => (S.lecreqs||[]).some(r=>r.lec===lid && r.status==="pending");
+const lrNew = () => S.me && S.me.role==="head" ? (S.lecreqs||[]).filter(r=>r.from===S.me.id && (r.status==="approved"||r.status==="rejected") && Number(r.seenAt||0)<Number(r.decidedAt||0)) : [];
+const lrDiff = r => { const c=r.chg||{}, w=r.was||{}; return Object.keys(c).map(k=>`<div style="font-size:13.5px">• <b>${esc(LRL[k]||k)}:</b> ${r.lec?`<span class="sub" style="text-decoration:line-through">${esc(lrV(k,w[k]))}</span> ← `:""}<b>${esc(lrV(k,c[k]))}</b></div>`).join(""); };
+const LR_ST = {pending:["مستني الاعتماد","gold"], approved:["اتوافق واتطبّق","ok"], rejected:["اترفض","bad"], cancelled:["اتلغى","gray"]};
+function lrCard(){ if(!isAdmin()) return ""; const L=lrPend(); if(!L.length) return "";
+  return `<div class="card"><h2>✏️ تعديلات محاضرات مستنية موافقتك (${L.length})</h2>${L.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.from))} · ${r.lec?"تعديل":"إضافة محاضرة جديدة"}: «${esc(r.title||"")}»</b><small>${esc(ckAgo(r.at))}</small><div class="prob">${lrDiff(r)}</div>
+    <div class="row" style="margin-top:6px"><input id="lr_r_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="lrDec" data-v="approved" data-id="${esc(r.id)}">✓ موافقة وتطبيق</button><button class="btn sm danger" data-a="lrDec" data-v="rejected" data-id="${esc(r.id)}">رفض</button></div></div></div>`).join("")}</div>`; }
+function lrMineModal(){ const L=(S.lecreqs||[]).filter(r=>r.from===S.me.id).sort((a,b)=>(b.decidedAt||b.at||0)-(a.decidedAt||a.at||0)).slice(0,15);
+  return `<h2>✏️ تعديلات المحاضرات اللي بعتيها</h2>${L.length?L.map(r=>{ const st=LR_ST[r.status]||["",""]; return `<div class="item"><div class="what"><b>${r.lec?"تعديل":"إضافة"}: «${esc(r.title||"")}» <span class="pill ${st[1]}">${st[0]}</span></b><small>${esc(ckAgo(r.at))}</small><div class="prob">${lrDiff(r)}${r.reply?`<span class="rep"><b>الرد:</b> ${esc(r.reply)}</span>`:""}</div>${r.status==="pending"?`<button class="btn sm ghost" data-a="lrCancel" data-id="${esc(r.id)}">إلغاء الطلب</button>`:""}</div></div>`; }).join(""):`<div class="empty">مفيش طلبات.</div>`}<div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`; }
 // ===== التحويل لمسئول اللجنة =====
 const FWD_K = {problem:"مشكلة", request:"طلب", review:"مراجعة حضور", tfq:"تفقد", other:"أخرى"};
 const fwdOpen = () => (S.fwds||[]).filter(f=>f.status!=="closed").sort((a,b)=>(a.at||0)-(b.at||0));
@@ -1602,17 +1616,19 @@ function headWorkCard(){ if(!S.me || S.me.role!=="head" || VIEWER()) return "";
     L.push(row("📨","طلبات المشرفين",pendingReqs().length,""));
     L.push(row("🗣","طلبات المشايخ المكلّفة بها",rq.length, rl?`<span class="late">${rl} متأخرة</span>`:"", rq.length?`<a class="btn sm ghost" href="#tasks">افتح</a>`:""));
   }
+  const lm=(S.lecreqs||[]).filter(r=>r.from===S.me.id), lp=lm.filter(r=>r.status==="pending").length, ln=lrNew().length;
+  if(lm.length) L.push(row("✏️","تعديلات المحاضرات اللي بعتيها",ln, [lp?`${lp} مستني الاعتماد`:"", ln?`${ln} قرار جديد`:""].filter(Boolean).join(" · "), `<button class="btn sm ghost" data-a="lrSeen">عرض</button>`));
   L.push(row("↩","ردود مسئول اللجنة على تحويلاتك",nw, nw?"ردود جديدة":"", mine?`<button class="btn sm ghost" data-a="fwdSeen">عرض</button>`:""));
   return `<div class="card"><h2>📋 شغلي اليوم</h2>${L.join("")}</div>`; }
 function viewAcademy(){
   const un=unassigned();
   const byDay=DAYS.map((d,i)=>[d,S.lectures.filter(l=>Number(l.day)===i).sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")||(a.name||"").localeCompare(b.name||""))]).filter(x=>x[1].length);
-  return `<div class="row"><div class="grow"><h1>جدول الأكاديمية</h1><p class="sub">${S.lectures.length} محاضرة${un.length?` · <span class="late">${un.length} بلا منظّم</span>`:" · كلها لها منظّم"}</p></div>${lecEd()?`<button class="btn ghost" data-a="impOpen">⟳ تحديث من شيت اللينكات</button><button class="btn" data-a="newLec">+ محاضرة</button>`:`<span class="pill gray">للعرض</span>`}</div>
+  return `<div class="row"><div class="grow"><h1>جدول الأكاديمية</h1><p class="sub">${S.lectures.length} محاضرة${un.length?` · <span class="late">${un.length} بلا منظّم</span>`:" · كلها لها منظّم"}</p></div>${lecEd()?`<button class="btn ghost" data-a="impOpen">⟳ تحديث من شيت اللينكات</button><button class="btn" data-a="newLec">${isAdmin()?"+ محاضرة":"+ اقتراح محاضرة"}</button>`:""}</div>${isAdmin()?"":`<p class="sub" style="font-size:13px;margin-top:-6px">أي تعديل على محاضرة${isOrgHead()?" أو إضافة محاضرة جديدة":""} بيتبعت لمسئول اللجنة، وبيتطبّق بعد موافقته على الجدول وعلى جداول كل المكلّفين بيها.</p>`}
   ${byDay.length?byDay.map(([d,ls])=>`<div class="card"><h2>${d}</h2>${ls.map(l=>{ const org=lecSlots(l.id);
     return `<div class="lec-row"><div class="tm">${l.start?esc(t12(l.start))+(l.end?" – "+esc(t12(l.end)):""):"بلا موعد"}</div>
     <div class="what"><b>${esc(l.name)}</b>${l.pauseTo&&l.pauseTo>=today()?` <span class="pill gold" title="من ${esc(fmtDay(l.pauseFrom))}">⏸ موقوفة حتى ${esc(fmtDay(l.pauseTo))}</span>`:""}${l.hold===true?` <span class="pill gold">📌 محجوز — موعد البداية لم يُحدَّد</span>`:""}${l.startFrom&&l.startFrom>today()?` <span class="pill gold">يبدأ ${esc(fmtDay(l.startFrom))}</span>`:""}${l.offer?` <span class="pill gold">معروض على المنظّمين${offerReqs(l.id).length?` · ${offerReqs(l.id).length} راغب`:""}</span>`:""}${l.sheikh?`<small>${esc(l.sheikh)}</small>`:""}
       <div class="chips">${org.length?org.map(s=>`<span class="pill ok">${esc(nameOf(s.owner))}</span>`).join(""):l.noOrg?`<span class="pill gray">لا يحتاج منظّم</span>`:lecPaused(l,today())?(l.startFrom>today()&&!l.offer?`<span class="pill gray">لم يُكلَّف منظّم بعد</span>`:""):l.offer?"":`<span class="pill bad">بلا منظّم</span>`}</div>${linksHtml(l)}</div>
-    ${lecEd()?`<div class="row" style="flex-wrap:nowrap">${org.length||l.noOrg||!isAdmin()?"":`<button class="btn sm gold" data-a="takeLec" data-id="${esc(l.id)}">أنظّمها أنا</button>`}<button class="btn sm" data-a="assignLec" data-id="${esc(l.id)}">تكليف</button><button class="btn sm ghost" data-a="editLec" data-id="${esc(l.id)}">تعديل</button></div>`:""}</div>`; }).join("")}</div>`).join(""):`<div class="card empty">لا توجد محاضرات بعد.</div>`}`;
+    <div class="row" style="flex-wrap:nowrap">${lrPendOf(l.id)?`<span class="pill gold">⏳ تعديل مستني الاعتماد</span>`:""}${org.length||l.noOrg||!isAdmin()?"":`<button class="btn sm gold" data-a="takeLec" data-id="${esc(l.id)}">أنظّمها أنا</button>`}${lecEd()?`<button class="btn sm" data-a="assignLec" data-id="${esc(l.id)}">تكليف</button>`:""}<button class="btn sm ghost" data-a="editLec" data-id="${esc(l.id)}">تعديل</button></div></div>`; }).join("")}</div>`).join(""):`<div class="card empty">لا توجد محاضرات بعد.</div>`}`;
 }
 function lecForm(l){
   const isNew=!l; l=l||{day:0};
@@ -1631,8 +1647,8 @@ function lecForm(l){
     <label class="full chkl"><input type="checkbox" id="l_no" ${l.noOrg?"checked":""}> لا يحتاج منظّم (الشيخ لا يحتاج تنظيمًا)</label>
     <label class="full chkl"><input type="checkbox" id="l_of" ${l.offer?"checked":""}> عرضه على المنظّمين ليرغب فيه من يريد</label></div>
     <p class="sub" style="font-size:13px">أثناء الإيقاف لا تظهر المحاضرة لمنظّمها ولا تُحسب في التقارير، وتعود وحدها بعد التاريخ الأخير. اترك الخانتين فارغتين لإلغاء الإيقاف.</p>
-    <p class="sub" style="font-size:13px">أي تغيير في الاسم أو الموعد يُطبَّق تلقائيًا على جدول منظّمها.</p>
-    <div class="row"><button class="btn" data-a="saveLec" data-id="${esc(isNew?"":l.id)}">حفظ</button><button class="btn ghost" data-a="close">إلغاء</button><span class="grow"></span>${isNew||!isAdmin()?"":`<button class="btn danger sm" data-a="delLec" data-id="${esc(l.id)}">حذف المحاضرة</button>`}</div>`;
+    <p class="sub" style="font-size:13px">${isAdmin()?"أي تغيير في الاسم أو الموعد يُطبَّق تلقائيًا على جدول منظّمها.":"التعديل هيتبعت لمسئول اللجنة، ومش هيتطبّق إلا بعد موافقته. بعد الموافقة يتطبّق على الجدول وعلى جداول كل المكلّفين بيها."}</p>
+    <div class="row"><button class="btn" data-a="saveLec" data-id="${esc(isNew?"":l.id)}">${isAdmin()?"حفظ":"إرسال للاعتماد"}</button><button class="btn ghost" data-a="close">إلغاء</button><span class="grow"></span>${isNew||!isAdmin()?"":`<button class="btn danger sm" data-a="delLec" data-id="${esc(l.id)}">حذف المحاضرة</button>`}</div>`;
 }
 function assignForm(l){
   const cur=lecSlots(l.id).map(s=>s.owner);
@@ -1834,16 +1850,18 @@ document.addEventListener("click", async e=>{
   if(a==="impApply"){ const ops=importOps(); const pick=[...document.querySelectorAll(".imp_c:checked")].map(x=>Number(x.value)); if(!pick.length) return toast("اختر ما تريد تطبيقه.");
     const chosen={}; document.querySelectorAll(".imp_u").forEach(x=>{ if(x.value) (chosen[x.dataset.i]=chosen[x.dataset.i]||[]).push(x.value); });
     el.disabled=true; let n=0;
-    const assign=async(l, want)=>{ const have=S.slots.filter(s=>s.lec===l.id && !s.date);
+    const assign=async(l, want)=>{ if(!isAdmin()) want=want.filter(myDeptId); const have=S.slots.filter(s=>s.lec===l.id && !s.date && (isAdmin()||myDeptId(s.owner)));
       for(const s of have) if(!want.includes(s.owner)) await remove("slots", s.id);
       for(const mid of want) if(!have.some(s=>s.owner===mid)) await save("slots", "lec_"+l.id+"_"+mid, lecSlotData(l,mid), false); };
     for(const i of pick){ const o=ops[i]; if(!o) continue;
+      if(!isAdmin() && (o.kind==="new"||o.kind==="chg")){ const x=o.row, chg={}; if(o.kind==="new"){ ["name","sheikh","day","start","end","zoom","sheet","account"].forEach(k=>{ if(x[k]!==undefined && x[k]!=="") chg[k]=x[k]; }); } else o.diff.forEach(([k])=>chg[k]=x[k]);
+        if(await save("lecreqs", "lr_"+Date.now().toString(36)+i, {lec:o.kind==="chg"?o.lec.id:"", chg}, false)) n++; continue; }
       if(o.kind==="new"){ const x=o.row; const doc=await save("lectures","lc_"+rid(),{name:x.name, sheikh:x.sheikh, day:x.day, start:x.start, end:x.end, zoom:x.zoom, sheet:x.sheet, account:x.account, active:true},false);
         if(doc){ n++; const want=[...new Set((o.org?o.org.ids:[]).concat(chosen[i]||[]))]; if(want.length) await assign(doc, want); } }
       if(o.kind==="org"){ const cur=lecSlots(o.lec.id).map(s=>s.owner); const want=[...new Set(cur.filter(x=>!o.rem.includes(x)).concat(o.add, chosen[i]||[]))]; await assign(o.lec, want); n++; }
       if(o.kind==="chg"){ const data={}; o.diff.forEach(([k])=>data[k]=o.row[k]); const doc=await save("lectures",o.lec.id,data,true);
         if(doc){ n++; if(data.start!==undefined||data.end!==undefined) for(const s of lecSlots(doc.id)) await save("slots", s.id, {day:doc.day, start:doc.start||"", end:doc.end||"", label:doc.name}, true); } } }
-    close(); toast(`تم تطبيق ${n} تعديل. راجع «بلا منظّم» لتكليف الجديد.`); return; }
+    close(); toast(isAdmin()?`تم تطبيق ${n} تعديل. راجع «بلا منظّم» لتكليف الجديد.`:`اتبعت ${n} لمسئول اللجنة (التعديلات والإضافات بتتطبّق بعد موافقته، والتكليف اتطبّق).`); return; }
   if(a==="newReq") return open(reqForm("lecture"));
   if(a==="retryLoad"){ S.msg=""; render(); await refresh(false); return; }
   if(a==="sendReq"){ const k=el.dataset.k, note=v("q_note"); const data={kind:k, note, status:"pending", at:Date.now()};
@@ -1896,6 +1914,9 @@ document.addEventListener("click", async e=>{
     if(doc){ close(); toast("وصلت للمسئول."); } return; }
   if(a==="reply"){ const r=v("r_"+id); if(!r) return toast("اكتب الرد."); el.disabled=true; if(!await save("checkins", id, {say:r})) el.disabled=false; return; }
   if(a==="ckOpen") return open(ckModal(id));
+  if(a==="lrDec"){ el.disabled=true; const ok=await save("lecreqs", id, {status:el.dataset.v, reply:v("lr_r_"+id)}); if(ok){ toast(el.dataset.v==="approved"?"اتطبّق التعديل.":"اترفض الطلب."); if(el.dataset.v==="approved") await refresh(); } else el.disabled=false; return; }
+  if(a==="lrCancel"){ el.disabled=true; if(await save("lecreqs", id, {status:"cancelled"})) open(lrMineModal()); else el.disabled=false; return; }
+  if(a==="lrSeen"){ open(lrMineModal()); for(const r of lrNew()) await save("lecreqs", r.id, {seenAt:1}); open(lrMineModal()); return; }
   if(a==="fwdAsk") return open(fwdForm(el.dataset.k, id, el.dataset.t||""));
   if(a==="fwdSend"){ el.disabled=true; const doc=await save("fwds", "fw_"+Date.now().toString(36), {kind:el.dataset.k, ref:id, title:el.dataset.t||"", note:v("fw_note")}, false); if(doc){ close(); toast("اتحوّلت لمسئول اللجنة."); } else el.disabled=false; return; }
   if(a==="fwdReply"){ const r=v("fw_r_"+id); if(!r) return toast("اكتب الرد."); el.disabled=true; if(!await save("fwds", id, {reply:r})) el.disabled=false; else toast("اتبعت الرد."); return; }
@@ -1985,6 +2006,8 @@ document.addEventListener("click", async e=>{
     if(data.noOrg && data.offer) return toast("اختر واحدة: «لا يحتاج منظّم» أو «عرضه على المنظّمين».");
     if(!data.name) return toast("اكتب اسم المحاضرة."); if(!!data.pauseFrom!==!!data.pauseTo) return toast("اكتب تاريخ بداية الإيقاف ونهايته معًا، أو اتركهما فارغين."); if(data.pauseFrom && data.pauseTo<data.pauseFrom) return toast("تاريخ نهاية الإيقاف قبل بدايته."); if(data.end && !data.start) return toast("اكتب وقت البداية.");
     if(data.zoom && !safeUrl(data.zoom)) return toast("رابط زووم يجب أن يبدأ بـ https://"); if(data.sheet && !safeUrl(data.sheet)) return toast("رابط الشيت يجب أن يبدأ بـ https://");
+    if(!isAdmin()){ const chg=Object.assign({},data); delete chg.active; if(id){ const cur=S.lectures.find(x=>x.id===id)||{}; Object.keys(chg).forEach(k=>{ const c=(k==="noOrg"||k==="offer"||k==="hold")?cur[k]===true:k==="showDays"?showDaysOf(cur):(cur[k]==null?(k==="day"?0:""):cur[k]); if(String(c)===String(chg[k])) delete chg[k]; }); if(!Object.keys(chg).length) return toast("مفيش تغيير."); }
+      el.disabled=true; const r=await save("lecreqs", "lr_"+Date.now().toString(36), {lec:id||"", chg}, false); if(r){ close(); toast("اتبعت لمسئول اللجنة للاعتماد."); } else el.disabled=false; return; }
     const oldName=(S.lectures.find(x=>x.id===id)||{}).name;
     el.disabled=true; const doc=await save("lectures", id||("lc_"+rid()), data, !!id);
     if(doc){ for(const s of lecSlots(doc.id).filter(x=>isAdmin()||myDeptId(x.owner))) await save("slots", s.id, {day:doc.day, start:doc.start||"", end:doc.end||"", label:doc.name}, true);
