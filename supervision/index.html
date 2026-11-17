@@ -365,10 +365,10 @@ const STEPS = [
 const stepLabel = (st, s) => st[1].replace("{SHEIKH}", ((lecOf(s)||{}).sheikh||"").trim() || "(لقب واسم المحاضر)");
 const REPORT_Q = {good:"ممتازة", ok:"مقبولة", bad:"فيها مشكلة"};
 const stepsFor = date => date>=STEPS_SINCE ? STEPS : MARKS;
-const REQ = {lecture:"اعتذار عن محاضرة", day:"اعتذار عن يوم", leave:"إجازة", fix:"تصحيح يوم سابق", offer:"رغبة في تنظيم مجلس"};
+const REQ = {lecture:"اعتذار عن محاضرة", hours:"استئذان لوقت محدد", day:"اعتذار عن يوم", leave:"إجازة", fix:"تصحيح يوم سابق", offer:"رغبة في تنظيم مجلس"};
 const REQ_ST = {pending:["ينتظر الرد","gold"], accepted:["مقبول","ok"], rejected:["مرفوض","bad"], cancelled:["ملغى",""]};
 const GOAL = {att:95, attend:90, done:95, weekly:5, before:30, grace:5, since:"2026-11-04"}; // since: أول يوم يُحسب فيه حضور الدوام
-const okLabel = r => r.kind==="sheikh" ? "اعتذر الشيخ" : /^emg_/.test(r.id||"") ? "بديل طارئ" : REQ[r.kind]+(r.kind==="leave"?" معتمدة":" معتمد"); // أهداف ثابتة من «سجل دوام المشرفين»
+const okLabel = r => r.kind==="sheikh" ? "اعتذر الشيخ" : /^emg_/.test(r.id||"") ? "بديل طارئ" : r.kind==="hours" ? "مستأذن "+t12(r.start)+" – "+t12(r.end) : REQ[r.kind]+(r.kind==="leave"?" معتمدة":" معتمد"); // أهداف ثابتة من «سجل دوام المشرفين»
 const MONTHS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
 const S = {session:null, me:null, members:[], tasks:[], slots:[], checkins:[], shifts:[], requests:[], lectures:[], evals:[], showInactive:false, wk:0, view:"today", day:null, month:null, phase:"boot", msg:""};
@@ -461,6 +461,7 @@ const isSlotDone = (date, sid) => { const t=slotTask(date,sid); if(!t) return fa
 // البديل: محاضرات الطلب التي ستحتاج من يغطيها
 function reqDates(r){ const out=[]; let d=r.date; const end=(r.kind==="leave"||r.kind==="lecture")?(r.dateTo||r.date):r.date; for(let i=0;i<70 && d<=end;i++){ out.push(d); d=addDays(d,1); } return out; }
 function reqLectures(r){ if(r.kind==="fix" || r.kind==="offer") return [];
+  if(r.kind==="hours") return slotsOf(r.member,r.date).filter(s=>isLecture(s) && s.start && s.end && r.start && r.end && toMin(r.start)<=toMin(s.start) && toMin(r.end)>=toMin(s.end)).map(s=>({d:r.date,s}));
   return reqDates(r).flatMap(d=>slotsOf(r.member,d).filter(s=>isLecture(s) && (r.kind!=="lecture" || s.id===r.slot)).map(s=>({d,s}))); }
 function coverSelect(r){ const ls=reqLectures(r); if(!ls.length) return "";
   const ppl=S.members.filter(m=>m.active!==false && m.role!=="committee" && m.id!==r.member && (isAdmin() || m.dept===S.me.dept));
@@ -495,7 +496,12 @@ function linksHtml(l, s){ if(!l) return ""; const z=safeUrl(l.zoom), sh=safeUrl(
 // الطلبات المقبولة تُسقط اليوم أو المحاضرة من الحساب
 const okReqs = mid => S.requests.filter(r => r.member===mid && r.status==="accepted");
 const dayOff = (mid, date) => okReqs(mid).find(r => (r.kind==="day" && r.date===date) || (r.kind==="leave" && r.date<=date && date<=(r.dateTo||r.date)));
-const slotOff = (mid, date, sid) => dayOff(mid,date) || okReqs(mid).find(r => r.kind==="lecture" && r.date<=date && date<=(r.dateTo||r.date) && r.slot===sid) || ((slotTask(date,sid)||{}).excused==="sheikh" ? {kind:"sheikh"} : null);
+// الاستئذان لوقت محدد (17 نوفمبر): لو بيغطي الخانة كلها تتشطب، ولو جزء منها تفضل مطلوبة والوقت ده مش بيتحسب
+const hoursReqs = (mid, date) => okReqs(mid).filter(r => r.kind==="hours" && r.date===date && r.start && r.end);
+const hoursFull = (mid, date, sid) => { const s=S.slots.find(x=>x.id===sid); if(!s||!s.start||!s.end) return null; return hoursReqs(mid,date).find(r => toMin(r.start)<=toMin(s.start) && toMin(r.end)>=toMin(s.end)) || null; };
+const hoursPart = (mid, date, s) => !s||!s.start||!s.end ? [] : hoursReqs(mid,date).filter(r => toMin(r.start)<toMin(s.end) && toMin(r.end)>toMin(s.start) && !(toMin(r.start)<=toMin(s.start) && toMin(r.end)>=toMin(s.end)));
+const hoursPill = (mid, date, s) => hoursPart(mid,date,s).map(r=>` <span class="pill gold">⏱ مستأذن ${esc(t12(r.start))} – ${esc(t12(r.end))}</span>`).join("");
+const slotOff = (mid, date, sid) => dayOff(mid,date) || okReqs(mid).find(r => r.kind==="lecture" && r.date<=date && date<=(r.dateTo||r.date) && r.slot===sid) || hoursFull(mid,date,sid) || ((slotTask(date,sid)||{}).excused==="sheikh" ? {kind:"sheikh"} : null);
 const pendingReqs = () => { const ids=team().map(m=>m.id); return S.requests.filter(r=>r.status==="pending" && ids.includes(r.member)); };
 // الدوام — من 6 نوفمبر لكل محاضرة/مهمة بدء وإنهاء خاصان بها (قرار المستخدم)
 const SLOT_DUTY_SINCE = "2026-11-06";
@@ -504,7 +510,7 @@ const slotShift = (mid, date, sid) => S.shifts.find(x => x.member===mid && x.dat
 const dutyExp = (mid, date) => slotsOf(mid,date).filter(s=>s.start && !slotOff(mid,date,s.id)); // المهام المطلوب لها دوام
 const dutyFrom = s => toMin(s.start) - (isLecture(s) ? GOAL.before : 0); // موعد بدء دوام المهمة
 function dutyOn(mid, date, sid){ if(date<SLOT_DUTY_SINCE) return !!activeShift(mid); const sh=slotShift(mid,date,sid); return !!sh && !sh.end; }
-function slotLate(mid, date, s){ const sh=slotShift(mid,date,s.id); if(!sh||!s.start) return 0; const x=toMin(sh.start)-dutyFrom(s); return x>GOAL.grace ? x : 0; }
+function slotLate(mid, date, s){ const sh=slotShift(mid,date,s.id); if(!sh||!s.start) return 0; let from=dutyFrom(s); hoursPart(mid,date,s).forEach(r=>{ if(toMin(r.start)<=from+GOAL.grace && toMin(r.end)>from) from=toMin(r.end); }); const x=toMin(sh.start)-from; return x>GOAL.grace ? x : 0; }
 function activeShift(mid){ if(today()>=SLOT_DUTY_SINCE) return S.shifts.find(x=>x.member===mid && x.date===today() && x.slot && x.start && !x.end) || null;
   const t=shiftOf(mid,today()); if(t) return t; const y=shiftOf(mid,addDays(today(),-1));
   return y && !y.end && NOW()-(y.startAt||0) < 16*36e5 ? y : null; }
@@ -599,7 +605,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="5c19de3d43bf"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="bafc05c1c37e"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -917,7 +923,7 @@ function lecCollapsed(d, s, mid){ const off=slotOff(mid,d,s.id), exc=off&&off.ki
   const sk=(lecOf(s)||{}).sheikh;
   return `<div class="lecc col ${done||full?"done":""}" role="button" tabindex="0" data-a="toggleLec" data-id="${esc(lecKey(mid,d,s.id))}">
     <span class="ring sm ${full?"full":""}" style="--p:${pct}"><span>${ring}</span></span>
-    <div class="what"><b>${esc(s.label)}${sk?`<span class="shk">${esc(sk)}</span>`:""}</b><small>🕘 ${s.start?esc(t12(s.start))+" – "+esc(t12(s.end)):""}</small></div>
+    <div class="what"><b>${esc(s.label)}${sk?`<span class="shk">${esc(sk)}</span>`:""}</b><small>🕘 ${s.start?esc(t12(s.start))+" – "+esc(t12(s.end)):""}${hoursPill(mid,d,s)}</small></div>
     <div class="cst">${duty}${exc?`<span class="pill gray">اعتذر الشيخ</span>`:done?`<span class="pill ok">✓ تمت</span>`:pr.length?`<span class="pill bad">⚠️ يوجد مشكلة</span>`:""}</div>
     <span class="chev" aria-hidden="true">▾</span></div>`; }
 function slotRow(d,s,mid,mine){
@@ -935,7 +941,7 @@ function slotRow(d,s,mid,mine){
   if(isLecture(s)){ const mk=marksOf(d,s.id), n=markCount(d,s.id), N=stepsFor(d).length, pct=Math.round(n*100/N);
     return `<div class="lecc ${done?"done":""}">
     <div class="lh"><span class="ring ${done?"full":""}" style="--p:${pct}" title="الخطوات المكتملة"><span>${done?"✓":n+"/"+N}</span></span>
-    <div class="what"><b>${esc(s.label)}${(lecOf(s)||{}).sheikh?`<span class="shk">${esc(lecOf(s).sheikh)}</span>`:""}${s.cover?` <span class="pill gold">بديل عن ${esc(nameOf(s.cover))}</span>`:""}${done?`<span class="pill ok">✓ تمت</span>`:pr.length?`<span class="pill bad">⚠️ يوجد مشكلة</span>`:""}${svTag(s.id+":excuse")}</b><small>🕘 ${when}</small>${linksHtml(lecOf(s),s)}</div>
+    <div class="what"><b>${esc(s.label)}${(lecOf(s)||{}).sheikh?`<span class="shk">${esc(lecOf(s).sheikh)}</span>`:""}${s.cover?` <span class="pill gold">بديل عن ${esc(nameOf(s.cover))}</span>`:""}${done?`<span class="pill ok">✓ تمت</span>`:pr.length?`<span class="pill bad">⚠️ يوجد مشكلة</span>`:""}${svTag(s.id+":excuse")}</b><small>🕘 ${when}${hoursPill(mid,d,s)}</small>${linksHtml(lecOf(s),s)}</div>
     <div class="lact">${mine && !done?`<button class="btn sm ghost warn" data-a="problem" data-slot="${esc(s.id)}">⚠️ يوجد مشكلة</button><button class="btn sm ghost" data-a="excuse" data-id="${esc(s.id)}" data-v="sheikh">اعتذر الشيخ</button>`:""}${fold}</div></div>
     ${dutyBar(d,s,mid,mine)}
     <div class="prog"><i style="width:${pct}%"></i></div>
@@ -949,7 +955,7 @@ function slotRow(d,s,mid,mine){
   const hasDuty = !!s.start && d>=SLOT_DUTY_SINCE;
   return `<div class="item ${done?"done":""}">
     ${mine && !hasDuty?`<button class="chk ${done?"on":""}" data-a="slot" data-id="${esc(s.id)}" aria-label="تم">✓</button>`:`<span class="chk ${done?"on":""}" aria-hidden="true">✓</span>`}
-    <div class="what"><b>${esc(s.label)}</b><small>${when}</small>${dutyBar(d,s,mid,mine)}${pr.map(probHtml).join("")}</div>
+    <div class="what"><b>${esc(s.label)}</b><small>${when}${hoursPill(mid,d,s)}</small>${dutyBar(d,s,mid,mine)}${pr.map(probHtml).join("")}</div>
     ${mine && !done?`<button class="flag" data-a="problem" data-slot="${esc(s.id)}">مشكلة؟</button>`:""}
   </div>`;
 }
@@ -959,6 +965,7 @@ function reqDesc(r){
   if(r.kind==="lecture"){ const s=S.slots.find(x=>x.id===r.slot), n=r.dateTo&&r.dateTo>r.date ? Math.round((parse(r.dateTo)-parse(r.date))/(7*864e5))+1 : 1;
     return (n>1 ? "من "+fmtDay(r.date)+" إلى "+fmtDay(r.dateTo)+" ("+n+" مرات)" : fmtDay(r.date))+" — "+(s?s.label:"محاضرة"); }
   if(r.kind==="leave") return "من "+fmtDay(r.date)+" إلى "+fmtDay(r.dateTo||r.date);
+  if(r.kind==="hours"){ const ov=slotsOf(r.member,r.date).filter(s=>s.start&&s.end&&r.start&&r.end&&toMin(r.start)<toMin(s.end)&&toMin(r.end)>toMin(s.start)); return fmtDay(r.date)+" · "+t12(r.start||"")+" – "+t12(r.end||"")+(ov.length?" · بيتقاطع مع: "+ov.map(s=>s.label).join("، "):""); }
   if(r.kind==="fix"){ const s=r.slot&&S.slots.find(x=>x.id===r.slot); return fmtDay(r.date)+(s?" — "+s.label:"")+(r.start?" · الدوام "+t12(r.start)+(r.end?" – "+t12(r.end):""):""); }
   return fmtDay(r.date);
 }
@@ -977,6 +984,8 @@ function reqForm(kind){
       <label>عدد المرات<select id="q_times">${[1,2,3,4,5,6,7,8].map(n=>`<option value="${n}">${n===1?"هذه المرة فقط":n===2?"مرتين (أسبوعين)":n+" مرات ("+n+" أسابيع)"}</option>`).join("")}</select></label>
       <p class="sub full" style="font-size:13px">لو اخترت أكثر من مرة، يُطبَّق الاعتذار على نفس المحاضرة في الأسابيع التالية، ويختار المسئول من ينظّمها بدلًا منك في هذه المدة فقط.</p>`,
     day:`<label>اليوم<input type="date" id="q_date" min="${d}" value="${d}"></label>`,
+    hours:`<label class="full">اليوم<input type="date" id="q_date" min="${d}" value="${d}"></label><label>من<input type="time" id="q_hf"></label><label>إلى<input type="time" id="q_ht"></label>
+      <p class="sub full" style="font-size:13px">لو الوقت بيغطي محاضرة أو مهمة كاملة، بتتشطب زي الاعتذار. ولو بيغطي جزء منها، بتفضل مطلوبة منك، والوقت ده مش بيتحسب عليك.</p>`,
     leave:`<label>من<input type="date" id="q_date" min="${d}" value="${d}"></label><label>إلى<input type="date" id="q_to" min="${d}" value="${d}"></label>`,
     fix:(()=>{ const po=[]; for(let i=1;i<=14;i++){ const ds=addDays(d,-i); slotsOf(me,ds).filter(s=>s.start && !slotOff(me,ds,s.id)).forEach(s=>po.push([ds+"|"+s.id, fmtDay(ds)+" — "+s.label+" ("+t12(s.start)+")"])); }
       return `<label class="full">المحاضرة أو المهمة<select id="q_fslot">${po.length?po.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join(""):`<option value="">لا توجد مهام في الأسبوعين الماضيين</option>`}</select></label><label>بدأت الدوام<input type="time" id="q_from"></label><label>أنهيت الدوام<input type="time" id="q_to"></label>`; })()
@@ -1040,6 +1049,10 @@ function ckAllCard(){ const all=ckTeam(), f=S.ckf||"open", mon=today().slice(0,7
   const seg=`<div class="seg sm" style="width:auto">${[["open","مفتوحة"],["me","مستنية ردّي"],["closed","اتقفلت هذا الشهر"]].map(([k,l])=>`<button class="${k===f?"on":""}" data-a="ckf" data-v="${k}">${l} (${L[k].length})</button>`).join("")}</div>`;
   const rows=L[f].sort((a,b)=>ckLast(b).at-ckLast(a).at);
   return `<details class="card teamd"${S.ckf?" open":""}><summary><h2 style="display:inline">💬 كل المشاكل</h2> <small class="sub">مفتوحة ${L.open.length}</small></summary><div class="row" style="margin:8px 0">${seg}</div>${rows.map(ckRow).join("")||`<div class="empty">لا شيء.</div>`}</details>`; }
+// الاستئذانات في التقرير الأسبوعي/الشهري (للمعلومة)
+function hoursReportCard(P, ppl){ const rows=ppl.map(m=>{ const rs=okReqs(m.id).filter(r=>r.kind==="hours" && r.date>=P.from && r.date<=P.to); return {m, n:rs.length, mins:rs.reduce((a,r)=>a+Math.max(0,toMin(r.end)-toMin(r.start)),0)}; }).filter(r=>r.n);
+  if(!rows.length) return "";
+  return `<div class="card"><h2>⏱ الاستئذانات</h2><div class="tsw-scroll"><table class="dt"><thead><tr><th>العضو</th><th>عدد المرات</th><th>إجمالي الوقت</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.m.name)}</b></td><td>${r.n}</td><td>${dur(r.mins)}</td></tr>`).join("")}</tbody></table></div><p class="sub" style="font-size:12.5px">الاستئذانات المقبولة بس، للمعلومة.</p></div>`; }
 // جزء «المشاكل» في التقرير الأسبوعي/الشهري (للمسئولين — مش داخل في تقييم المشرف)
 function ckReportCard(P, ppl){ const rows=ppl.map(m=>{ const ps=ckAll().filter(p=>p.member===m.id && p.date>=P.from && p.date<=P.to);
     const fr=ps.filter(p=>p.repliedAt).map(p=>(Number(p.repliedAt)-Number(p.at))/60000), cl=ps.filter(p=>p.closedAt).map(p=>(Number(p.closedAt)-Number(p.at))/60000);
@@ -1142,7 +1155,7 @@ function inboxCard(d, reqs, needReply){
   return parts ? `<div class="card inbox"><h2>يحتاج تدخّلك${n?` (${n})`:""}</h2>${parts}</div>` : `<div class="card inbox"><h2>يحتاج تدخّلك</h2><div class="empty">✓ لا شيء يحتاج تدخّلك الآن.</div></div>`; }
 function teamRows(d, rows){ return `${rows.length? rows.map(({m,sl,exp,dn,pr,late})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${esc(DEPTS[m.dept]||"")}</small></span>${asBtn(m.id)}${dutyPill(m.id,d)}${pr.length?`<span class="pill gold">⚠️ ${pr.length}</span>`:""}${late?`<span class="pill bad">${late} متأخرة</span>`:""}${exp.length?`<span class="pill ${dn===exp.length?"ok":""}">${dn} من ${exp.length}</span>`:""}</summary>
     <div class="mini">${sl.map(s=>{ const off=slotOff(m.id,d,s.id), ok=isSlotDone(d,s.id), lec=isLecture(s);
-      return `<span class="${ok?"d":"u"}">${off?"—":ok?"✓":"○"} ${s.start?esc(t12(s.start))+" — ":""}${esc(s.label)}${off?` (${off.kind==="sheikh"?"اعتذر الشيخ":"معتذر"})`:lec&&!ok?` (${markCount(d,s.id)} من ${stepsFor(d).length}: ${stepsFor(d).filter(([k])=>!marksOf(d,s.id)[k]).map(x=>stepLabel(x,s)).join("، ")} ناقص)`:""}${repLine((slotTask(d,s.id)||{}).report, s)}${lec && d>=today() && canEmg(m.id) ? (off && /^emg_/.test(off.id||"") ? ` <button class="btn sm ghost" data-a="emgUndo" data-id="${esc(off.id)}">↩ إلغاء البديل</button>` : off && off.kind==="sheikh" ? ` <button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="">↩ تراجع عن اعتذار الشيخ</button>` : !off && !ok ? ` <button class="btn sm ghost warn" data-a="emgOpen" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}">🚨 بديل طارئ</button> <button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="sheikh">🕌 اعتذر الشيخ</button>` : "") : ""}</span>`; }).join("")}${pr.map(probHtml).join("")}</div></details>`).join("") : `<div class="empty">لا يوجد شغل مجدول للفريق في هذا اليوم.</div>`}`;
+      return `<span class="${ok?"d":"u"}">${off?"—":ok?"✓":"○"} ${s.start?esc(t12(s.start))+" — ":""}${esc(s.label)}${hoursPart(m.id,d,s).map(r=>` (⏱ مستأذن ${esc(t12(r.start))}–${esc(t12(r.end))})`).join("")}${off?` (${off.kind==="sheikh"?"اعتذر الشيخ":"معتذر"})`:lec&&!ok?` (${markCount(d,s.id)} من ${stepsFor(d).length}: ${stepsFor(d).filter(([k])=>!marksOf(d,s.id)[k]).map(x=>stepLabel(x,s)).join("، ")} ناقص)`:""}${repLine((slotTask(d,s.id)||{}).report, s)}${lec && d>=today() && canEmg(m.id) ? (off && /^emg_/.test(off.id||"") ? ` <button class="btn sm ghost" data-a="emgUndo" data-id="${esc(off.id)}">↩ إلغاء البديل</button>` : off && off.kind==="sheikh" ? ` <button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="">↩ تراجع عن اعتذار الشيخ</button>` : !off && !ok ? ` <button class="btn sm ghost warn" data-a="emgOpen" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}">🚨 بديل طارئ</button> <button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="sheikh">🕌 اعتذر الشيخ</button>` : "") : ""}</span>`; }).join("")}${pr.map(probHtml).join("")}</div></details>`).join("") : `<div class="empty">لا يوجد شغل مجدول للفريق في هذا اليوم.</div>`}`;
 }
 
 // ملخص اليوم للمسئول: محاضرات اليوم، تمت، متأخرة الآن، اعتذار الشيخ
@@ -1401,7 +1414,7 @@ function viewReport(){
     : `<input type="month" data-a="month" value="${esc(P.month)}" style="width:auto">`;
   const head = `${ptitle("التقرير "+({day:"اليومي",week:"الأسبوعي",month:"الشهري"}[P.per])+" — "+P.label)}<div class="row noprint"><div class="grow"><h1>التقارير</h1><p class="sub">${esc(P.label)}</p></div>${ctl}<button class="btn ghost" data-a="print">🖨️ طباعة / PDF</button></div>${seg}`;
   if(P.per==="day") return head + viewDayReport(P.from, ppl);
-  return head + periodTable(P, ppl.map(m=>({m,...periodStats(m.id,P.from,P.to)}))) + ckReportCard(P, ppl);
+  return head + periodTable(P, ppl.map(m=>({m,...periodStats(m.id,P.from,P.to)}))) + hoursReportCard(P, ppl) + ckReportCard(P, ppl);
 }
 // التقرير اليومي للفريق: سطر لكل شخص يُفتح بالضغط
 function viewDayReport(d, ppl){
@@ -1734,9 +1747,10 @@ document.addEventListener("click", async e=>{
     if(k==="lecture"){ const x=v("q_slot"); if(!x) return toast("اختر المحاضرة."); [data.date,data.slot]=x.split("|"); const n=Number(v("q_times")||1); if(n>1) data.dateTo=addDays(data.date,7*(n-1)); }
     else { data.date=v("q_date"); if(!data.date) return toast("اختر اليوم."); }
     if(k==="leave"){ data.dateTo=v("q_to"); if(!data.dateTo||data.dateTo<data.date) return toast("تاريخ النهاية بعد البداية."); }
+    if(k==="hours"){ data.start=v("q_hf"); data.end=v("q_ht"); if(!data.start||!data.end) return toast("اختر الوقت من وإلى."); if(toMin(data.end)<=toMin(data.start)) return toast("وقت النهاية لازم يكون بعد البداية."); }
     if(k==="fix"){ const fs=(v("q_fslot")||"").split("|"); if(!fs[1]) return toast("اختر المحاضرة أو المهمة."); data.date=fs[0]; data.slot=fs[1]; data.start=v("q_from"); data.end=v("q_to"); if(data.date>=d) return toast("التصحيح لأيام سابقة فقط."); }
     if(!note) return toast(k==="fix"?"اكتب المطلوب تصحيحه.":"اكتب السبب.");
-    if(S.requests.some(r=>r.member===me && r.status==="pending" && r.kind===k && r.date===data.date && (r.slot||"")===(data.slot||""))) return toast("أرسلت هذا الطلب من قبل وينتظر الرد.");
+    if(S.requests.some(r=>r.member===me && r.status==="pending" && r.kind===k && r.date===data.date && (r.slot||"")===(data.slot||"") && (r.start||"")===(data.start||""))) return toast("أرسلت هذا الطلب من قبل وينتظر الرد.");
     el.disabled=true; if(await save("requests", null, data, false)){ close(); toast("وصل طلبك للمسئول."); } else el.disabled=false; return; }
   if(a==="wantLec"){ const l=S.lectures.find(x=>x.id===id); if(!l) return; el.disabled=true;
     if(await save("requests", null, {kind:"offer", slot:id, date:l.startFrom||d, note:"", status:"pending", at:Date.now()}, false)) toast("وصلت رغبتك لمسئول اللجنة."); else el.disabled=false; return; }
