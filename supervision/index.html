@@ -404,6 +404,8 @@ const store = {get:k=>{try{return localStorage.getItem(k)}catch(e){return null}}
 function toast(m){ document.querySelectorAll(".toast").forEach(x=>x.remove()); const t=document.createElement("div"); t.className="toast"; t.textContent=m; document.body.appendChild(t); setTimeout(()=>t.remove(),3200); }
 const nameOf = id => (S.members.find(m=>m.id===id)||{}).name || "—";
 const isMgr = () => S.me && (S.me.role==="committee" || S.me.role==="head");
+const isOrgHead = () => !!(S.me && S.me.role==="head" && S.me.dept==="org"); // مسئول التنظيم: يعتمد مراجعات حضور المنظّمين (17 نوفمبر)
+const canAR = () => isAdmin() || isOrgHead();
 const isAdmin = () => S.me && S.me.role==="committee";
 // «👁 شاشته» (قرار المستخدم 9 نوفمبر): مسئول اللجنة يرى شاشة أي عضو، ومسئول القسم أعضاء قسمه فقط — للعرض فقط
 const canView = id => !!(isMgr() && id && id!==S.me.id && (isAdmin() ? S.members.some(m=>m.id===id && m.role!=="committee") : team().some(m=>m.id===id)));
@@ -536,7 +538,7 @@ async function api(action, payload={}, ms=30000){
     return d;
   } catch(e){ if(e && e.reason) throw e; throw {reason:"network", timeout:ctl.signal.aborted}; } finally { clearTimeout(tm); }
 }
-function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && d.me.role==="committee" && !S.ar) setTimeout(()=>loadAR(false),0); }
+function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="org")) && !S.ar) setTimeout(()=>loadAR(false),0); }
 async function refresh(quiet){
   const f=document.activeElement; if(quiet && f && /INPUT|TEXTAREA|SELECT/.test(f.tagName) && f.value) return; // لا نمسح ما يكتبه
   if(quiet && PENDING) return; // حفظ جارٍ: لا نكتب فوقه ببيانات أقدم
@@ -596,7 +598,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="ecfad090c7f2"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="a25048de1c59"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -655,9 +657,9 @@ function renderInner(){
     const asBar = asv ? `<div class="asbar noprint"><span>👁 أنت تشاهد شاشة <b>${esc(nameOf(asv))}</b> كما تظهر له — <b>للعرض فقط</b></span><button class="btn sm" data-a="asExit">↩ رجوع</button></div>` : "";
     nav.hidden=false; $("#tabs").innerHTML = mt.map(([k,l,n])=>`<a href="#${k}" class="${S.view===k?"on":""}">${l}${n?`<span class="n">${n}</span>`:""}</a>`).join("");
     app.innerHTML = asBar + banner + ({today:viewMine, week:()=>weekCard(me), mine:viewMyReport, reqs:viewMyReqs}[S.view])(); return; }
-  const pend = ckTeam().filter(ckWaitMe).length + pendingReqs().length;
+  const pend = ckTeam().filter(ckWaitMe).length + pendingReqs().length + (isOrgHead()?arPending().length:0);
   const tabs = [["today","اليوم",pend],["tasks","المهام",0],["sched","جداول الفريق",0],["report","التقارير",0],["lreps","تقارير المحاضرات",0]].concat(isAdmin()?[["academy","جدول الأكاديمية",unassigned().length],["team","الفريق والجداول",0]]:[]);
-  if(!tabs.some(t=>t[0]===S.view) && !(S.view==="attrev" && isAdmin())) S.view="today";
+  if(!tabs.some(t=>t[0]===S.view) && !(S.view==="attrev" && canAR())) S.view="today";
   nav.hidden=false;
   $("#tabs").innerHTML = tabs.map(([k,l,n])=>`<a href="#${k}" class="${S.view===k?"on":""}">${l}${n?`<span class="n">${n}</span>`:""}</a>`).join("");
   app.innerHTML = banner + ({today:viewTeamToday, tasks:viewTasks, report:viewReport, lreps:viewLecReports, academy:viewAcademy, team:viewTeam, sched:viewTeamSched, attrev:viewAttRev}[S.view])();
@@ -1131,11 +1133,11 @@ function viewTeamToday(){
   <details class="card teamd"><summary><h2 style="display:inline">الفريق — تفاصيل كل شخص</h2></summary>${teamRows(d, rows)}</details>
   ${d===today()?ckAllCard():""}`; }
 function inboxCard(d, reqs, needReply){
-  const parts = [d===today()?sysCard()+riskCard()+arInbox():"", reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button></div></div></div>`).join("")}</div>`:"",
+  const parts = [d===today()?sysCard()+riskCard()+arInbox()+stepMissCard():"", reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button></div></div></div>`).join("")}</div>`:"",
   needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>{ const n=ckMsgs(p).length; return `<div class="item"><div class="what"><b>${n>1?"💬 رد جديد — ":"⚠️ "}${esc(m.name)}</b><small>${esc(fmtDay(p.date))} · ${esc(ckAgo(ckLast(p).at))}</small><div class="prob">${esc(p.note)}${n>1?`<span class="rep"><b>${esc(m.name)}:</b> ${esc(ckLastText(p))}</span>`:""}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button><button class="btn sm ghost" data-a="ckOpen" data-id="${esc(p.id)}">💬 النقاش${n>1?" ("+n+")":""}</button></div></div></div>`; }).join("")}</div>`:"",
   d===today()&&ckTeam().filter(ckWaitClose).length?`<div class="card"><h2>⏳ مستنية تأكيد القفل (${ckTeam().filter(ckWaitClose).length})</h2><p class="sub" style="font-size:13px">اتردّ عليها من أكتر من 3 أيام، وصاحبتها ما ردّتش ولا قفلتها.</p>${ckTeam().filter(ckWaitClose).map(ckRow).join("")}</div>`:"",
   d===today()?sheikhReqCard():""].join("").trim();
-  const n = reqs.length + needReply.length + (d===today()?sheikhReqs().length+arPending().length+ckTeam().filter(ckWaitClose).length:0);
+  const n = reqs.length + needReply.length + (d===today()?sheikhReqs().length+arPending().length+ckTeam().filter(ckWaitClose).length+stepMiss().length:0);
   return parts ? `<div class="card inbox"><h2>يحتاج تدخّلك${n?` (${n})`:""}</h2>${parts}</div>` : `<div class="card inbox"><h2>يحتاج تدخّلك</h2><div class="empty">✓ لا شيء يحتاج تدخّلك الآن.</div></div>`; }
 function teamRows(d, rows){ return `${rows.length? rows.map(({m,sl,exp,dn,pr,late})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${esc(DEPTS[m.dept]||"")}</small></span>${asBtn(m.id)}${dutyPill(m.id,d)}${pr.length?`<span class="pill gold">⚠️ ${pr.length}</span>`:""}${late?`<span class="pill bad">${late} متأخرة</span>`:""}${exp.length?`<span class="pill ${dn===exp.length?"ok":""}">${dn} من ${exp.length}</span>`:""}</summary>
     <div class="mini">${sl.map(s=>{ const off=slotOff(m.id,d,s.id), ok=isSlotDone(d,s.id), lec=isLecture(s);
@@ -1172,16 +1174,29 @@ const AR_W = {"خطأ":1, "لم يُسجَّل":1, "ناقص تنويه":0.5}; /
 function arAcc(total, items, st){ const t=Number(total)||0; if(!t) return null; let w=0; (items||[]).forEach(it=>{ if((st?st[arKey(it)]:it.st)==='y') w+=AR_W[it.j]||0; }); return Math.round(Math.max(0,(t-w))*1000/t)/10; }
 const arHidden = e => /^ar_/.test(e.id||"") && !((e.metrics||{}).sent); // مسودة المسئول لا تظهر للمنظّم
 function arSelf(e){ try { const x=JSON.parse(e.selfNote||"{}"); return {d:x.d||[], r:x.r||{}}; } catch(_){ return {d:[], r:{}}; } }
-function loadAR(force){ if(!isAdmin() || S.arLoading) return; S.arLoading=true;
+function loadAR(force){ if(!canAR() || S.arLoading) return; S.arLoading=true;
   api("attReviews",{force:!!force}).then(d=>{ S.arLoading=false; if(d.ok){ S.ar=d.reviews||[]; S.arErr=""; } else S.arErr=d.reason||"err"; render(); })
     .catch(()=>{ S.arLoading=false; S.arErr="network"; render(); }); }
 function arOrg(rv){ const doc=arDoc(rv.id); if(doc && doc.member) return doc.member; const sl=S.slots.find(s=>s.lec && s.lec===rv.lec && !s.cover); return sl?sl.owner:""; }
 function arDec(rv){ S.arDec=S.arDec||{}; if(!S.arDec[rv.id]){ const doc=arDoc(rv.id), st={}; ((doc&&doc.metrics&&doc.metrics.items)||[]).forEach(it=>{ if(it.st) st[arKey(it)]=it.st; }); S.arDec[rv.id]={st, org:arOrg(rv), note:(doc&&doc.headNote)||""}; } return S.arDec[rv.id]; }
 // سطر في «يحتاج تدخّلك»: كل مراجعة لم تُرسل بعد
 function arPending(){ return (S.ar||[]).filter(rv=>rv.items.length && !((arDoc(rv.id)||{}).metrics||{}).sent); }
+const AR_DUE = "12:00"; // مهلة اعتماد مسئول التنظيم (قرار المستخدم 17 نوفمبر)
+function arDuePill(){ const late=cairoNow().hm>=AR_DUE, oh=S.members.find(m=>m.role==="head" && m.dept==="org" && m.active!==false);
+  if(isAdmin()) return `${oh?`<span class="pill gray">عند ${esc(oh.name)}</span>`:""}${late?`<span class="pill bad">متأخرة عن 12 الضهر</span>`:""}`;
+  return late?`<span class="pill bad">متأخرة عن 12 الضهر</span>`:`<span class="pill gold">اعتمديها قبل 12 الضهر</span>`; }
+// خطوات حضور ناقصة امبارح (لمسئول التنظيم ومسئول اللجنة): المنظّم ما علّمش «تسجيل حضور وغياب الطلاب» أو ما بدأش دوام المحاضرة
+function stepMiss(){ if(!canAR()) return []; const y=addDays(today(),-1), out=[];
+  if(y<STEPS_SINCE) return out;
+  S.members.filter(m=>m.active!==false && m.dept==="org" && m.role!=="committee").forEach(m=>slotsOf(m.id,y).filter(s=>isLecture(s) && !adminLec(s) && !slotOff(m.id,y,s.id)).forEach(s=>{
+    const noSheet=!marksOf(y,s.id).sheet, noDuty=s.start && !slotShift(m.id,y,s.id);
+    if(noSheet||noDuty) out.push({m,s,why:[noDuty?"ما بدأش دوام المحاضرة":"", noSheet?"ما علّمش «تسجيل حضور وغياب الطلاب»":""].filter(Boolean).join(" · ")}); }));
+  return out.sort((a,b)=>(a.s.start||"").localeCompare(b.s.start||"")); }
+function stepMissCard(){ const L=stepMiss(); if(!L.length) return "";
+  return `<div class="card"><h2>⚠️ خطوات حضور ناقصة امبارح (${L.length})</h2>${L.map(({m,s,why})=>`<div class="item"><div class="what"><b>${esc(s.label)}</b><small>${s.start?esc(t12(s.start))+" · ":""}${esc(m.name)} · <span class="late">${esc(why)}</span></small></div>${asBtn(m.id)}</div>`).join("")}</div>`; }
 function arInbox(){ const p=arPending(); if(!p.length) return "";
   return `<div class="card"><h2>🔎 مراجعة حضور جاهزة (${p.length})</h2>${p.map(rv=>{ const c=t=>rv.items.filter(i=>i.j===t).length;
-    return `<div class="item"><div class="what"><b>${esc(rv.title)} — ${esc(fmtDay(rv.date))}</b><small>راجعها Claude من تقرير زووم وجروب تيليجرام · دقة التسجيل <b style="color:var(--ok);display:inline">${esc(rv.acc)}</b> · <span style="color:var(--bad)">${c("خطأ")} خطأ</span> · <span style="color:var(--gold-ink)">${c("ناقص تنويه")} ناقص تنويه</span>${c("لم يُسجَّل")?` · ${c("لم يُسجَّل")} لم يُسجَّلوا`:""}</small></div><button class="btn sm" data-a="arOpen" data-id="${esc(rv.id)}">راجِع</button></div>`; }).join("")}</div>`; }
+    return `<div class="item"><div class="what"><b>${esc(rv.title)} — ${esc(fmtDay(rv.date))}</b> ${arDuePill()}<small>راجعها Claude من تقرير زووم وجروب تيليجرام · دقة التسجيل <b style="color:var(--ok);display:inline">${esc(rv.acc)}</b> · <span style="color:var(--bad)">${c("خطأ")} خطأ</span> · <span style="color:var(--gold-ink)">${c("ناقص تنويه")} ناقص تنويه</span>${c("لم يُسجَّل")?` · ${c("لم يُسجَّل")} لم يُسجَّلوا`:""}</small></div><button class="btn sm" data-a="arOpen" data-id="${esc(rv.id)}">راجِع</button></div>`; }).join("")}</div>`; }
 // شاشة المراجعة للمسئول
 function viewAttRev(){
   if(!S.ar) return `<div class="card empty">${S.arErr?`تعذّر تحميل المراجعات${S.arErr==="review_sheet"?" (شيت المراجعة غير متاح لحساب الأكاديمية)":""}. <button class="btn sm" data-a="arReload">⟳ إعادة المحاولة</button>`:"جارٍ تحميل المراجعة…"}</div>`;
@@ -1200,13 +1215,13 @@ function viewAttRev(){
       ${rep?`<div class="ev"><span class="rp">رد المنظّم: ${esc(rep)}</span></div>`:""}
       <div class="acts"><button class="ab ${st==="y"?"y":""}" data-a="arSt" data-k="${esc(k)}" data-v="y">✓ اعتمد</button><button class="ab n ${st==="n"?"on":""}" data-a="arSt" data-k="${esc(k)}" data-v="n">✗ استبعد</button></div></div>`; };
   const groups=AR_TYPES.map(([t,ic])=>{ const g=list.filter(i=>i.k===t); return g.length?`<div class="arg">${ic} ${esc(t)} <em>${g.length}</em></div>${arHow(t)}${g.map(item).join("")}`:""; }).join("");
-  const nY=rv.items.filter(i=>dec.st[arKey(i)]==="y").length, orgs=S.members.filter(m=>m.active!==false && m.role!=="committee");
+  const nY=rv.items.filter(i=>dec.st[arKey(i)]==="y").length, orgs=S.members.filter(m=>m.active!==false && m.role!=="committee" && (isAdmin() || m.dept==="org"));
   const sentFix=sent?(doc.metrics.items||[]).filter(i=>i.st==="y"&&self.d.includes(arKey(i))).length:0, sentN=sent?(doc.metrics.items||[]).filter(i=>i.st==="y").length:0;
   return `<div class="row" style="align-items:flex-start"><div class="grow"><h1 style="font-size:24px">مراجعة الحضور — ${esc(rv.title)}</h1>
     <p class="sub">${esc(fmtDay(rv.date))} · الشيخ ${esc(rv.sheikh)} ${esc(rv.from)}–${esc(rv.to)} (${esc(rv.mins)} د) · الحد الأدنى ${esc(rv.th)} د</p></div>
     ${S.ar.length>1?`<select data-a="arPick" style="width:auto">${S.ar.slice().reverse().map(r=>`<option value="${esc(r.id)}" ${r.id===rv.id?"selected":""}>${esc(r.id)} · ${esc(fmtDay(r.date))}</option>`).join("")}</select>`:""}
     <button class="btn sm ghost" data-a="arReload">⟳ تحديث</button><button class="btn sm ghost" data-a="arBack">↩ رجوع</button></div>
-  ${sent?`<div class="banner">📤 أُرسلت للمنظّم ${esc(nameOf(doc.member))} · صحّح <b>${sentFix}</b> من ${sentN}${doc.ack?` · ✓ علّم «صحّحت الكل»${doc.ackNote?`: ${esc(doc.ackNote)}`:""}`:""}</div>`:""}
+  ${sent?`<div class="banner">📤 ${doc.evaluator?`أرسلها ${esc(nameOf(doc.evaluator))} `:"أُرسلت "}للمنظّم ${esc(nameOf(doc.member))} · صحّح <b>${sentFix}</b> من ${sentN}${doc.ack?` · ✓ علّم «صحّحت الكل»${doc.ackNote?`: ${esc(doc.ackNote)}`:""}`:""}</div>`:""}
   <div class="kq6"><div class="kq"><b>${esc(rv.total)}</b><small>طالب</small></div><div class="kq ok"><b>${esc(rv.ok)}</b><small>صح</small></div><div class="kq bad"><b>${esc(rv.bad)}</b><small>خطأ</small></div><div class="kq gold"><b>${esc(rv.note)}</b><small>ناقص تنويه</small></div><div class="kq gray"><b>${esc(rv.unreg||0)}</b><small>لم يُسجَّلوا</small></div></div>
   <div class="arbar"><span>دقة المنظّم <small class="sub">(للتقييم · الهدف ${GOAL.att}%)</small></span><div class="bar"><i style="width:${acc||0}%"></i></div><b style="color:${acc>=GOAL.att?"var(--ok)":"var(--bad)"}">${acc}%</b>${pacc!=null?`<small class="${acc>=pacc?"up":"late"}">${acc>=pacc?"▲":"▼"} من ${pacc}% في المراجعة السابقة</small>`:""}</div>
   <p class="sub" style="font-size:12.5px;margin:-6px 0 0">من شيت المنظّم كما سلّمه أول مرة قبل أي تصحيح: كل ملاحظة تعتمدها تُحسب عليه (ناقص التنويه بنصف)، والمستبعد يُحسب صح. قبل قرارك: ${esc(rv.acc)} من مقارنة Claude.</p>
@@ -1233,7 +1248,7 @@ function arLine(it, x){ const m=Number(it.min)||0;
   return `مش متسجل — مش موجود في زووم ← يُكتب غياب`; }
 // بطاقة المنظّم في «يومي»
 function arFollow(me){ return S.evals.filter(e=>e.member===me && /^ar_/.test(e.id) && !arHidden(e) && !e.ack).map(e=>{ const x=e.metrics||{}, its=(x.items||[]).filter(i=>i.st==="y"), self=arSelf(e), dn=its.filter(i=>self.d.includes(arKey(i))).length;
-  return `<div class="card follow arf"><h2>📋 ملاحظات على حضور «${esc(x.title||"")}»</h2><p class="sub" style="margin:-4px 0 6px;font-size:13.5px">${esc(fmtDay(x.date||e.month))} · من المسئول · صحّح شيت الحضور وعلّم على كل اسم</p>
+  return `<div class="card follow arf"><h2>📋 ملاحظات على حضور «${esc(x.title||"")}»</h2><p class="sub" style="margin:-4px 0 6px;font-size:13.5px">${esc(fmtDay(x.date||e.month))} · من ${e.evaluator?esc(nameOf(e.evaluator)):"المسئول"} · صحّح شيت الحضور وعلّم على كل اسم</p>
     ${e.headNote?`<p style="margin:0 0 6px"><b>ملاحظة المسئول:</b> ${esc(e.headNote)}</p>`:""}
     ${its.map((it,i)=>{ const k=arKey(it), on=self.d.includes(k); return `<div class="item ${on?"done":""}"><button class="chk ${on?"on":""}" data-a="arFix" data-id="${esc(e.id)}" data-k="${esc(k)}" aria-label="صحّحت">${on?"✓":""}</button><div class="what"><b>${esc(it.n)}</b><small>${esc(arLine(it,x))}</small>
       ${(it.k==="متسجل حضور ومش موجود في زووم"||it.k==="متسجّل معتذر من غير اعتذار")?`<div class="row" style="margin-top:4px"><input id="arr_${esc(e.id)}_${i}" placeholder="ردّك (اختياري)" value="${esc(self.r[k]||"")}" class="grow" style="width:auto"><button class="btn sm ghost" data-a="arRep" data-id="${esc(e.id)}" data-k="${esc(k)}" data-i="${i}">إرسال</button></div>`:""}</div></div>`; }).join("")}
