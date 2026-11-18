@@ -646,7 +646,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="20b6ae0c30f0"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="6163c71c9bde"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1113,6 +1113,71 @@ function ckReportCard(P, ppl){ const rows=ppl.map(m=>{ const ps=ckAll().filter(p
   const D=x=>x===null?"—":x<1440?dur(x):Math.round(x/144)/10+" يوم";
   return `<div class="card"><h2>💬 المشاكل</h2><div class="tsw-scroll"><table class="dt"><thead><tr><th>العضو</th><th>مشاكل</th><th>اتقفلت</th><th>مفتوحة</th><th>متوسط أول رد</th><th>متوسط وقت القفل</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r.m.name)}</b></td><td>${r.n}</td><td>${r.closed}</td><td>${r.open?`<span class="pill gold">${r.open}</span>`:"0"}</td><td>${D(r.fr)}</td><td>${D(r.cl)}</td></tr>`).join("")}</tbody></table></div><p class="sub" style="font-size:12.5px">بتقيس سرعة رد المسئولين، ومش داخلة في تقييم المشرف.</p></div>`; }
 
+// ===== ⏱ وقت وصول كل حاجة لمسئول القسم ومدة تأخيره (طلب المستخدم 18 نوفمبر 8:17 م) =====
+// قراءة بس من البيانات الموجودة؛ مفيش تعديل في الخادم. اللي اتعمل نيابة بـ«✋ اشتغل بداله» بيتحسب لها ومعاه ✋ (قرار المستخدم).
+const HD_SINCE = "2026-11-18";          // أول يوم بيتحسب
+const HD_TRIAL_UNTIL = "2026-11-25";    // للعلم لحد 25 نوفمبر زي باقي المؤشرات الجديدة
+const HD_NIGHT = ["22:00","08:00"];     // من 10 م لـ 8 ص ما بيتحسبش في مهلة الطلبات والمشاكل
+const HD_K = {req:{ic:"📨",l:"الطلبات",h:4,night:true}, ck:{ic:"⚠️",l:"المشاكل (أول رد)",h:2,night:true}, ar:{ic:"✅",l:"مراجعات الحضور"}, se:{ic:"📋",l:"«مش استفسار؟»",h:24}, tfq:{ic:"📞",l:"رأي في تفقد",h:24}};
+const cDate = ms => { const o={}; new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Cairo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(ms)).forEach(x=>o[x.type]=x.value); return o.year+"-"+o.month+"-"+o.day; };
+function cairoEpoch(ds, hm){ const [y,mo,d]=String(ds).split("-").map(Number), [h,mi]=String(hm||"00:00").split(":").map(Number), g=Date.UTC(y,mo-1,d,h,mi); return g - (cairoMinOf(g,ds)-(h*60+mi))*60000; }
+const hdStr = x => { const m=String(x||"").match(/(\d{4}-\d\d-\d\d)[ T](\d{1,2}):(\d\d)/); return m ? cairoEpoch(m[1], m[2].padStart(2,"0")+":"+m[3]) : 0; };
+const hdWhen = ms => ms ? `${fmtDay(cDate(ms))} ${t12(hmCairo(ms))}` : "—";
+function hdDue(k, at){ const K=HD_K[k]; if(!K.night) return at + K.h*36e5;
+  let d=cDate(at), s=at; const hm=hmCairo(at);
+  if(hm>=HD_NIGHT[0]){ d=addDays(d,1); s=cairoEpoch(d,HD_NIGHT[1]); } else if(hm<HD_NIGHT[1]) s=cairoEpoch(d,HD_NIGHT[1]);
+  const due=s+K.h*36e5, end=cairoEpoch(d,HD_NIGHT[0]);
+  return due<=end ? due : cairoEpoch(addDays(d,1),HD_NIGHT[1]) + (due-end); }
+const hdHeads = () => S.members.filter(m=>m.role==="head" && m.active!==false && (isAdmin() || m.id===S.me.id));
+// كل حاجة وصلت للمسئولة h في الفترة: {k, who, title, at, due, doneAt, doneBy, via, mine, wait, late}
+function hdItems(h, from, to){ const ids=new Set(S.members.filter(m=>m.dept===h.dept && m.id!==h.id && m.role!=="committee").map(m=>m.id)), out=[];
+  const isHer = x => !!x && (x===h.id || x===h.name), now=NOW();
+  const push=(k,o)=>{ if(!o.at) return; const d=cDate(o.at); if(d<from || d>to || d<HD_SINCE) return;
+    o.k=k; o.due=o.due||hdDue(k,o.at);
+    o.mine = !o.doneAt && !o.doneUnk ? true : (isHer(o.doneBy) || (!!o.via && isHer(o.as||o.doneBy)) || !!o.viaOnly);
+    o.wait = !o.doneAt && !o.doneUnk;
+    o.late = o.doneUnk ? 0 : Math.max(0, Math.round(((o.doneAt||now)-o.due)/60000));
+    if(o.late<=GRACE) o.late=0; out.push(o); };
+  // 📨 الطلبات: وصلت (at) ← اتقرر فيها (decidedAt)
+  (S.requests||[]).filter(r=>ids.has(r.member)).forEach(r=>{ if(r.status==="cancelled" && !r.decidedAt) return;
+    push("req",{id:r.id, who:r.member, title:(REQ[r.kind]||"طلب")+(r.date?" — "+fmtDay(r.date):""), at:Number(r.at)||0, doneAt:Number(r.decidedAt)||0, doneBy:r.decidedBy, via:r.decidedAt&&r.decidedBy===h.id?r.via:""}); });
+  // ⚠️ المشاكل: وصلت (at) ← أول رد من غير صاحبتها
+  ckAll().filter(p=>ids.has(p.member)).forEach(p=>{ const f=ckMsgs(p).find(m=>!m.first && m.by && m.by!==p.member), at=Number(p.at)||0;
+    if(f) return push("ck",{id:p.id, who:p.member, title:p.note, at, doneAt:f.at, doneBy:f.by, via:f.via||""});
+    if(!ckOpen(p)) return push("ck",{id:p.id, who:p.member, title:p.note, at, doneAt:Number(p.closedAt)||0, doneUnk:!p.closedAt, doneBy:p.closedBy||p.member, how:"اتقفلت من غير رد"});
+    push("ck",{id:p.id, who:p.member, title:p.note, at}); });
+  // ✅ مراجعات الحضور (مسئولة التنظيم): بتجهز 7 ص يوم بعد المحاضرة، والمهلة 1 الضهر
+  if(h.dept==="org"){ const seen=new Set(), one=(rid,title,date,doc,who)=>{ const m=(doc||{}).metrics||{}, d1=addDays(date,1), sent=Number(m.firstSentAt||m.sentAt)||0, cl=!sent && m.closed;
+      push("ar",{id:rid, who, title:"«"+(title||"")+"» — "+fmtDay(date), at:cairoEpoch(d1,"07:00"), due:cairoEpoch(d1,AR_DUE), doneAt:sent||(cl?Number(m.closedAt)||0:0), doneUnk:!!(cl&&!m.closedAt), doneBy:(doc||{}).evaluator, via:(doc||{}).via||"", viaOnly:!!(doc||{}).via, how:cl?"اتقفلت (كلها مستبعدة)":""}); };
+    (S.ar||[]).forEach(rv=>{ if(!(rv.items||[]).length || !rv.date) return; seen.add(rv.id); const doc=arDoc(rv.id); one(rv.id, rv.title, rv.date, doc, (doc&&doc.member)||arOrg(rv)); });
+    S.evals.filter(e=>/^ar_/.test(e.id||"") && !seen.has(e.id.slice(3))).forEach(e=>{ const m=e.metrics||{}; if((m.sent||m.closed) && m.date) one(e.id.slice(3), m.title, m.date, e, e.member); }); }
+  if(h.dept==="sa"){
+    // 📋 «مش استفسار؟»: المشرفة طلبت (flagAt) ← المسئولة قررت (decAt)
+    ((S.se||{}).q||[]).filter(q=>q.flag && ids.has(q.member)).forEach(q=>push("se",{id:q.id, who:q.member, title:"استفسار وصل "+(q.arr||""), at:hdStr(q.flagAt), doneAt:q.dec?hdStr(q.decAt):0, doneUnk:!!(q.dec&&!q.decAt), doneBy:q.decBy}));
+    // 📞 رأي في تفقد: وقت الوصول بيتقرا من عمود «at» لو اتسجّل (لسه مش متسجّل)
+    (S.tfq||[]).filter(r=>TFQ_BAD.includes(r.verdict)||r.op).forEach(r=>push("tfq",{id:r.id, who:r.due, title:(r.student||"")+" — "+(r.course||""), at:hdStr(r.at), doneAt:r.op?hdStr(r.opAt):0, doneUnk:!!(r.op&&!r.opAt), doneBy:r.opBy})); }
+  return out.sort((a,b)=>b.at-a.at); }
+function hdStats(L){ const c=L.filter(x=>x.mine), dn=c.filter(x=>!x.wait && !x.doneUnk), rt=dn.map(x=>(x.doneAt-x.at)/60000);
+  return {n:c.length, on:dn.filter(x=>!x.late).length, late:dn.filter(x=>x.late).length, wait:c.filter(x=>x.wait).length, waitLate:c.filter(x=>x.wait&&x.late).length,
+    avg:rt.length?rt.reduce((a,b)=>a+b,0)/rt.length:null, max:Math.max(0,...c.map(x=>x.late)), other:L.filter(x=>!x.mine).length}; }
+function hdState(x){ if(!x.mine) return `<span class="pill gray">عملها ${esc(nameOf(x.doneBy)||x.doneBy||"حد تاني")} — مش محسوبة</span>`;
+  if(x.doneUnk) return `<span class="pill gray">${esc(x.how||"اتعملت")} — الوقت مش متسجّل</span>`;
+  if(x.wait) return x.late?`<span class="pill bad">متأخرة دلوقتي ${dur(x.late)}</span>`:`<span class="pill gold">مستنية · المهلة ${esc(t12(hmCairo(x.due)))}</span>`;
+  return (x.late?`<span class="pill bad">اتأخرت ${dur(x.late)}</span>`:`<span class="pill ok">في المهلة</span>`)+(x.how?` <small class="sub">${esc(x.how)}</small>`:""); }
+function hdCard(P){ if(!isMgr() || VIEWER()) return ""; const H=hdHeads(); if(!H.length) return "";
+  const D=x=>x===null?"—":x<1440?dur(x):Math.round(x/144)/10+" يوم";
+  const blocks=H.map(h=>{ const L=hdItems(h,P.from,P.to), st=hdStats(L);
+    const byK=Object.keys(HD_K).map(k=>{ const t=L.filter(x=>x.k===k); if(!t.length) return ""; const s=hdStats(t); return `<span class="pill ${s.late||s.waitLate?"gold":"ok"}">${HD_K[k].ic} ${HD_K[k].l} ${s.n}${s.late+s.waitLate?` · ${s.late+s.waitLate} متأخرة`:""}</span>`; }).join(" ");
+    const rows=L.map(x=>`<tr${!x.mine?` style="opacity:.6"`:""}><td>${HD_K[x.k].ic} ${esc(HD_K[x.k].l)}</td><td>${esc(nameOf(x.who)||x.who||"—")}</td><td style="max-width:240px">${esc(String(x.title||"").slice(0,90))}</td><td>${esc(hdWhen(x.at))}</td><td>${esc(hdWhen(x.due))}</td><td>${x.doneAt?esc(hdWhen(x.doneAt)):x.doneUnk?"—":"لسه"}${x.via&&x.mine?" "+viaTag(x.via):""}</td><td style="white-space:nowrap">${hdState(x)}</td></tr>`).join("");
+    return `<div style="margin-top:10px">${isAdmin()?`<h3 style="margin:6px 0">${esc(h.name)} <small class="sub">مسئولة ${esc(DEPTS[h.dept]||"")}</small></h3>`:""}
+      ${L.length?`<div class="row" style="flex-wrap:wrap;gap:6px">${byK}</div>
+      <details class="person"><summary><span class="grow">كل اللي وصلها (${L.length})</span></summary><div class="tsw-scroll"><table class="dt"><thead><tr><th>النوع</th><th>من</th><th>الموضوع</th><th>وصلت</th><th>المهلة</th><th>اتعملت</th><th>الحالة</th></tr></thead><tbody>${rows}</tbody></table></div></details>`:`<div class="empty">مفيش حاجة وصلت في الفترة دي.</div>`}</div>`; });
+  const sum=H.map(h=>({h, st:hdStats(hdItems(h,P.from,P.to))}));
+  return `<div class="card"><h2>⏱ ${isAdmin()?"سرعة مسئولي الأقسام":"سرعتي في اللي بيوصلني"}</h2>
+    <div class="tsw-scroll"><table class="dt"><thead><tr>${isAdmin()?"<th>المسئولة</th>":""}<th>وصلها</th><th>في المهلة</th><th>اتأخرت</th><th>مستنية الآن</th><th>متوسط وقت الرد</th><th>أطول تأخير</th></tr></thead><tbody>${sum.map(({h,st})=>`<tr>${isAdmin()?`<td><b>${esc(h.name)}</b></td>`:""}<td>${st.n}</td><td>${st.on}</td><td>${st.late?`<span class="pill bad">${st.late}</span>`:"0"}</td><td>${st.wait?`<span class="pill ${st.waitLate?"bad":"gold"}">${st.wait}${st.waitLate?` (${st.waitLate} متأخرة)`:""}</span>`:"0"}</td><td>${D(st.avg)}</td><td>${st.max?dur(st.max):"—"}</td></tr>`).join("")}</tbody></table></div>
+    ${blocks.join("")}
+    <p class="sub" style="font-size:12.5px">المهلة: الطلبات 4 ساعات، والمشاكل ساعتين لأول رد (من 10 م لـ 8 ص ما بيتحسبش)، ومراجعة الحضور لحد 1 الضهر، و«مش استفسار؟» 24 ساعة. ورأي التفقد لسه مش بيتحسب لأن وقت وصوله مش متسجّل. ✋ = اتعملت بواسطة مسئول اللجنة وبتتحسب لصاحبتها.${P.from<HD_TRIAL_UNTIL?` <b>للعلم لحد ${esc(fmtDay(HD_TRIAL_UNTIL))}، ومش داخلة في التقييم.</b>`:""}</p></div>`; }
+
 // صفحة المسئول: الفريق اليوم
 function dutyPill(mid, d){ if(d>=SLOT_DUTY_SINCE) return dutyPillSlots(mid,d);
   const sh=shiftOf(mid,d), st=shState(sh), off=dayOff(mid,d), late=lateBy(mid,d);
@@ -1423,7 +1488,7 @@ function viewAttRev(){
     <button class="btn ghost" data-a="arSave" data-v="0">💾 حفظ</button><button class="btn gold" data-a="arSave" data-v="1">${(!sent && rv.items.length && rv.items.every(i=>dec.st[arKey(i)]==="n"))?"✓ إنهاء المراجعة (كلها مستبعدة)":`📤 ${sent?"تحديث الإرسال":"إرسال للمنظّم"} (${nY})`}</button></div>`; }
 function arMetrics(rv, dec, sent){ const old=(arDoc(rv.id)||{}).metrics||{};
   return {kind:"att", rid:rv.id, title:rv.title, date:rv.date, sheikh:rv.sheikh, mins:rv.mins, th:rv.th, total:rv.total, ok:rv.ok, bad:rv.bad, note:rv.note, unreg:rv.unreg, acc:rv.acc,
-    accEff:arAcc(rv.total, rv.items, dec.st), unk:old.unk||{}, closed:!!dec.closed, sent:!!(sent||old.sent), sentAt:sent?Date.now():(old.sentAt||null), items:rv.items.map(it=>{ const o=Object.assign({}, it, {st:dec.st[arKey(it)]||""}); delete o.note; return o; })}; } // ملاحظة المراجعة للمسئول فقط، لا تُرسل للمنظّم
+    accEff:arAcc(rv.total, rv.items, dec.st), unk:old.unk||{}, closed:!!dec.closed, sent:!!(sent||old.sent), sentAt:sent?Date.now():(old.sentAt||null), firstSentAt:old.firstSentAt||old.sentAt||(sent?Date.now():null), closedAt:dec.closed?(old.closedAt||Date.now()):null, items:rv.items.map(it=>{ const o=Object.assign({}, it, {st:dec.st[arKey(it)]||""}); delete o.note; return o; })}; } // ملاحظة المراجعة للمسئول فقط، لا تُرسل للمنظّم
 // نص الملاحظة للمنظّم
 function arLine(it, x){ const m=Number(it.min)||0;
   if(it.k==="دخل المحاضرة ومتسجل غياب") return `مكتوب غياب — دخل ${m} دقيقة${it.zn&&it.zn!=="—"?` باسم ${it.zn}`:""} ← يُكتب حضور${m<=arNum(x.th)?" مع تنويه إنه حضر أقل من النص":""}`;
@@ -1537,8 +1602,8 @@ function viewReport(){
     : P.per==="week" ? `<button class="btn sm ghost" data-a="rwk" data-v="-1">‹ السابق</button>${S.rwk?`<button class="btn sm ghost" data-a="rwk" data-v="0">هذا الأسبوع</button>`:""}<button class="btn sm ghost" data-a="rwk" data-v="1">التالي ›</button>`
     : `<input type="month" data-a="month" value="${esc(P.month)}" style="width:auto">`;
   const head = `${ptitle("التقرير "+({day:"اليومي",week:"الأسبوعي",month:"الشهري"}[P.per])+" — "+P.label)}<div class="row noprint"><div class="grow"><h1>التقارير</h1><p class="sub">${esc(P.label)}</p></div>${ctl}<button class="btn ghost" data-a="print">🖨️ طباعة / PDF</button></div>${seg}`;
-  if(P.per==="day") return head + viewDayReport(P.from, ppl);
-  return head + periodTable(P, ppl.map(m=>({m,...periodStats(m.id,P.from,P.to)}))) + hoursReportCard(P, ppl) + ckReportCard(P, ppl);
+  if(P.per==="day") return head + viewDayReport(P.from, ppl) + hdCard(P);
+  return head + periodTable(P, ppl.map(m=>({m,...periodStats(m.id,P.from,P.to)}))) + hoursReportCard(P, ppl) + ckReportCard(P, ppl) + hdCard(P);
 }
 // التقرير اليومي للفريق: سطر لكل شخص يُفتح بالضغط
 function viewDayReport(d, ppl){
