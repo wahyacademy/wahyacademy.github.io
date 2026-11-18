@@ -248,6 +248,7 @@ details.dr summary{flex-wrap:wrap;gap:6px}
 .item{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
 .item:first-of-type{border-top:0}
 .item .what{flex:1;min-width:0}
+@media (max-width:600px){.item.emgi{flex-wrap:wrap}.item.emgi .emgx{width:100%;justify-content:flex-start!important}} /* أزرار «يحتاج تدخّلك» تحت السطر على الموبايل */
 .item .what b{display:block;font-weight:600;line-height:1.5}
 .item .what small{color:var(--muted);font-size:13px}
 .item.done .what b{color:var(--muted);text-decoration:line-through}
@@ -645,7 +646,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="1182bb9dc40d"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="20b6ae0c30f0"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1142,12 +1143,14 @@ function riskCard(){
   const d=today(), now=toMin(cairoNow().hm), items=[];
   team().concat(isMgr()?[S.me]:[]).forEach(m=>{
     slotsOf(m.id,d).filter(s=>isLecture(s) && !adminLec(s) && s.start && !slotOff(m.id,d,s.id) && !slotShift(m.id,d,s.id)).forEach(s=>{ const st=toMin(s.start), en=s.end?toMin(s.end):st+90;
-      if(now>=st-GOAL.before && now<en) items.push({t:st, html:`<b>${esc(s.label)}</b><small>${esc(t12(s.start))} · ${esc(m.name)} <span class="late">${now>=st?"بدأت المحاضرة ولم يبدأ الدوام":"لم يبدأ الدوام بعد"}</span></small>`}); }); });
+      // «🚨 بديل طارئ» و«🕌 اعتذر الشيخ» جنب السطر (قرار المستخدم 18 نوفمبر، «سجل المشاكل» رقم 10) — نفس شروط «الفريق — تفاصيل كل شخص»
+      const act = canEmg(m.id) && (!VIEWER() || !!ACT()) && !isSlotDone(d,s.id) ? `<span class="row emgx" style="gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm ghost warn" data-a="emgOpen" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}">🚨 بديل طارئ</button><button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="sheikh">🕌 اعتذر الشيخ</button></span>` : "";
+      if(now>=st-GOAL.before && now<en) items.push({t:st, html:`<b>${esc(s.label)}</b><small>${esc(t12(s.start))} · ${esc(m.name)} <span class="late">${now>=st?"بدأت المحاضرة ولم يبدأ الدوام":"لم يبدأ الدوام بعد"}</span></small>`, act}); }); });
   if(isAdmin()) S.lectures.filter(l=>l.active!==false && !l.noOrg && !lecPaused(l,d) && l.start && Number(l.day)===dayIdx(parse(d)) && !lecSlots(l.id).length && !S.slots.some(s=>s.lec===l.id && s.date===d)).forEach(l=>{ const st=toMin(l.start);
     if(now>=st-60 && now<st+30) items.push({t:st, html:`<b>${esc(l.name)}</b><small>${esc(t12(l.start))} · <span class="late">بلا منظّم</span></small>`, lid:l.id}); });
   if(!items.length) return "";
   items.sort((a,b)=>a.t-b.t);
-  return `<div class="card" style="border-color:var(--bad);background:var(--bad-soft)"><h2 style="color:var(--bad)">⚠️ محاضرات تحتاج تدخّلك الآن (${items.length})</h2>${items.map(x=>`<div class="item"><div class="what">${x.html}</div>${x.lid?`<button class="btn sm" data-a="coverLec" data-id="${esc(x.lid)}">تكليف لليوم</button>`:""}</div>`).join("")}</div>`;
+  return `<div class="card" style="border-color:var(--bad);background:var(--bad-soft)"><h2 style="color:var(--bad)">⚠️ محاضرات تحتاج تدخّلك الآن (${items.length})</h2>${items.map(x=>`<div class="item${x.act?" emgi":""}"><div class="what">${x.html}</div>${x.lid?`<button class="btn sm" data-a="coverLec" data-id="${esc(x.lid)}">تكليف لليوم</button>`:x.act||""}</div>`).join("")}</div>`;
 }
 // «🚨 بديل طارئ» (قرار المستخدم 9 نوفمبر): مسئول اللجنة (والقسم لقسمه) يسجّل اعتذارًا إداريًا عن المنظّم ويوجّه المحاضرة لبديل أو لنفسه، وتُحسب للبديل
 const canEmg = mid => isMgr() && mid!==S.me.id && (isAdmin() || team().some(m=>m.id===mid));
