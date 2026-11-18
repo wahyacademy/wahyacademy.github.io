@@ -640,7 +640,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="f3f5a3df6444"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="f137f4ae66fd"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1944,7 +1944,7 @@ document.addEventListener("click", async e=>{
   if(a==="retryLoad"){ S.msg=""; render(); await refresh(false); return; }
   if(a==="sendReq"){ const k=el.dataset.k, note=v("q_note"); const data={kind:k, note, status:"pending", at:Date.now()};
     if(k==="lecture"){ const x=v("q_slot"); if(!x) return toast("اختر المحاضرة."); [data.date,data.slot]=x.split("|"); const n=Number(v("q_times")||1); if(n>1) data.dateTo=addDays(data.date,7*(n-1)); }
-    else { data.date=v("q_date"); if(!data.date) return toast("اختر اليوم."); }
+    else if(k!=="fix"){ data.date=v("q_date"); if(!data.date) return toast("اختر اليوم."); } // التصحيح بياخد اليوم من q_fslot (🐞 سجل المشاكل 5، 18 نوفمبر)
     if(k==="leave"){ data.dateTo=v("q_to"); if(!data.dateTo||data.dateTo<data.date) return toast("تاريخ النهاية بعد البداية."); }
     if(k==="hours"){ data.start=v("q_hf"); data.end=v("q_ht"); if(!data.start||!data.end) return toast("اختر الوقت من وإلى."); if(toMin(data.end)<=toMin(data.start)) return toast("وقت النهاية لازم يكون بعد البداية."); }
     if(k==="fix"){ const fs=(v("q_fslot")||"").split("|"); if(!fs[1]) return toast("اختر المحاضرة أو المهمة."); data.date=fs[0]; data.slot=fs[1]; data.start=v("q_from"); data.end=v("q_to"); if(data.date>=d) return toast("التصحيح لأيام سابقة فقط."); }
