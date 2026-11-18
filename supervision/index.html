@@ -62,7 +62,7 @@ h2{font-size:18px;margin:0 0 10px;color:var(--brand-deep)}
 .wday h3{margin:0 0 6px;font-size:13.5px;color:var(--brand-deep);display:flex;justify-content:space-between;align-items:center;gap:4px}
 .wday h3 small{color:var(--muted);font-weight:500}
 .wev{background:#fff;border-radius:8px;padding:6px 8px;margin-bottom:6px;border-inline-start:4px solid var(--brand);font-size:12.5px;line-height:1.5}
-.card.newtk{border-top-color:var(--gold);background:#fffaf0;outline:2px solid var(--gold)}.tshead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}.asbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#FFF4D6;border:1px solid #F7B717;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:14.5px;color:#5A3E00;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.card.newtk{border-top-color:var(--gold);background:#fffaf0;outline:2px solid var(--gold)}.tshead{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between}.asbar.act{background:#fff4d6;border-color:var(--gold)}.tg.via{background:#fff4d6;color:#7a5200}.asbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#FFF4D6;border:1px solid #F7B717;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:14.5px;color:#5A3E00;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .asmode #app [data-a]:not([data-a=asExit]):not([data-a=toggleLec]):not([data-a=copyZoom]):not([data-a=print]){cursor:not-allowed}
 .dt{width:100%;border-collapse:collapse;font-size:14px}.dt th{background:#F4F7FB;color:var(--brand);font-size:12.5px;text-align:right;padding:8px 10px;white-space:nowrap}
 .dt td{padding:9px 10px;border-bottom:1px solid #EDF1F6;vertical-align:middle}.dt td.tm{white-space:nowrap;font-weight:700;color:var(--brand)}.dt td.tm small{display:block;font-weight:400;color:#64748B;font-size:12px}
@@ -424,8 +424,13 @@ const canView = id => !!(isMgr() && id && id!==S.me.id && (isAdmin() ? S.members
 const VIEWER = () => S.as && canView(S.as) ? S.as : null;
 const meId = () => VIEWER() || S.me.id;
 const meName = () => VIEWER() ? nameOf(S.as) : S.me.name;
-const AS_OK = new Set(["asExit","asView","toggleLec","copyZoom","print","logout","arOpen","arF","sdept","sper0","smode","sday","swk"]); // الأخيرة تغيّر العرض بس (معاينة شاشة المسئولة)
+const AS_OK = new Set(["asExit","asView","actOn","actOff","toggleLec","copyZoom","print","logout","arOpen","arF","sdept","sper0","smode","sday","swk"]); // الأخيرة تغيّر العرض بس (معاينة شاشة المسئولة)
 const asHead = () => { const id=VIEWER(); const m=id && S.members.find(x=>x.id===id); return m && m.role==="head" ? m : null; };
+// «✋ اشتغل بداله» (قرار المستخدم 18 نوفمبر): حساب شئون الطلاب بس يشتغل في شاشة أي عضو بدل صاحبها، والخادم بيسجّل كل حاجة باسمه
+const isSuper = () => !!(S.me && S.me.role==="committee" && S.me.id==="m_owner");
+const ACT = () => (S.act && isSuper() && VIEWER()) || null;
+const AS_ACT = new Set(["save","delete","clock","seAck","seFlag","lateList"]);
+const viaTag = by => by ? `<span class="pill gold via" title="${esc(nameOf(by))}">✋ بواسطة مسئول اللجنة</span>` : "";
 const asBtn = id => canView(id) ? `<button class="btn sm ghost" data-a="asView" data-id="${esc(id)}" title="عرض شاشته كما تظهر له">👁 شاشته</button>` : "";
 function team(){ // من أتابعهم
   const act = S.members.filter(m => m.active!==false && m.role!=="committee");
@@ -458,7 +463,7 @@ const markCount = (date, sid) => { const m=marksOf(date,sid); return stepsFor(da
 // «📣 منشن المتأخرين»: القايمة بتتحسب مرة واحدة من الخادم (زووم + شيت الحضور)، ومش بتتخزن غير في ذاكرة الصفحة
 const LATE = {};
 function lateMark(d, s, msg){ const id=s.id, marks=Object.assign({}, marksOf(d,id), {late:true}); const all=stepsFor(d,s).every(([x])=>marks[x]);
-  saveFast("tasks", slotDoneId(d,id), {title:s.label, type:"scheduled", assignee:S.me.id, due:d, slot:id, marks, status:all?"done":"todo", doneAt:all?d:null}, all?"اكتملت خطوات تنظيم المحاضرة، أحسنت.":msg, id+":late"); }
+  saveFast("tasks", slotDoneId(d,id), {title:s.label, type:"scheduled", assignee:meId(), due:d, slot:id, marks, status:all?"done":"todo", doneAt:all?d:null}, all?"اكتملت خطوات تنظيم المحاضرة، أحسنت.":msg, id+":late"); }
 const LATE_ERR = {early:"لسه ما عدّاش 10 دقايق على «الشيخ انضم».", no_start:"علّم خطوة «الشيخ انضم لنا…» الأول.", na:"الخطوة دي مش متاحة للمحاضرة دي.", no_sheet:"مفيش شيت حضور مضاف للمحاضرة دي.", sheet_open:"تعذّر فتح شيت الحضور من حساب الأكاديمية.", no_col:"مفيش في شيت الحضور عمود بتاريخ النهارده. ضيف عمود اليوم واكتب فيه الاعتذارات، وبعدين افتح الخطوة تاني.", not_live:"زووم مش لاقي المحاضرة شغالة دلوقتي على الحساب ده.", plan:"حساب زووم ده مش بيدعم قايمة الحضور اللحظية.", no_zoom:"مفيش رقم اجتماع زووم للمحاضرة دي.", setup:"الربط مع زووم لسه ما اكتملش.", zoom:"تعذّر جلب القايمة من زووم.", forbidden:"المحاضرة دي مش في جدولك."};
 async function lateOpen(d, s){ const key=d+"|"+s.id;
   if(!LATE[key]){ open(`<h2>📣 المتأخرين</h2><p class="sub">بجيب القايمة من زووم وشيت الحضور…</p>`);
@@ -574,13 +579,13 @@ const problemsOf = (mid, date) => S.checkins.filter(c => c.member===mid && c.dat
 async function api(action, payload={}, ms=30000){
   const ctl = new AbortController(); const tm = setTimeout(()=>ctl.abort(), ms);
   try {
-    const r = await fetch(CONFIG.apiUrl, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({action, session:S.session, ...payload}), signal:ctl.signal});
+    const r = await fetch(CONFIG.apiUrl, {method:"POST", headers:{"Content-Type":"text/plain;charset=utf-8"}, body:JSON.stringify({action, session:S.session, ...(ACT() && AS_ACT.has(action) ? {as:ACT()} : {}), ...payload}), signal:ctl.signal});
     const d = await r.json();
     if(!d.ok && d.reason==="auth"){ logout("انتهت جلستك، ادخل مرة أخرى."); throw d; }
     return d;
   } catch(e){ if(e && e.reason) throw e; throw {reason:"network", timeout:ctl.signal.aborted}; } finally { clearTimeout(tm); }
 }
-function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals","fwds","lecreqs"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="org")) && !S.ar) setTimeout(()=>loadAR(false),0); if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="sa")) && !S.tfq) setTimeout(()=>loadTFQ(false),0); if(canSE() && !S.se) setTimeout(()=>loadSE(false),0); }
+function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals","fwds","lecreqs"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.nb=d.nb||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="org")) && !S.ar) setTimeout(()=>loadAR(false),0); if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="sa")) && !S.tfq) setTimeout(()=>loadTFQ(false),0); if(canSE() && !S.se) setTimeout(()=>loadSE(false),0); }
 async function refresh(quiet){
   const f=document.activeElement; if(quiet && f && /INPUT|TEXTAREA|SELECT/.test(f.tagName) && f.value) return; // لا نمسح ما يكتبه
   if(quiet && PENDING) return; // حفظ جارٍ: لا نكتب فوقه ببيانات أقدم
@@ -611,7 +616,7 @@ function saveFast(col, id, data, okMsg, tag){ tag=tag||id; SAVING[tag]=(SAVING[t
   return SAVEQ[col+id]; }
 // بدء/إنهاء دوام خانة فورًا على الشاشة؛ الخادم يختم الوقت الرسمي في الخلفية، وعند الرفض يرجع كما كان (قرار المستخدم 9 نوفمبر)
 const CLOCK_MSG={already_started:"الدوام بدأ بالفعل.", already_ended:"الدوام انتهى بالفعل.", not_started:"لم تبدأ الدوام بعد.", not_today:"هذه المهمة ليست اليوم.", forbidden:"هذه المهمة ليست في جدولك.", paused:"هذه المحاضرة موقوفة مؤقتًا.", marks_missing:"أكمل خطوات التنظيم أولًا."};
-function clockFast(op, slot){ const me=S.me.id, d=today(), id="sh_"+me+"_"+d+"_"+slot, tag="clk:"+slot, now=cairoNow().hm;
+function clockFast(op, slot){ const me=meId(), d=today(), id="sh_"+me+"_"+d+"_"+slot, tag="clk:"+slot, now=cairoNow().hm;
   const i=S.shifts.findIndex(x=>x.id===id), prev=i>=0?S.shifts[i]:null;
   const local=op==="start" ? {id, member:me, date:d, slot, start:now, startAt:NOW()} : Object.assign({}, prev||{id, member:me, date:d, slot}, {end:now, endAt:Date.now()});
   if(i>=0) S.shifts[i]=local; else S.shifts.push(local);
@@ -640,7 +645,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="ba8aa142bc7c"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="1182bb9dc40d"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -703,7 +708,8 @@ function renderInner(){
   const asv=VIEWER(); document.body.classList.toggle("asmode", !!asv);
   if(!isMgr() || asv){ const me=meId(), mt=[["today","يومي",S.evals.filter(e=>e.member===me&&!e.ack&&!arHidden(e)).length+newTasks(me).length],["week","جدولي الأسبوعي",0],["mine","تقريري",0],["reqs","طلباتي",0]];
     if(!mt.some(t=>t[0]===S.view)) S.view="today";
-    const asBar = asv ? `<div class="asbar noprint"><span>👁 أنت تشاهد شاشة <b>${esc(nameOf(asv))}</b> كما تظهر له — <b>للعرض فقط</b></span><button class="btn sm" data-a="asExit">↩ رجوع</button></div>` : "";
+    const asBar = !asv ? "" : ACT() ? `<div class="asbar act noprint"><span>✋ أنت <b>تشتغل بدل ${esc(nameOf(asv))}</b> — أي حاجة تعملها هتتسجّل باسمك</span><span class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm ghost" data-a="actOff">👁 رجوع للعرض فقط</button><button class="btn sm" data-a="asExit">↩ رجوع لشاشتي</button></span></div>`
+      : `<div class="asbar noprint"><span>👁 أنت تشاهد شاشة <b>${esc(nameOf(asv))}</b> كما تظهر له — <b>للعرض فقط</b></span><span class="row" style="gap:6px;flex-wrap:nowrap">${isSuper()?`<button class="btn sm gold" data-a="actOn">✋ اشتغل بداله</button>`:""}<button class="btn sm" data-a="asExit">↩ رجوع</button></span></div>`;
     nav.hidden=false; $("#tabs").innerHTML = mt.map(([k,l,n])=>`<a href="#${k}" class="${S.view===k?"on":""}">${l}${n?`<span class="n">${n}</span>`:""}</a>`).join("");
     app.innerHTML = asBar + banner + ({today:viewMine, week:()=>weekCard(me), mine:viewMyReport, reqs:viewMyReqs}[S.view])(); return; }
   const pend = ckTeam().filter(ckWaitMe).length + pendingReqs().length + (isOrgHead()?arPending().length:0) + (isAdmin()?fwdOpen().length+lrPend().length:fwdNew().length+lrNew().length);
@@ -792,7 +798,7 @@ function viewMine(){
   ${followCards(me)}
   ${reservedCard(me)}
   ${offersCard(me)}
-  <div class="card"><h2>شغل اليوم</h2>${sl.length ? allSlotsOf(me,d).map(s=>isBreak(s)?breakRow(s):slotRow(d,s,me,!VIEWER())).join("") : `<div class="empty">لا توجد محاضرات أو متابعات في جدولك اليوم.</div>`}</div>
+  <div class="card"><h2>شغل اليوم</h2>${sl.length ? allSlotsOf(me,d).map(s=>isBreak(s)?breakRow(s):slotRow(d,s,me,!VIEWER()||!!ACT())).join("") : `<div class="empty">لا توجد محاضرات أو متابعات في جدولك اليوم.</div>`}</div>
   ${tk.length ? `<div class="card"><h2>مهام مطلوبة منك</h2>${tk.map(t=>taskRow(t,true)).join("")}</div>` : ""}
   <div class="row"><button class="btn ghost" data-a="problem" data-slot="">⚠️ عندي مشكلة أو استفسار</button></div>
   ${myProbsCard(me)}`;
@@ -856,7 +862,7 @@ function dutyBar(d, s, mid, mine){ if(!s.start || d<SLOT_DUTY_SINCE) return "";
   const sh=slotShift(mid,d,s.id), st=shState(sh), from=dutyFrom(s);
   if(st==="none"){ if(!mine || d!==today()) return `<div class="dbar"><span class="pill ${d<today()||(d===today()&&toMin(cairoNow().hm)>from+GOAL.grace)?"bad":""}">لم يبدأ الدوام</span></div>`;
     return `<div class="dbar"><span class="dl">${isLecture(s)?"الدوام يبدأ":"تبدأ"} ${esc(t12(fromMin(from)))}</span><span class="cd" data-live="cd" data-t="${from*60}"></span><button class="btn gold" data-a="clock" data-op="start" data-slot="${esc(s.id)}">▶ ${isLecture(s)?"بدء الدوام":"بدء المهمة"}</button></div>`; }
-  const lt=slotLate(mid,d,s), ltp=lt?`<span class="pill bad">متأخر ${dur(lt)}</span>`:"";
+  const lt=slotLate(mid,d,s), ltp=(lt?`<span class="pill bad">متأخر ${dur(lt)}</span>`:"")+viaTag(sh && sh.via);
   const task=!isLecture(s), pend=svTag("clk:"+s.id);
   if(st==="on") return `<div class="dbar on"><span class="pill ok">${task?"بدأت المهمة":"في الدوام"} ${esc(t12(sh.start))}</span>${ltp}<span class="live" data-live="el" data-s="${sh.startAt||""}" data-b="0">${dur(shMin(sh))}</span>${pend}${mine?(task?`<button class="btn" data-a="taskEnd" data-slot="${esc(s.id)}">✓ أنهيت المهمة</button>`:`<button class="btn" data-a="clock" data-op="end" data-slot="${esc(s.id)}">إنهاء الدوام</button>`):""}</div>`;
   if(st==="open") return `<div class="dbar"><span class="pill bad">دوام بلا نهاية</span>${ltp}<small class="sub">بدأ ${esc(t12(sh.start))}</small></div>`;
@@ -924,7 +930,8 @@ function collectReport(){ const r={v:2, zoomN:v("r_zoomN"), sheikhIn:v("r_in"), 
   else { r.share=v("yn_share"); if(!r.share){ REP_ERR="yn_share"; return "أجب: هل يوجد شير؟"; } if(r.share==="y"){ r.shareBy=v("r_shBy"); r.shareBook=v("r_shBook"); } }
   r.zoomN=Number(r.zoomN); return r; }
 // عرض التقرير
-function repLine(rp, s){ if(!rp) return ""; if(rp.v!==2) return repLineV1(rp);
+function repLine(rp, s){ if(!rp) return ""; if(rp.by) return repLine0(rp, s).replace("📝 تقرير المحاضرة", "📝 تقرير المحاضرة "+viaTag(rp.by)); return repLine0(rp, s); }
+function repLine0(rp, s){ if(rp.v!==2) return repLineV1(rp);
   const tm=timing(s||{}, rp), pc=attPct(rp), c=(l,b,sub,bad)=>`<div class="rc${bad?" bad":""}"><small>${l}</small><b>${esc(String(b))}</b>${sub?`<small>${esc(sub)}</small>`:""}</div>`;
   const flags=YN_Q.filter(([k])=>rp[k]==="y").map(([k])=>`<div class="rflag"><b>${YN_FLAG[k]}:</b> ${rp[k+"C"]?esc(rp[k+"C"].split(",").map(x=>TECH_C[x]||x).join("، "))+(rp[k+"D"]?" — ":""):""}${esc(rp[k+"D"]||"")}</div>`).join("");
   const no=YN_Q.filter(([k])=>rp[k]==="n").map(([k])=>"لا "+YN_FLAG[k].replace(/^حدث /,"شيء ").replace("طلب من الشيخ","طلبات من الشيخ")).join(" · ");
@@ -988,11 +995,11 @@ function slotRow(d,s,mid,mine){
     <div class="lact">${mine && !done?`<button class="btn sm ghost warn" data-a="problem" data-slot="${esc(s.id)}">⚠️ يوجد مشكلة</button><button class="btn sm ghost" data-a="excuse" data-id="${esc(s.id)}" data-v="sheikh">اعتذر الشيخ</button>`:""}${fold}</div></div>
     ${dutyBar(d,s,mid,mine)}
     <div class="prog"><i style="width:${pct}%"></i></div>
-    <div class="steps">${stepsFor(d,s).map((st,ix)=>{ const [k,l]=st, v=mk[k], ss=stepState(d,s,st,v), w=stepWin(s,st,d);
+    <div class="steps">${stepsFor(d,s).map((st,ix)=>{ const [k,l]=st, v=mk[k], vb=v && ((slotTask(d,s.id)||{}).marksBy||{})[k], ss=stepState(d,s,st,v), w=stepWin(s,st,d);
       const tm = v ? (typeof v==="number" ? "تمت "+t12(fromMin(cairoMinOf(v,d))) : "تمت") : w ? (k==="late" ? "من "+t12(fromMin(w.from))+" حتى "+t12(fromMin(w.due)) : w.due===Infinity ? "بدون موعد" : "حتى "+t12(fromMin(w.due))) : k==="late" ? "بعد «الشيخ انضم» بـ 10 د" : "";
       const tag = ss==="now" ? "الآن" : ss==="late" ? "متأخرة" : ss==="lateDone" ? "تمت متأخرة" : "";
       const lbl=stepLabel(st,s), q=(lbl.match(/«([^»]+)»/)||[])[1], cp=q||lbl;
-      const inner = `<span class="bx">${v?"✓":ix+1}</span><span class="tx">${esc(lbl)}</span><span class="tm">${esc(tm)}</span>${tag?`<span class="tg">${tag}</span>`:""}${svTag(s.id+":"+k)}`;
+      const inner = `<span class="bx">${v?"✓":ix+1}</span><span class="tx">${esc(lbl)}</span><span class="tm">${esc(tm)}</span>${tag?`<span class="tg">${tag}</span>`:""}${vb?`<span class="tg via" title="بواسطة مسئول اللجنة">✋</span>`:""}${svTag(s.id+":"+k)}`;
       return mine ? `<div class="stp ${ss}" role="button" tabindex="0" data-a="${k==="report"?"report":k==="late"&&!v?"late":"mark"}" data-id="${esc(s.id)}" data-k="${k}" aria-pressed="${!!v}">${inner}</div>` : `<span class="stp ${ss}">${inner}</span>`; }).join("")}</div>
     ${repLine((slotTask(d,s.id)||{}).report, s)}${pr.map(probHtml).join("")}</div>`; }
   const hasDuty = !!s.start && d>=SLOT_DUTY_SINCE;
@@ -1017,10 +1024,10 @@ function myReqs(me){
   const list=S.requests.filter(r=>r.member===me && (r.status==="pending" || (r.date||"")>=old)).sort((a,b)=>(b.at||0)-(a.at||0)).slice(0,6);
   if(!list.length) return "";
   return `<div class="card"><h2>طلباتي</h2>${list.map(r=>{ const [l,c]=REQ_ST[r.status]||["",""];
-    return `<div class="item"><div class="what"><b>${esc(REQ[r.kind]||"")} <span class="pill ${c}">${l}</span></b><small>${esc(reqDesc(r))}</small>${r.reply?`<small style="display:block"><b>الرد:</b> ${esc(r.reply)}</small>`:""}</div>${r.status==="pending"?`<button class="btn sm ghost" data-a="cancelReq" data-id="${esc(r.id)}">إلغاء</button>`:""}</div>`; }).join("")}</div>`;
+    return `<div class="item"><div class="what"><b>${esc(REQ[r.kind]||"")} <span class="pill ${c}">${l}</span>${viaTag(r.via)}</b><small>${esc(reqDesc(r))}</small>${r.reply?`<small style="display:block"><b>الرد:</b> ${esc(r.reply)}</small>`:""}</div>${r.status==="pending"?`<button class="btn sm ghost" data-a="cancelReq" data-id="${esc(r.id)}">إلغاء</button>`:""}</div>`; }).join("")}</div>`;
 }
 function reqForm(kind){
-  const me=S.me.id, d=today(); kind=kind||"lecture";
+  const me=meId(), d=today(); kind=kind||"lecture";
   const opts=[]; for(let i=0;i<14;i++){ const ds=addDays(d,i); slotsOf(me,ds).filter(s=>!slotOff(me,ds,s.id)).forEach(s=>opts.push([ds+"|"+s.id, fmtDay(ds)+" — "+s.label+(s.start?" ("+t12(s.start)+")":"")])); }
   const f = {
     lecture:`<label class="full">المحاضرة<select id="q_slot">${opts.length?opts.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join(""):`<option value="">لا توجد محاضرات في الأسبوعين القادمين</option>`}</select></label>
@@ -1060,7 +1067,7 @@ const ckWho = id => id===meId() ? "أنا" : nameOf(id);
 const ckWhen = ms => { const d=new Date(Number(ms)||0); return d.toLocaleDateString("ar-EG-u-nu-latn",{timeZone:"Africa/Cairo",day:"numeric",month:"long"})+" "+d.toLocaleTimeString("ar-EG-u-nu-latn",{timeZone:"Africa/Cairo",hour:"numeric",minute:"2-digit"}); };
 const ckAgo = ms => { const m=Math.max(1,Math.round((ckNow()-Number(ms||0))/60000)); return m<60?`من ${m} د`:m<1440?`من ${Math.round(m/60)} س`:`من ${Math.round(m/1440)} يوم`; };
 const ckLastText = p => { const m=ckMsgs(p).slice(-1)[0]; return m.k==="close"?"✓ اتقفلت"+(m.t?" — "+m.t:""):m.k==="reopen"?"↺ اتفتحت تاني":m.t; };
-const ckCanReopen = p => !ckOpen(p) && !!p.closedAt && ckNow()-Number(p.closedAt) <= CK_REOPEN;
+const ckCanReopen = p => !ckOpen(p) && (isSuper() || (!!p.closedAt && ckNow()-Number(p.closedAt) <= CK_REOPEN)); // حساب شئون الطلاب يفتحها في أي وقت (18 نوفمبر)
 const ckTeam = () => { const ids=new Set(team().map(m=>m.id)); return ckAll().filter(p=>ids.has(p.member) && p.member!==meId()); };
 const ckWaitMe = p => ckOpen(p) && ckLast(p).by===p.member;          // آخر رسالة من صاحبة المشكلة: مستنية رد المسئول
 const ckWaitClose = p => ckOpen(p) && ckLast(p).by!==p.member && ckNow()-ckLast(p).at > CK_WAIT; // المسئول رد وعدّى 3 أيام
@@ -1076,9 +1083,9 @@ function myProbsCard(me){ const all=ckAll().filter(p=>p.member===me), op=all.fil
   return `<div class="card"><h2>💬 مشاكلي <small class="sub">· مفتوحة ${op.length}</small></h2>${op.map(ckRow).join("")||`<div class="empty">✓ مفيش مشاكل مفتوحة.</div>`}${cl.length?`<details style="margin-top:6px"><summary class="sub">اتقفلت آخر 7 أيام (${cl.length})</summary>${cl.map(ckRow).join("")}</details>`:""}</div>`; }
 function ckModal(id){ const p=S.checkins.find(c=>c.id===id);
   if(!p) return `<h2>المشكلة غير موجودة</h2><div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`;
-  const me=meId(), op=ckOpen(p), can=(p.member===me || isMgr()) && !VIEWER();
+  const me=meId(), op=ckOpen(p), can=(p.member===me || isMgr()) && (!VIEWER() || !!ACT());
   const msgs=ckMsgs(p).map(m=> m.k ? `<div class="ckev">${m.k==="close"?"✓ اتقفلت":"↺ اتفتحت تاني"} · ${esc(ckWho(m.by))} · ${esc(ckWhen(m.at))}${m.t?` — «${esc(m.t)}»`:""}</div>`
-    : `<div class="ckm ${m.by===me?"me":""}">${esc(m.t)}<small>${esc(ckWho(m.by))} · ${esc(ckWhen(m.at))}</small></div>`).join("");
+    : `<div class="ckm ${m.by===me?"me":""}">${esc(m.t)}<small>${esc(ckWho(m.by))}${m.via?" · ✋ بواسطة مسئول اللجنة":""} · ${esc(ckWhen(m.at))}</small></div>`).join("");
   const closed = p.closedBy ? "" : `<div class="banner">✓ اتقفلت (مشكلة قديمة عليها رد وعدّى عليها أسبوع)</div>`;
   const foot = !can ? `<div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`
     : op ? `<label>ردّك<textarea id="ck_say" placeholder="اكتب ردك"></textarea></label><div class="row"><button class="btn" data-a="ckSay" data-id="${esc(id)}">إرسال</button><button class="btn ghost" data-a="ckCloseAsk" data-id="${esc(id)}">✓ اتحلّت — اقفلها</button>${fwdBtn("problem",id,nameOf(p.member)+": "+(p.note||""))}<button class="btn ghost" data-a="close">إغلاق</button></div>`
@@ -1125,6 +1132,8 @@ function dutyPillSlots(mid, d){ const ex=dutyExp(mid,d); if(!ex.length){ const o
   return (act?`<span class="pill ok">في الدوام · ${esc(act.label)}</span>`:mins?`<span class="pill">دوام ${dur(mins)}</span>`:"")+(missed?`<span class="pill bad">لم يبدأ ${missed}</span>`:"")+(late?`<span class="pill bad">تأخر في ${late}</span>`:"")+(open?`<span class="pill bad">بلا نهاية ${open}</span>`:""); }
 // محاضرات اليوم المعرّضة للخطر: تبدأ خلال 30 دقيقة (أو بدأت) ومنظّمها لم يبدأ الدوام، أو بلا منظّم أصلًا
 // أعطال النظام (لمسئول اللجنة): ما فشل في الخادم خلال 48 ساعة + رصيد البريد اليومي
+function nbCard(){ if(!isSuper() || !(S.nb||[]).length) return ""; const L=S.nb.slice(0,30);
+  return `<details class="card noprint"><summary><b>✋ سجل النيابة</b> <small class="sub">— آخر ${L.length} حاجة اتعملت بإيد مسئول اللجنة بدل حد (ليك بس)</small></summary>${L.map(x=>`<div class="item"><div class="what"><b>${esc(nameOf(x.who))} · ${esc(x.what)}</b><small>${esc(ckWhen(x.at))} · ${esc(nameOf(x.by))}${x.ref?" · "+esc(x.ref):""}</small></div></div>`).join("")}</details>`; }
 function sysCard(){ if(!isAdmin()) return ""; const since=NOW()-48*36e5, es=(S.errs||[]).filter(e=>Number(e.at)>=since), low=S.mailLeft!=null && S.mailLeft<20;
   if(!es.length && !low) return "";
   return `<div class="card"><h2>🛠 تنبيهات النظام</h2>${low?`<div class="banner">رصيد إرسال البريد اليوم منخفض: ${esc(String(S.mailLeft))} رسالة. الإيميلات وأكواد الدخول قد لا تصل حتى الغد.</div>`:""}
@@ -1190,7 +1199,7 @@ function viewTeamToday(){
   <details class="card teamd"><summary><h2 style="display:inline">الفريق — تفاصيل كل شخص</h2></summary>${teamRows(d, rows)}</details>
   ${d===today()?ckAllCard():""}`; }
 function inboxCard(d, reqs, needReply){
-  const parts = [d===today()?lrCard()+fwdCard()+sysCard()+riskCard()+arInbox()+stepMissCard()+tfqInbox():"", reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button>${fwdBtn("request",r.id,nameOf(r.member)+" · "+(REQ[r.kind]||"")+" — "+reqDesc(r),true)}</div></div></div>`).join("")}</div>`:"",
+  const parts = [d===today()?lrCard()+fwdCard()+sysCard()+nbCard()+riskCard()+arInbox()+stepMissCard()+tfqInbox():"", reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button>${fwdBtn("request",r.id,nameOf(r.member)+" · "+(REQ[r.kind]||"")+" — "+reqDesc(r),true)}</div></div></div>`).join("")}</div>`:"",
   needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>{ const n=ckMsgs(p).length; return `<div class="item"><div class="what"><b>${n>1?"💬 رد جديد — ":"⚠️ "}${esc(m.name)}</b><small>${esc(fmtDay(p.date))} · ${esc(ckAgo(ckLast(p).at))}</small><div class="prob">${esc(p.note)}${n>1?`<span class="rep"><b>${esc(m.name)}:</b> ${esc(ckLastText(p))}</span>`:""}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button><button class="btn sm ghost" data-a="ckOpen" data-id="${esc(p.id)}">💬 النقاش${n>1?" ("+n+")":""}</button></div></div></div>`; }).join("")}</div>`:"",
   d===today()&&ckTeam().filter(ckWaitClose).length?`<div class="card"><h2>⏳ مستنية تأكيد القفل (${ckTeam().filter(ckWaitClose).length})</h2><p class="sub" style="font-size:13px">اتردّ عليها من أكتر من 3 أيام، وصاحبتها ما ردّتش ولا قفلتها.</p>${ckTeam().filter(ckWaitClose).map(ckRow).join("")}</div>`:"",
   d===today()?sheikhReqCard():""].join("").trim();
@@ -1272,7 +1281,7 @@ function seCard(r, own){
   :`<p class="sub">مفيش خانة متابعة حضور وغياب خلصت امبارح.</p>`}
   <h3 class="seh3">الرد على الاستفسارات خلال 15 دقيقة${r.shift?` <small class="sub">— ${own?"ورديتك":"الوردية"} ${esc(r.shift)}</small>`:""}</h3>
   ${st.n?`<div class="kpis">${seKpi(st.n,"استفسار")}${seKpi(st.pct+"%",`اترد خلال 15 د (${st.ok} من ${st.n})`,st.pct>=90?"ok":st.pct>=70?"gold":"bad")}${seKpi(st.avg!=null?st.avg+" د":"—","متوسط أول رد")}</div>
-  ${bad.map(q=>{ const fl=q.flag, dc=q.dec; return `<div class="item sewrap"><div class="what"><b>وصل ${esc(q.arr||"")}${q.where?` <small class="sub">· ${esc(q.where)}</small>`:""}</b><small>${q.first?`أول رد ${esc(q.first.slice(-5))} · بعد ${esc(q.min||"")} دقيقة`:"ما اترَدّش لحد نهاية الوردية"} · ${esc(q.kind||"")}${fl?` · «مش استفسار؟»${fl!=="مش استفسار"?": «"+esc(fl)+"»":""}`:""}</small></div>
+  ${bad.map(q=>{ const fl=q.flag, dc=q.dec; return `<div class="item sewrap"><div class="what"><b>وصل ${esc(q.arr||"")}${q.where?` <small class="sub">· ${esc(q.where)}</small>`:""}</b><small>${q.first?`أول رد ${esc(q.first.slice(-5))} · بعد ${esc(q.min||"")} دقيقة`:"ما اترَدّش لحد نهاية الوردية"} · ${esc(q.kind||"")}${fl?` · «مش استفسار؟»${fl!=="مش استفسار"?": «"+esc(fl)+"»":""}${q.flagBy?" · ✋ بواسطة مسئول اللجنة":""}`:""}</small></div>
     ${dc==="مش استفسار"?`<span class="pill ok">اتشال — مش استفسار</span>`:`<span class="pill ${q.first?"gold":"bad"}">${q.first?"متأخر":"ما اترَدّش"}</span>`}${dc==="استفسار"?`<span class="pill gray">«مش استفسار» اترفض</span>`:""}
     ${own&&!fl&&!dc?`<button class="btn sm ghost" data-a="seFlagAsk" data-id="${esc(q.id)}">مش استفسار؟</button>`:""}${own&&fl&&!dc?`<span class="pill">مستني رأي المسئولة</span>`:""}
     ${!own&&fl&&!dc&&canTFQ()?`<button class="btn sm" data-a="seDec" data-id="${esc(q.id)}" data-v="مش استفسار">✓ مش استفسار</button><button class="btn sm ghost" data-a="seDec" data-id="${esc(q.id)}" data-v="استفسار">لأ، استفسار</button>`:""}</div>`; }).join("")}
@@ -1282,11 +1291,11 @@ function seCard(r, own){
   ${cl?`<h3 class="seh3">${own?"تقفليها":"تقفلها"} في ${own?"خانتك":"خانتها"} الجاية${cl.when?` <small class="sub">— ${esc(cl.when)}</small>`:""}</h3><ul class="seul">${cl.list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
   ${r.note?`<p style="margin:8px 0 0"><b>ملاحظة:</b> ${esc(r.note)}</p>`:""}
   ${own&&!r.ack?`<label style="margin-top:8px">تعليقك (اختياري)<input id="seack_${esc(r.id)}" maxlength="300"></label><div class="row" style="margin-top:6px"><button class="btn" data-a="seAck" data-id="${esc(r.id)}">اطّلعت</button></div>`
-   :r.ack?`<div class="banner" style="margin-top:8px">✓ اطّلعت ${esc(String(r.ack).slice(-5))}${r.ackNote?`: «${esc(r.ackNote)}»`:""}</div>`:""}</div>`; }
+   :r.ack?`<div class="banner" style="margin-top:8px">✓ اطّلعت ${esc(String(r.ack).slice(-5))}${r.ackNote?`: «${esc(r.ackNote)}»`:""} ${viaTag(r.ackBy)}</div>`:""}</div>`; }
 // في «يومي» عند المشرفة: التقييمات اللي لسه ما اطّلعتش عليها، واليوم اللي من غير ملاحظات سطر يختفي تاني يوم
 function seMine(mid){ if(!S.se) return ""; const y=addDays(today(),-1);
   return S.se.ev.filter(r=>r.member===mid && !r.ack).sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{
-    if(!seClean(r)) return seCard(r, mid===S.me.id);
+    if(!seClean(r)) return seCard(r, mid===S.me.id || mid===ACT());
     if(r.date!==y) return "";
     const st=seStats(seQs(mid,r.date)), need=seN(r.need);
     return `<div class="banner">✓ <b>تقييم شغلك — ${esc(fmtDay(r.date))}:</b> ${need?`${seN(r.sent)} من ${need} تفقدات في خانتها · `:""}${st.n?`${st.n} استفسار اترد عليهم كلهم خلال 15 د${st.avg!=null?` (متوسط ${st.avg} د)`:""}`:"مفيش استفسارات"}. مفيش ملاحظات.</div>`; }).join(""); }
@@ -1663,7 +1672,7 @@ function lrMineModal(){ const L=(S.lecreqs||[]).filter(r=>r.from===S.me.id).sort
 const FWD_K = {problem:"مشكلة", request:"طلب", review:"مراجعة حضور", tfq:"تفقد", other:"أخرى"};
 const fwdOpen = () => (S.fwds||[]).filter(f=>f.status!=="closed").sort((a,b)=>(a.at||0)-(b.at||0));
 const fwdNew = () => S.me && S.me.role==="head" ? (S.fwds||[]).filter(f=>f.from===S.me.id && f.reply && Number(f.seenAt||0)<Number(f.repliedAt||0)) : [];
-function fwdBtn(kind, ref, title, sm){ if(!S.me || S.me.role!=="head" || VIEWER()) return "";
+function fwdBtn(kind, ref, title, sm){ const hm=ACT() ? S.members.find(m=>m.id===ACT()) : S.me; if(!hm || hm.role!=="head" || (VIEWER() && !ACT())) return "";
   const done=(S.fwds||[]).find(f=>f.from===S.me.id && f.kind===kind && f.ref===ref);
   if(done) return `<span class="pill ${done.reply?"ok":"gray"}" title="${esc(done.reply||"")}">↗ اتحوّلت${done.reply?" · اتردّ عليها":""}</span>`;
   return `<button class="btn ${sm?"sm ":""}ghost" data-a="fwdAsk" data-k="${esc(kind)}" data-id="${esc(ref)}" data-t="${esc(String(title||"").slice(0,280))}">↗ تحويل لمسئول اللجنة</button>`; }
@@ -1838,10 +1847,12 @@ document.addEventListener("click", async e=>{
   const el=e.target.closest("[data-a]"); if(!el) return; const a=el.dataset.a, id=el.dataset.id;
   if(a==="bg"){ if(e.target===el) close(); return; }
   if(el.tagName==="INPUT") return;
-  if(VIEWER() && !AS_OK.has(a) && el.closest("#app")){ e.preventDefault(); toast("للعرض فقط — هذه شاشة "+nameOf(S.as)); return; }
-  if(a==="asView"){ e.preventDefault(); if(!canView(id)) return; S.asBack=S.view; S.as=id; S.view="today"; close(); history.replaceState(null,"","#today"); render(); scrollTo(0,0); return; }
-  if(a==="asExit"){ const b=S.asBack||"today"; S.as=null; S.view=b; history.replaceState(null,"","#"+b); render(); scrollTo(0,0); return; }
-  const me=S.me&&S.me.id, d=today();
+  if(VIEWER() && !ACT() && !AS_OK.has(a) && el.closest("#app")){ e.preventDefault(); toast("للعرض فقط — هذه شاشة "+nameOf(S.as)); return; }
+  if(a==="actOn"){ e.preventDefault(); if(!isSuper() || !VIEWER()) return; if(!el.dataset.sure) return open(`<h2>✋ تشتغل بدل ${esc(nameOf(S.as))}؟</h2><p class="sub" style="line-height:1.9">أي حاجة تعملها في الشاشة دي هتتسجّل باسمك في «سجل النيابة»، وهيظهر جنبها «✋ بواسطة مسئول اللجنة» ليك وله.</p><div class="row"><button class="btn gold" data-a="actOn" data-sure="1">✋ أيوه، اشتغل بداله</button><button class="btn ghost" data-a="close">إلغاء</button></div>`); S.act=true; close(); render(); return; }
+  if(a==="actOff"){ e.preventDefault(); S.act=false; render(); return; }
+  if(a==="asView"){ e.preventDefault(); if(!canView(id)) return; S.act=false; S.asBack=S.view; S.as=id; S.view="today"; close(); history.replaceState(null,"","#today"); render(); scrollTo(0,0); return; }
+  if(a==="asExit"){ const b=S.asBack||"today"; S.as=null; S.act=false; S.view=b; history.replaceState(null,"","#"+b); render(); scrollTo(0,0); return; }
+  const me=ACT()||(S.me&&S.me.id), d=today();
   if(a==="logout") return logout("");
   if(a==="gprompt") return loadGsi(()=>{ try { google.accounts.id.prompt(); } catch(err){ toast("تعذّر فتح نافذة الدخول؛ جرّب Chrome محدّثًا."); } });
   if(a==="close") return close();
