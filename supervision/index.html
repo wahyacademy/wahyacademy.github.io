@@ -640,7 +640,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="f137f4ae66fd"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="ba8aa142bc7c"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1237,7 +1237,7 @@ function loadAR(force){ if(!canAR() || S.arLoading) return; S.arLoading=true;
 function arOrg(rv){ const doc=arDoc(rv.id); if(doc && doc.member) return doc.member; const sl=S.slots.find(s=>s.lec && s.lec===rv.lec && !s.cover); return sl?sl.owner:""; }
 function arDec(rv){ S.arDec=S.arDec||{}; if(!S.arDec[rv.id]){ const doc=arDoc(rv.id), st={}; ((doc&&doc.metrics&&doc.metrics.items)||[]).forEach(it=>{ if(it.st) st[arKey(it)]=it.st; }); S.arDec[rv.id]={st, org:arOrg(rv), note:(doc&&doc.headNote)||""}; } return S.arDec[rv.id]; }
 // سطر في «يحتاج تدخّلك»: كل مراجعة لم تُرسل بعد
-function arPending(){ return (S.ar||[]).filter(rv=>rv.items.length && !((arDoc(rv.id)||{}).metrics||{}).sent); }
+function arPending(){ return (S.ar||[]).filter(rv=>{ const m=((arDoc(rv.id)||{}).metrics||{}); return rv.items.length && !m.sent && !m.closed; }); } // closed = كل الملاحظات مستبعدة واتقفلت (سجل المشاكل 9)
 const AR_DUE = "13:00"; // مهلة اعتماد مسئول التنظيم (قرار المستخدم 17 نوفمبر)
 function arDuePill(){ const late=cairoNow().hm>=AR_DUE, oh=S.members.find(m=>m.role==="head" && m.dept==="org" && m.active!==false);
   if(isAdmin()) return `${oh?`<span class="pill gray">عند ${esc(oh.name)}</span>`:""}${late?`<span class="pill bad">متأخرة عن 1 الضهر</span>`:""}`;
@@ -1396,6 +1396,7 @@ function viewAttRev(){
     <p class="sub">${esc(fmtDay(rv.date))} · الشيخ ${esc(rv.sheikh)} ${esc(rv.from)}–${esc(rv.to)} (${esc(rv.mins)} د) · الحد الأدنى ${esc(rv.th)} د</p></div>
     ${S.ar.length>1?`<select data-a="arPick" style="width:auto">${S.ar.slice().reverse().map(r=>`<option value="${esc(r.id)}" ${r.id===rv.id?"selected":""}>${esc(r.id)} · ${esc(fmtDay(r.date))}</option>`).join("")}</select>`:""}
     <button class="btn sm ghost" data-a="arReload">⟳ تحديث</button>${fwdBtn("review",rv.id,"مراجعة حضور «"+(rv.title||"")+"» "+(rv.date||""),true)}<button class="btn sm ghost" data-a="arBack">↩ رجوع</button></div>
+  ${(!sent && ((doc||{}).metrics||{}).closed)?`<div class="banner">✓ اتقفلت المراجعة — كل الملاحظات مستبعدة، ومفيش حاجة اتبعتت للمنظّم.</div>`:""}
   ${sent?`<div class="banner">📤 ${doc.evaluator?`أرسلها ${esc(nameOf(doc.evaluator))} `:"أُرسلت "}للمنظّم ${esc(nameOf(doc.member))} · صحّح <b>${sentFix}</b> من ${sentN}${doc.ack?` · ✓ علّم «صحّحت الكل»${doc.ackNote?`: ${esc(doc.ackNote)}`:""}`:""}</div>`:""}
   <div class="kq6"><div class="kq"><b>${esc(rv.total)}</b><small>طالب</small></div><div class="kq ok"><b>${esc(rv.ok)}</b><small>صح</small></div><div class="kq bad"><b>${esc(rv.bad)}</b><small>خطأ</small></div><div class="kq gold"><b>${esc(rv.note)}</b><small>ناقص تنويه</small></div><div class="kq gray"><b>${esc(rv.unreg||0)}</b><small>لم يُسجَّلوا</small></div></div>
   <div class="arbar"><span>دقة المنظّم <small class="sub">(للتقييم · الهدف ${GOAL.att}%)</small></span><div class="bar"><i style="width:${acc||0}%"></i></div><b style="color:${acc>=GOAL.att?"var(--ok)":"var(--bad)"}">${acc}%</b>${pacc!=null?`<small class="${acc>=pacc?"up":"late"}">${acc>=pacc?"▲":"▼"} من ${pacc}% في المراجعة السابقة</small>`:""}</div>
@@ -1407,10 +1408,10 @@ function viewAttRev(){
   <div class="arsbar"><span class="grow">اعتمدت <b>${nY}</b> من ${rv.items.length} · <a role="button" tabindex="0" data-a="arAll" style="cursor:pointer;color:var(--brand);text-decoration:underline">اعتماد الكل</a></span>
     <label class="pick">المنظّم <select id="ar_org">${`<option value="">اختر…</option>`+orgs.map(m=>`<option value="${esc(m.id)}" ${m.id===dec.org?"selected":""}>${esc(m.name)}</option>`).join("")}</select></label>
     <input id="arn_note" placeholder="ملاحظة للمنظّم (اختياري)" value="${esc(dec.note)}" style="width:auto;min-width:200px">
-    <button class="btn ghost" data-a="arSave" data-v="0">💾 حفظ</button><button class="btn gold" data-a="arSave" data-v="1">📤 ${sent?"تحديث الإرسال":"إرسال للمنظّم"} (${nY})</button></div>`; }
+    <button class="btn ghost" data-a="arSave" data-v="0">💾 حفظ</button><button class="btn gold" data-a="arSave" data-v="1">${(!sent && rv.items.length && rv.items.every(i=>dec.st[arKey(i)]==="n"))?"✓ إنهاء المراجعة (كلها مستبعدة)":`📤 ${sent?"تحديث الإرسال":"إرسال للمنظّم"} (${nY})`}</button></div>`; }
 function arMetrics(rv, dec, sent){ const old=(arDoc(rv.id)||{}).metrics||{};
   return {kind:"att", rid:rv.id, title:rv.title, date:rv.date, sheikh:rv.sheikh, mins:rv.mins, th:rv.th, total:rv.total, ok:rv.ok, bad:rv.bad, note:rv.note, unreg:rv.unreg, acc:rv.acc,
-    accEff:arAcc(rv.total, rv.items, dec.st), unk:old.unk||{}, sent:!!(sent||old.sent), sentAt:sent?Date.now():(old.sentAt||null), items:rv.items.map(it=>{ const o=Object.assign({}, it, {st:dec.st[arKey(it)]||""}); delete o.note; return o; })}; } // ملاحظة المراجعة للمسئول فقط، لا تُرسل للمنظّم
+    accEff:arAcc(rv.total, rv.items, dec.st), unk:old.unk||{}, closed:!!dec.closed, sent:!!(sent||old.sent), sentAt:sent?Date.now():(old.sentAt||null), items:rv.items.map(it=>{ const o=Object.assign({}, it, {st:dec.st[arKey(it)]||""}); delete o.note; return o; })}; } // ملاحظة المراجعة للمسئول فقط، لا تُرسل للمنظّم
 // نص الملاحظة للمنظّم
 function arLine(it, x){ const m=Number(it.min)||0;
   if(it.k==="دخل المحاضرة ومتسجل غياب") return `مكتوب غياب — دخل ${m} دقيقة${it.zn&&it.zn!=="—"?` باسم ${it.zn}`:""} ← يُكتب حضور${m<=arNum(x.th)?" مع تنويه إنه حضر أقل من النص":""}`;
@@ -1445,11 +1446,13 @@ async function arAct(a, el, id){
   if(a==="arAll"){ const d=arDec(rv); d.org=v("ar_org")||d.org; d.note=v("arn_note"); rv.items.forEach(it=>{ if(!d.st[arKey(it)]) d.st[arKey(it)]="y"; }); render(); return true; }
   if(a==="arSave"){ const d=arDec(rv), send=el.dataset.v==="1"; d.org=v("ar_org"); d.note=v("arn_note");
     if(!d.org) return toast("اختر المنظّم."), true;
-    if(send && !rv.items.some(it=>d.st[arKey(it)]==="y")) return toast("اعتمد ملاحظة واحدة على الأقل."), true;
+    const allN = rv.items.length && rv.items.every(it=>d.st[arKey(it)]==="n"); d.closed = false;
+    if(send && allN && !arDoc(rv.id)?.metrics?.sent){ d.closed = true; } // كل الملاحظات مستبعدة ⇒ تتقفل من غير إرسال للمنظّم
+    else if(send && !rv.items.some(it=>d.st[arKey(it)]==="y")) return toast("اعتمد ملاحظة واحدة على الأقل، أو استبعد الكل علشان تنهي المراجعة."), true;
     const old=arDoc(rv.id); if(old && old.member && old.member!==d.org) return toast("المراجعة مرتبطة بمنظّم آخر؛ لا يمكن تغييره بعد الحفظ."), true;
     el.disabled=true;
-    const ok=await save("evals", arId(rv.id), {member:d.org, month:rv.date, evaluator:S.me.id, headNote:d.note, metrics:arMetrics(rv,d,send)}, true);
-    el.disabled=false; if(ok){ toast(send?"أُرسلت؛ ستظهر للمنظّم في «يومي».":"حُفظت المسودة."); render(); } return true; }
+    const ok=await save("evals", arId(rv.id), {member:d.org, month:rv.date, evaluator:S.me.id, headNote:d.note, metrics:arMetrics(rv,d,send && !d.closed)}, true);
+    el.disabled=false; if(ok){ toast(d.closed?"✓ اتقفلت المراجعة — كل الملاحظات مستبعدة، ومفيش حاجة للمنظّم.":send?"أُرسلت؛ ستظهر للمنظّم في «يومي».":"حُفظت المسودة."); render(); } return true; }
   if(a==="arUnk"){ if(!rv) return true; const d=arDec(rv), i=Number(el.dataset.i), u=rv.unknown[i]; if(!u) return true; d.org=v("ar_org")||d.org; d.note=v("arn_note")||d.note;
     if(!d.org) return toast("اختر المنظّم أولًا (في الشريط السفلي)."), true;
     const old=arDoc(rv.id); if(old && old.member && old.member!==d.org) return toast("المراجعة مرتبطة بمنظّم آخر."), true;
