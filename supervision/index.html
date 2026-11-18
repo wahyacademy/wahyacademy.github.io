@@ -547,6 +547,13 @@ const hoursPart = (mid, date, s) => !s||!s.start||!s.end ? [] : hoursReqs(mid,da
 const hoursPill = (mid, date, s) => hoursPart(mid,date,s).map(r=>` <span class="pill gold">⏱ مستأذن ${esc(t12(r.start))} – ${esc(t12(r.end))}</span>`).join("");
 const slotOff = (mid, date, sid) => dayOff(mid,date) || okReqs(mid).find(r => r.kind==="lecture" && r.date<=date && date<=(r.dateTo||r.date) && r.slot===sid) || hoursFull(mid,date,sid) || ((slotTask(date,sid)||{}).excused==="sheikh" ? {kind:"sheikh"} : null);
 const pendingReqs = () => { const ids=team().map(m=>m.id); return S.requests.filter(r=>r.status==="pending" && ids.includes(r.member)); };
+// ✓ طلب من قسمي اتقرر من غيري (مسئول اللجنة أو بالنيابة ✋) — للعلم لحد «اطّلعت»، ويختفي لوحده بعد 3 أيام (18 نوفمبر)
+const RQ_NOTE_DAYS = 3;
+const reqDecOther = () => { if(!S.me || S.me.role!=="head" || VIEWER()) return []; const ids=new Set(team().map(m=>m.id)), lim=Date.now()-RQ_NOTE_DAYS*864e5;
+  return (S.requests||[]).filter(r=>ids.has(r.member) && r.member!==S.me.id && (r.status==="accepted"||r.status==="rejected") && !/^emg_/.test(r.id||"") && Number(r.decidedAt||0)>lim && (r.decidedBy!==S.me.id || !!r.via) && Number(r.headSeen||0)<Number(r.decidedAt||0)).sort((a,b)=>Number(b.decidedAt)-Number(a.decidedAt)); };
+const rqByTxt = r => r.decidedBy===S.me.id ? "مسئول اللجنة ✋ (بالنيابة عنك)" : (S.members.find(m=>m.id===r.decidedBy)||{}).role==="committee" ? "مسئول اللجنة" : (nameOf(r.decidedBy)||"مسئول اللجنة");
+function reqDecCard(){ const L=reqDecOther(); if(!L.length) return "";
+  return `<div class="card"><h2>✓ اتقرر في طلبات من قسمك (${L.length}) <small class="sub">للعلم</small></h2>${L.map(r=>`<div class="item"><div class="what"><b>${r.status==="accepted"?"✅":"❌"} ${esc(rqByTxt(r))} ${r.status==="accepted"?"قبل":"رفض"} طلب ${esc(nameOf(r.member))}</b><small>${esc(REQ[r.kind]||"طلب")} — ${esc(reqDesc(r))} · ${esc(ckAgo(r.decidedAt))}</small>${r.reply?`<div class="prob">الرد: ${esc(r.reply)}</div>`:""}</div><button class="btn sm ghost" data-a="rqSeen" data-id="${esc(r.id)}">اطّلعت</button></div>`).join("")}${L.length>1?`<div class="row" style="margin-top:6px"><button class="btn sm ghost" data-a="rqSeen" data-id="">اطّلعت على الكل</button></div>`:""}</div>`; }
 // الدوام — من 6 نوفمبر لكل محاضرة/مهمة بدء وإنهاء خاصان بها (قرار المستخدم)
 const SLOT_DUTY_SINCE = "2026-11-06";
 const shiftOf = (mid, date) => S.shifts.find(x => x.member===mid && x.date===date && x.start && !x.slot);
@@ -649,7 +656,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="5efff6c1f31f"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="58dcba4c2b52"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1273,8 +1280,8 @@ function inboxCard(d, reqs, needReply){
   const parts = [d===today()?lrCard()+fwdCard()+sysCard()+nbCard()+riskCard()+arInbox()+stepMissCard()+tfqInbox():"", reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}${fixPick(r)}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button>${fwdBtn("request",r.id,nameOf(r.member)+" · "+(REQ[r.kind]||"")+" — "+reqDesc(r),true)}</div></div></div>`).join("")}</div>`:"",
   needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>{ const n=ckMsgs(p).length; return `<div class="item"><div class="what"><b>${n>1?"💬 رد جديد — ":"⚠️ "}${esc(m.name)}</b><small>${esc(fmtDay(p.date))} · ${esc(ckAgo(ckLast(p).at))}</small><div class="prob">${esc(p.note)}${n>1?`<span class="rep"><b>${esc(m.name)}:</b> ${esc(ckLastText(p))}</span>`:""}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button><button class="btn sm ghost" data-a="ckOpen" data-id="${esc(p.id)}">💬 النقاش${n>1?" ("+n+")":""}</button></div></div></div>`; }).join("")}</div>`:"",
   d===today()&&ckTeam().filter(ckWaitClose).length?`<div class="card"><h2>⏳ مستنية تأكيد القفل (${ckTeam().filter(ckWaitClose).length})</h2><p class="sub" style="font-size:13px">اتردّ عليها من أكتر من 3 أيام، وصاحبتها ما ردّتش ولا قفلتها.</p>${ckTeam().filter(ckWaitClose).map(ckRow).join("")}</div>`:"",
-  d===today()?sheikhReqCard():""].join("").trim();
-  const n = reqs.length + needReply.length + (d===today()?(isAdmin()?fwdOpen().length+lrPend().length:0)+sheikhReqs().length+arPending().length+ckTeam().filter(ckWaitClose).length+stepMiss().length+tfqAttn().length:0);
+  d===today()?sheikhReqCard():"", d===today()?reqDecCard():""].join("").trim();
+  const n = reqs.length + needReply.length + (d===today()?(isAdmin()?fwdOpen().length+lrPend().length:0)+sheikhReqs().length+arPending().length+ckTeam().filter(ckWaitClose).length+stepMiss().length+tfqAttn().length+reqDecOther().length:0);
   return parts ? `<div class="card inbox"><h2>يحتاج تدخّلك${n?` (${n})`:""}</h2>${parts}</div>` : `<div class="card inbox"><h2>يحتاج تدخّلك</h2><div class="empty">✓ لا شيء يحتاج تدخّلك الآن.</div></div>`; }
 function teamRows(d, rows){ return `${rows.length? rows.map(({m,sl,exp,dn,pr,late})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${esc(DEPTS[m.dept]||"")}</small></span>${asBtn(m.id)}${dutyPill(m.id,d)}${pr.length?`<span class="pill gold">⚠️ ${pr.length}</span>`:""}${late?`<span class="pill bad">${late} متأخرة</span>`:""}${exp.length?`<span class="pill ${dn===exp.length?"ok":""}">${dn} من ${exp.length}</span>`:""}</summary>
     <div class="mini">${sl.map(s=>{ const off=slotOff(m.id,d,s.id), ok=isSlotDone(d,s.id), lec=isLecture(s);
@@ -2118,6 +2125,7 @@ document.addEventListener("click", async e=>{
     if(!data.title||!data.assignee||!data.due) return toast("اكتب المطلوب واختر الشخص والموعد.");
     if(!id) Object.assign(data,{type:"assigned", status:"todo", assigner:me, createdAt:Date.now()});
     if(await save("tasks", id||null, data, !!id)) close(); return; }
+  if(a==="rqSeen"){ for(const r of (id?reqDecOther().filter(x=>x.id===id):reqDecOther())) saveFast("requests", r.id, {headSeen:Date.now()}, "", r.id); return; }
   if(a==="seenTask"){ saveFast("tasks", id, {seenAt:Date.now()}, "", id); NEWSEEN && NEWSEEN.delete(id); return; }
   if(a==="delTask"){ await remove("tasks", id); close(); return; }
   if(a==="newMember") return open(memberForm(null));
