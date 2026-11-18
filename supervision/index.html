@@ -338,6 +338,7 @@ span.mk{cursor:default}
 .ltl{columns:2;column-gap:24px;margin:0;padding:0;list-style:none;max-height:50vh;overflow:auto}.ltl li{break-inside:avoid;padding:6px 8px;border-bottom:1px solid #EEF1F5;font-size:14.5px;display:flex;gap:10px}.ltl .rn{font-size:11.5px;color:var(--muted);min-width:26px}
 .ltu{border:1px dashed #C9D3DF;border-radius:10px;padding:8px 12px;font-size:13px}
 @media(max-width:700px){.ltl{columns:1}.ltk{grid-template-columns:1fr 1fr}}
+.seh3{font-size:15.5px;margin:16px 0 8px;color:var(--brand-deep)}.seul{margin:6px 0;padding-inline-start:20px;line-height:1.9}.sem{border:1px solid var(--line,#e3e8ef);border-radius:10px;padding:10px 12px;margin-top:10px}.semh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:6px}.semh a{text-decoration:none}.item.sewrap{flex-wrap:wrap}.item.sewrap .what{flex-basis:100%}.card.se .kpis{margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -578,7 +579,7 @@ async function api(action, payload={}, ms=30000){
     return d;
   } catch(e){ if(e && e.reason) throw e; throw {reason:"network", timeout:ctl.signal.aborted}; } finally { clearTimeout(tm); }
 }
-function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals","fwds","lecreqs"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="org")) && !S.ar) setTimeout(()=>loadAR(false),0); if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="sa")) && !S.tfq) setTimeout(()=>loadTFQ(false),0); }
+function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals","fwds","lecreqs"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="org")) && !S.ar) setTimeout(()=>loadAR(false),0); if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="sa")) && !S.tfq) setTimeout(()=>loadTFQ(false),0); if(canSE() && !S.se) setTimeout(()=>loadSE(false),0); }
 async function refresh(quiet){
   const f=document.activeElement; if(quiet && f && /INPUT|TEXTAREA|SELECT/.test(f.tagName) && f.value) return; // لا نمسح ما يكتبه
   if(quiet && PENDING) return; // حفظ جارٍ: لا نكتب فوقه ببيانات أقدم
@@ -638,7 +639,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="a83c5d27e910"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="8927006006fa"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -779,6 +780,7 @@ function viewMine(){
   const exp=sl.filter(s=>!slotOff(me,d,s.id)), done=exp.filter(s=>isSlotDone(d,s.id)).length;
   return `<p class="sub">${exp.length ? `أنجزت ${done} من ${exp.length} من شغل اليوم` : sl.length ? "شغل اليوم معتذر عنه بموافقة المسئول" : "لا يوجد شغل مجدول لك اليوم"}</p>
   ${newTasksCard(me)}
+  ${seMine(me)}
   ${followCards(me)}
   ${reservedCard(me)}
   ${offersCard(me)}
@@ -1172,7 +1174,7 @@ function viewTeamToday(){
   const needReply = d===today() ? ckTeam().filter(ckWaitMe).sort((a,b)=>ckLast(a).at-ckLast(b).at).map(p=>({p,m:S.members.find(x=>x.id===p.member)||{name:"—"}})) : rows.flatMap(r=>r.pr.filter(p=>!p.reply).map(p=>({p,m:r.m})));
   const reqs = pendingReqs().sort((a,b)=>(a.date||"").localeCompare(b.date||""));
   return `<div class="row"><div class="grow"><h1>${d===today()?"متابعة اليوم":DAYS[dayIdx(parse(d))]}</h1>${d===today()?"":datesHtml(d)}<p class="sub">من أنجز شغله، ومن يحتاج ردك</p></div><input type="date" data-a="day" value="${esc(d)}" style="width:auto"></div>
-  ${d===today()?heldAdminCard()+headWorkCard():""}
+  ${d===today()?heldAdminCard()+headWorkCard()+seHeadCard():""}
   ${daySummary(d)}
   ${inboxCard(d, reqs, needReply)}
   ${mineSl.length?`<div class="card"><h2>${S.me.role==="head"?"جدولي اليوم":"شغلي اليوم"}</h2>${mineSl.map(s=>slotRow(d,s,S.me.id,d===today())).join("")}</div>`:""}
@@ -1237,6 +1239,72 @@ function arDuePill(){ const late=cairoNow().hm>=AR_DUE, oh=S.members.find(m=>m.r
 function loadTFQ(force){ if(!canTFQ() || S.tfqLoading) return; S.tfqLoading=true;
   api("tafaqqud",{force:!!force}).then(d=>{ S.tfqLoading=false; if(d.ok){ S.tfq=d.rows||[]; S.tfqErr=""; } else S.tfqErr=d.reason||"err"; render(); })
     .catch(()=>{ S.tfqLoading=false; S.tfqErr="network"; render(); }); }
+// ===== تقييم الوردية (18 نوفمبر): من ورقتي «تقييم الورديات» و«الاستفسارات» اللي Claude بيكتبهم الساعة 7 الصبح — الخادم بيبعت لكل مشرفة صفوفها بس =====
+const SE_TRIAL_UNTIL = "2026-11-25"; // أول أسبوع تجريبي وما يتحسبش (قرار المستخدم 17 نوفمبر)
+const canSE = () => !!S.me && (S.me.role==="sa" || S.me.dept==="sa" || canTFQ());
+function loadSE(force){ if(!canSE() || S.seLoading) return; S.seLoading=true;
+  api("shiftEval",{force:!!force}).then(d=>{ S.seLoading=false; if(d.ok){ S.se={ev:d.ev||[], q:d.q||[]}; } render(); }).catch(()=>{ S.seLoading=false; }); }
+const seQs = (mid,ds) => ((S.se||{}).q||[]).filter(q=>q.member===mid && q.date===ds);
+function seStats(qs){ const c=qs.filter(q=>q.dec!=="مش استفسار"), ok=c.filter(q=>q.verdict==="في المهلة").length, mins=c.map(q=>Number(q.min)).filter(x=>!isNaN(x)&&x>=0);
+  return {n:c.length, ok, pct:c.length?Math.round(ok*100/c.length):null, avg:mins.length?Math.round(mins.reduce((a,b)=>a+b,0)/mins.length):null}; }
+const SE_K = {"ما اتبعتش":"bad","ناقص":"bad","اعتذار فاتك":"gold","متأخر":"gold"};
+const seN = x => Number(x)||0;
+const seClean = r => !seN(r.notSent) && !seN(r.stop) && !seN(r.lateEx) && !(r.items||[]).length && seStats(seQs(r.member,r.date)).ok===seStats(seQs(r.member,r.date)).n;
+const seTrial = r => (r.date||"") < SE_TRIAL_UNTIL;
+const seKpi = (v,t,k) => `<div class="kpi ${k||""}"><b>${v}</b><small>${t}</small></div>`;
+// الكارت: own=true للمشرفة نفسها (فيه «اطّلعت» و«مش استفسار؟»)
+function seCard(r, own){
+  const qs=seQs(r.member,r.date).sort((a,b)=>(a.arr||"").localeCompare(b.arr||"")), st=seStats(qs), bad=qs.filter(q=>q.verdict!=="في المهلة");
+  const need=seN(r.need), cl=r.close&&r.close.list&&r.close.list.length?r.close:null;
+  return `<div class="card follow se"><div class="row" style="align-items:center;gap:8px"><h2 style="margin:0">📋 ${own?"تقييم شغلك":"تقييم "+esc(nameOf(r.member))} — ${esc(fmtDay(r.date))}</h2>${seTrial(r)?`<span class="pill gold">تجريبي · مش محسوب لحد ${esc(fmtDay(SE_TRIAL_UNTIL))}</span>`:""}</div>
+  <p class="sub" style="font-size:13px;margin-top:4px">اتحسب الساعة 7 الصبح. بيشمل التفقدات اللي خانتها المفروضة ${own?"خانتك":"خانتها"}، والاستفسارات اللي وصلت في ${own?"ورديتك":"ورديتها"}.</p>
+  <h3 class="seh3">التفقدات${r.slot?` <small class="sub">— ${esc(r.slot)}</small>`:""}</h3>
+  ${need?`<div class="kpis">${seKpi(`${seN(r.sent)} من ${need}`,"اتبعتت في خانتها","ok")}${seKpi(seN(r.notSent),"ما اتبعتتش",seN(r.notSent)?"bad":"")}${seKpi(seN(r.stop),"إجراء توقف ناقص",seN(r.stop)?"bad":"")}${seKpi(seN(r.lateEx),"اعتذار متأخر فات",seN(r.lateEx)?"gold":"")}</div>
+  ${(r.items||[]).map(it=>`<div class="item"><div class="what"><b>${esc(it.n||"")}</b><small>${esc(it.c||"")}${it.w?" — "+esc(it.w):""}</small></div><span class="pill ${SE_K[it.k]||""}">${esc(it.k||"")}</span></div>`).join("")}`
+  :`<p class="sub">مفيش خانة متابعة حضور وغياب خلصت امبارح.</p>`}
+  <h3 class="seh3">الرد على الاستفسارات خلال 15 دقيقة${r.shift?` <small class="sub">— ${own?"ورديتك":"الوردية"} ${esc(r.shift)}</small>`:""}</h3>
+  ${st.n?`<div class="kpis">${seKpi(st.n,"استفسار")}${seKpi(st.pct+"%",`اترد خلال 15 د (${st.ok} من ${st.n})`,st.pct>=90?"ok":st.pct>=70?"gold":"bad")}${seKpi(st.avg!=null?st.avg+" د":"—","متوسط أول رد")}</div>
+  ${bad.map(q=>{ const fl=q.flag, dc=q.dec; return `<div class="item sewrap"><div class="what"><b>وصل ${esc(q.arr||"")}${q.where?` <small class="sub">· ${esc(q.where)}</small>`:""}</b><small>${q.first?`أول رد ${esc(q.first.slice(-5))} · بعد ${esc(q.min||"")} دقيقة`:"ما اترَدّش لحد نهاية الوردية"} · ${esc(q.kind||"")}${fl?` · «مش استفسار؟»${fl!=="مش استفسار"?": «"+esc(fl)+"»":""}`:""}</small></div>
+    ${dc==="مش استفسار"?`<span class="pill ok">اتشال — مش استفسار</span>`:`<span class="pill ${q.first?"gold":"bad"}">${q.first?"متأخر":"ما اترَدّش"}</span>`}${dc==="استفسار"?`<span class="pill gray">«مش استفسار» اترفض</span>`:""}
+    ${own&&!fl&&!dc?`<button class="btn sm ghost" data-a="seFlagAsk" data-id="${esc(q.id)}">مش استفسار؟</button>`:""}${own&&fl&&!dc?`<span class="pill">مستني رأي المسئولة</span>`:""}
+    ${!own&&fl&&!dc&&canTFQ()?`<button class="btn sm" data-a="seDec" data-id="${esc(q.id)}" data-v="مش استفسار">✓ مش استفسار</button><button class="btn sm ghost" data-a="seDec" data-id="${esc(q.id)}" data-v="استفسار">لأ، استفسار</button>`:""}</div>`; }).join("")}
+  <p class="sub" style="font-size:12.5px">بيظهر الوقت والنوع بس — من غير نص الرسالة ولا اسم أو رقم صاحبها.${own?" تقدري تلاقي الرسالة في تيليجرام بالوقت.":""}</p>`
+  :`<p class="sub">مفيش استفسارات في ${own?"ورديتك":"الوردية"}.</p>`}
+  ${r.fyi?`<h3 class="seh3">للعلم بس <small class="sub">— تجريبي ومش داخل في التقييم</small></h3><div class="row" style="gap:6px">${String(r.fyi).split("|").map(x=>`<span class="pill">${esc(x.trim())}</span>`).join("")}</div>`:""}
+  ${cl?`<h3 class="seh3">${own?"تقفليها":"تقفلها"} في ${own?"خانتك":"خانتها"} الجاية${cl.when?` <small class="sub">— ${esc(cl.when)}</small>`:""}</h3><ul class="seul">${cl.list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
+  ${r.note?`<p style="margin:8px 0 0"><b>ملاحظة:</b> ${esc(r.note)}</p>`:""}
+  ${own&&!r.ack?`<label style="margin-top:8px">تعليقك (اختياري)<input id="seack_${esc(r.id)}" maxlength="300"></label><div class="row" style="margin-top:6px"><button class="btn" data-a="seAck" data-id="${esc(r.id)}">اطّلعت</button></div>`
+   :r.ack?`<div class="banner" style="margin-top:8px">✓ اطّلعت ${esc(String(r.ack).slice(-5))}${r.ackNote?`: «${esc(r.ackNote)}»`:""}</div>`:""}</div>`; }
+// في «يومي» عند المشرفة: التقييمات اللي لسه ما اطّلعتش عليها، واليوم اللي من غير ملاحظات سطر يختفي تاني يوم
+function seMine(mid){ if(!S.se) return ""; const y=addDays(today(),-1);
+  return S.se.ev.filter(r=>r.member===mid && !r.ack).sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{
+    if(!seClean(r)) return seCard(r, mid===S.me.id);
+    if(r.date!==y) return "";
+    const st=seStats(seQs(mid,r.date)), need=seN(r.need);
+    return `<div class="banner">✓ <b>تقييم شغلك — ${esc(fmtDay(r.date))}:</b> ${need?`${seN(r.sent)} من ${need} تفقدات في خانتها · `:""}${st.n?`${st.n} استفسار اترد عليهم كلهم خلال 15 د${st.avg!=null?` (متوسط ${st.avg} د)`:""}`:"مفيش استفسارات"}. مفيش ملاحظات.</div>`; }).join(""); }
+const seFlagsWaiting = () => canTFQ() && S.se ? S.se.q.filter(q=>q.flag && !q.dec) : [];
+// عند مسئولة شئون الطلاب ومسئول اللجنة: آخر يوم اتقيّم + «مش استفسار؟» المستنية
+function seHeadCard(){ if(!canTFQ() || !S.se) return "";
+  const ds=S.se.ev.map(r=>r.date).sort().pop(), fl=seFlagsWaiting(); if(!ds && !fl.length) return "";
+  const rows=S.se.ev.filter(r=>r.date===ds);
+  const blk=r=>{ const st=seStats(seQs(r.member,r.date)), need=seN(r.need);
+    return `<div class="sem"><div class="semh"><a href="#" data-a="seOpen" data-id="${esc(r.id)}"><b>${esc(nameOf(r.member))}</b></a><small class="sub">${r.ack?"✓ اطّلعت "+esc(String(r.ack).slice(-5)):"لسه ما اطّلعتش"}</small></div>
+    <div class="row" style="gap:6px">${need?`<span class="pill">تفقدات في خانتها: ${seN(r.sent)} من ${need}</span>`:`<span class="pill">تفقدات: مفيش خانة خلصت</span>`}${seN(r.notSent)?`<span class="pill bad">ما اتبعتش: ${seN(r.notSent)}</span>`:""}${seN(r.stop)?`<span class="pill bad">توقف ناقص: ${seN(r.stop)}</span>`:""}${seN(r.lateEx)?`<span class="pill gold">اعتذار فات: ${seN(r.lateEx)}</span>`:""}${st.n?`<span class="pill ${st.pct>=90?"ok":st.pct>=70?"gold":"bad"}">الرد خلال 15 د: ${st.pct}% (${st.ok}/${st.n})</span>${st.avg!=null?`<span class="pill">متوسط أول رد: ${st.avg} د</span>`:""}`:`<span class="pill">مفيش استفسارات</span>`}</div></div>`; };
+  return `${rows.length?`<div class="card"><div class="row" style="align-items:center;gap:8px"><h2 style="margin:0">📋 تقييم الورديات — ${esc(fmtDay(ds))}</h2>${ds<SE_TRIAL_UNTIL?`<span class="pill gold">تجريبي لحد ${esc(fmtDay(SE_TRIAL_UNTIL))}</span>`:""}</div>${rows.map(blk).join("")}<p class="sub" style="font-size:12.5px;margin-top:6px">الضغط على اسم المشرفة يفتح نفس الكارت اللي هي شايفاه.</p></div>`:""}
+  ${fl.length?`<div class="card"><h2>«مش استفسار؟» — مستني رأيك <span class="pill">${fl.length}</span></h2>${fl.map(q=>`<div class="item sewrap"><div class="what"><b>${esc(nameOf(q.member))} · ${esc(fmtDay(q.date))} · وصل ${esc(q.arr||"")}</b><small>${q.first?`أول رد بعد ${esc(q.min||"")} د`:"ما اترَدّش"} · ${esc(q.kind||"")}${q.flag&&q.flag!=="مش استفسار"?` · كتبت: «${esc(q.flag)}»`:""}</small></div><button class="btn sm" data-a="seDec" data-id="${esc(q.id)}" data-v="مش استفسار">✓ مش استفسار — يتشال</button><button class="btn sm ghost" data-a="seDec" data-id="${esc(q.id)}" data-v="استفسار">لأ، استفسار</button></div>`).join("")}<p class="sub" style="font-size:12.5px">لو وافقتي يتشال من النسبة على طول. ولو رفضتي، المشرفة تشوف «اترفض» جنبه.</p></div>`:""}`; }
+function seFlagForm(id){ const q=(S.se.q||[]).find(x=>x.id===id); if(!q) return "";
+  return `<h2>مش استفسار؟</h2><p class="sub">وصل ${esc(q.arr||"")} · ${esc(q.kind||"")}. الطلب بيروح لمسئولة شئون الطلاب تراجعه، ولو وافقت يتشال من النسبة.</p><label>إيه الرسالة دي؟ (اختياري)<input id="seflag_note" maxlength="300" placeholder="مثلًا: رسالة شكر بس"></label><div class="row"><button class="btn" data-a="seFlag" data-id="${esc(id)}">ابعت للمسئولة</button><button class="btn ghost" data-a="close">إلغاء</button></div>`; }
+async function seAct(a, el, id){
+  const fail=()=>{ el.disabled=false; toast("ما اتحفظش. جرّب تاني."); };
+  if(a==="seOpen"){ const r=S.se.ev.find(x=>x.id===id); if(r) open(seCard(r,false)+`<div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`); return true; }
+  if(a==="seFlagAsk"){ open(seFlagForm(id)); return true; }
+  if(a==="seAck"){ el.disabled=true; const n=document.getElementById("seack_"+id), note=n?n.value.trim():"";
+    try { const d=await api("seAck",{id, note}); if(!d.ok) return fail(); const r=S.se.ev.find(x=>x.id===id); if(r){ r.ack=today()+" "+cairoNow().hm; r.ackNote=note; } toast("شكرًا، اتسجّل اطّلاعك."); render(); } catch(e){ fail(); } return true; }
+  if(a==="seFlag"){ el.disabled=true; const note=v("seflag_note");
+    try { const d=await api("seFlag",{id, note}); if(!d.ok) return fail(); const q=S.se.q.find(x=>x.id===id); if(q){ q.flag=note||"مش استفسار"; } close(); toast("اتبعت للمسئولة."); render(); } catch(e){ fail(); } return true; }
+  if(a==="seDec"){ el.disabled=true; const vv=el.dataset.v;
+    try { const d=await api("seDecide",{id, v:vv}); if(!d.ok) return fail(); const q=S.se.q.find(x=>x.id===id); if(q){ q.dec=vv; q.decBy=S.me.name; } toast(vv==="مش استفسار"?"اتشال من النسبة.":"اتسجّل إنه استفسار."); close(); render(); } catch(e){ fail(); } return true; }
+  return false; }
 const TFQ_BAD = ["ما اتبعتش","خطأ","ناقص","محتاج مراجعة"];
 const tfqAttn = () => canTFQ() ? (S.tfq||[]).filter(r=>TFQ_BAD.includes(r.verdict) && !r.op) : [];
 const tfqWho = id => id ? (S.members.find(m=>m.id===id)||{}).name || id : "—";
@@ -1611,6 +1679,7 @@ function headWorkCard(){ if(!S.me || S.me.role!=="head" || VIEWER()) return "";
     L.push(row("📨","طلبات المنظّمين",pendingReqs().length,""));
     L.push(row("⚠️","مشاكل المنظّمين المفتوحة",ckTeam().filter(ckWaitMe).length,""));
   } else { const rq=openTasks(S.me.id).filter(t=>/^rq_/.test(t.id||"")), rl=rq.filter(t=>(t.due||"")<today()).length;
+    L.push(row("📋","«مش استفسار؟» مستني رأيك",seFlagsWaiting().length,""));
     L.push(row("📞","رأيك في التفقدات الجديدة",canTFQ()?tfqAttn().length:0,"", canTFQ()&&tfqAttn().length?`<a class="btn sm ghost" href="#tfq">افتح</a>`:""));
     L.push(row("⚠️","تصعيدات ومشاكل المشرفين",ckTeam().filter(ckWaitMe).length,""));
     L.push(row("📨","طلبات المشرفين",pendingReqs().length,""));
@@ -1765,6 +1834,7 @@ document.addEventListener("click", async e=>{
   if(a==="logout") return logout("");
   if(a==="gprompt") return loadGsi(()=>{ try { google.accounts.id.prompt(); } catch(err){ toast("تعذّر فتح نافذة الدخول؛ جرّب Chrome محدّثًا."); } });
   if(a==="close") return close();
+  if(/^se[A-Z]/.test(a)){ e.preventDefault(); if(await seAct(a,el,id)) return; }
   if(a==="slot"){ const s=S.slots.find(x=>x.id===id); const tid=slotDoneId(d,id);
     if(isSlotDone(d,id)){ saveFast("tasks", tid, {status:"todo", doneAt:null}); return; }
     saveFast("tasks", tid, {title:s.label, type:"scheduled", assignee:me, due:d, status:"done", doneAt:d, slot:id}); return; }
