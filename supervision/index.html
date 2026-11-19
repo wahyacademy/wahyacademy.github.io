@@ -284,6 +284,7 @@ details.dr summary{flex-wrap:wrap;gap:6px}
 label{display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600}
 input,select,textarea{border:1px solid var(--line);border-radius:10px;padding:9px 11px;background:var(--paper);font-weight:400;width:100%}
 textarea{min-height:70px;resize:vertical}
+textarea.trmini{min-height:40px;transition:min-height .15s}textarea.trmini:focus,textarea.trmini.filled{min-height:80px}
 .form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .form .full{grid-column:1/-1}
 @media (max-width:560px){.form{grid-template-columns:1fr}}
@@ -425,7 +426,7 @@ const canView = id => !!(isMgr() && id && id!==S.me.id && (isAdmin() ? S.members
 const VIEWER = () => S.as && canView(S.as) ? S.as : null;
 const meId = () => VIEWER() || S.me.id;
 const meName = () => VIEWER() ? nameOf(S.as) : S.me.name;
-const AS_OK = new Set(["asExit","asView","actOn","actOff","toggleLec","copyZoom","print","logout","arOpen","arF","sdept","sper0","smode","sday","swk"]); // الأخيرة تغيّر العرض بس (معاينة شاشة المسئولة)
+const AS_OK = new Set(["thAll","asExit","asView","actOn","actOff","toggleLec","copyZoom","print","logout","arOpen","arF","sdept","sper0","smode","sday","swk"]); // الأخيرة تغيّر العرض بس (معاينة شاشة المسئولة)
 const asHead = () => { const id=VIEWER(); const m=id && S.members.find(x=>x.id===id); return m && m.role==="head" ? m : null; };
 // «✋ اشتغل بداله» (قرار المستخدم 18 نوفمبر): حساب شئون الطلاب بس يشتغل في شاشة أي عضو بدل صاحبها، والخادم بيسجّل كل حاجة باسمه
 const isSuper = () => !!(S.me && S.me.role==="committee" && S.me.id==="m_owner");
@@ -656,7 +657,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="58dcba4c2b52"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="8b595f761a5c"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -694,7 +695,7 @@ function otpBox(){ const o=S.otp||{};
   return `<div class="otpq"><p class="sub" style="margin:0">أرسلنا كودًا من 6 أرقام إلى <b dir="ltr">${esc(o.email)}</b> (راجع الرسائل غير المرغوب فيها أيضًا).</p><label>الكود<input id="otp_c" inputmode="numeric" maxlength="6" dir="ltr" autocomplete="one-time-code" style="letter-spacing:6px;text-align:center;font-size:20px"></label><div class="row"><button class="btn" data-a="otpVerify">دخول</button><button class="btn ghost" data-a="otpSend" data-again="1">إرسال كود جديد</button></div></div>`; }
 // ---------- العرض ----------
 // ما يُكتب في خانات الرد/القرار/التعليق يبقى عند إعادة الرسم (لا يُرسل ولا يُخزَّن)
-const KEEP_RE = /^(r_|q_|cv_|rqr_|ack_|arr_|arn_|aru_)/;
+const KEEP_RE = /^(r_|q_|cv_|rqr_|ack_|arr_|arn_|aru_|seack_|tr_)/;
 function render(){ const keep={}; document.querySelectorAll("#app textarea[id], #app input[id], #app select[id]").forEach(x=>{ if(KEEP_RE.test(x.id) && x.value && x.type!=="hidden") keep[x.id]=x.value; });
   // «👁 شاشته» لمسئولة قسم (🐞 سجل المشاكل 2، 18 نوفمبر): تُرسم شاشة المسئولين بدورها وقسمها وقت الرسم فقط، للعرض فقط
   const hv=asHead();
@@ -705,6 +706,8 @@ function render(){ const keep={}; document.querySelectorAll("#app textarea[id], 
     $("#app").insertAdjacentHTML("afterbegin", `<div class="asbar noprint"><span>👁 أنت تشاهد شاشة <b>${esc(hv.name)}</b> كما تظهر لها — <b>للعرض فقط</b></span><button class="btn sm" data-a="asExit">↩ رجوع</button></div>`);
   } else renderInner();
   for(const id in keep){ const x=document.getElementById(id); if(x && !x.value) x.value=keep[id]; }
+  document.querySelectorAll("#app [data-pre]").forEach(x=>{ if(!x.value && !(x.id in keep)) x.value=x.dataset.pre; }); // تعليق قديم يتعدّل (🐞 19 نوفمبر)
+  document.querySelectorAll("#app [data-cnt]").forEach(x=>{ if(x.classList.contains("trmini")) x.classList.toggle("filled", !!x.value); const c=document.getElementById(x.dataset.cnt); if(c) c.textContent=x.value.length+" / "+x.maxLength; });
   tick(); }
 function renderInner(){
   const app=$("#app"), nav=$("#nav");
@@ -810,7 +813,7 @@ function viewMine(){
   ${reservedCard(me)}
   ${offersCard(me)}
   <div class="card"><h2>شغل اليوم</h2>${sl.length ? allSlotsOf(me,d).map(s=>isBreak(s)?breakRow(s):slotRow(d,s,me,!VIEWER()||!!ACT())).join("") : `<div class="empty">لا توجد محاضرات أو متابعات في جدولك اليوم.</div>`}</div>
-  ${tk.length ? `<div class="card"><h2>مهام مطلوبة منك</h2>${tk.map(t=>taskRow(t,true)).join("")}</div>` : ""}
+  ${tk.length||doneTodayRows(me) ? `<div class="card"><h2>مهام مطلوبة منك</h2>${tk.map(t=>taskRow(t,true)).join("")}${doneTodayRows(me)}</div>` : ""}
   <div class="row"><button class="btn ghost" data-a="problem" data-slot="">⚠️ عندي مشكلة أو استفسار</button></div>
   ${myProbsCard(me)}`;
 }
@@ -1059,11 +1062,16 @@ function reqForm(kind){
     <div class="row"><button class="btn" data-a="sendReq" data-k="${kind}">إرسال الطلب</button><button class="btn ghost" data-a="close">إلغاء</button></div>`;
 }
 function seenWhen(ms){ const t=new Date(Number(ms)), dk=new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Cairo"}).format(t), hm=new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit",hour12:false}).format(t); return (dk===today()?"":fmtDay(dk)+" ")+t12(hm); }
+// ردود المهمة (🐞 19 نوفمبر): صاحب المهمة واللي بعتها ومسئولة القسم يكتبوا تحت المهمة، وكل رد بيتحفظ بوقته
+function taskThread(t,mine){ const th=Array.isArray(t.thread)?t.thread:[], all=S.thAll&&S.thAll.has(t.id), sh=all?th:th.slice(-3);
+  return `${th.length?`<div class="tthread" style="margin-top:6px;border-inline-start:3px solid var(--line);padding-inline-start:8px">${th.length>sh.length?`<button class="btn sm ghost" data-a="thAll" data-id="${esc(t.id)}" style="font-size:12px;margin-bottom:2px">عرض كل الردود (${th.length})</button>`:""}${sh.map(m=>`<small style="display:block;margin:3px 0"><b>${esc(m.by===S.me.id?"أنت":nameOf(m.by))}</b> <span class="sub">${esc(seenWhen(m.at))}</span>: ${esc(m.t)}</small>`).join("")}</div>`:""}<div style="margin-top:6px"><textarea id="tr_${esc(t.id)}" class="${mine?"":"trmini"}" maxlength="1000" data-cnt="trc_${esc(t.id)}" placeholder="${mine?"💬 اكتب ردك أو ملاحظتك على المهمة…":"💬 اكتب لـ"+esc(nameOf(t.assignee))+"…"}"></textarea><div class="row" style="margin-top:4px"><small class="sub grow" id="trc_${esc(t.id)}">0 / 1000</small><button class="btn sm" data-a="taskSay" data-id="${esc(t.id)}">ابعت</button></div></div>`; }
+// اللي خلص النهارده يقدر يرجّعه بنفسه لحد 12 بالليل (🐞 19 نوفمبر)
+function doneTodayRows(mid){ const L=S.tasks.filter(t=>t.type==="assigned" && t.assignee===mid && t.status==="done" && t.doneAt===today()); return L.map(t=>`<div class="item done"><div class="what"><b>${esc(t.title)}</b><small>✓ خلصت النهارده</small></div><button class="btn sm ghost" data-a="taskUndo" data-id="${esc(t.id)}">↩ رجّعها</button></div>`).join(""); }
 function taskRow(t,mine){
   const late = t.due && t.due<today();
   return `<div class="item">
     ${mine?`<button class="chk" data-a="task" data-id="${esc(t.id)}" aria-label="تم">✓</button>`:""}
-    <div class="what"><b>${esc(t.title)}</b><small class="${late?"late":""}">${late?"متأخرة — ":""}التسليم: ${esc(taskWhen(t))}${mine?"":" · "+esc(nameOf(t.assignee))}</small>${mine?"":t.type==="assigned"?(t.seenAt?`<small style="display:block;color:var(--ok)">✓ اطّلع ${esc(seenWhen(t.seenAt))}</small>`:`<small style="display:block" class="late">لم يطّلع بعد</small>`):""}${t.output?`<small style="display:block">${esc(t.output)}</small>`:""}</div>
+    <div class="what"><b>${esc(t.title)}</b><small class="${late?"late":""}">${late?"متأخرة — ":""}التسليم: ${esc(taskWhen(t))}${mine?"":" · "+esc(nameOf(t.assignee))}</small>${mine?"":t.type==="assigned"?(t.seenAt?`<small style="display:block;color:var(--ok)">✓ اطّلع ${esc(seenWhen(t.seenAt))}</small>`:`<small style="display:block" class="late">لم يطّلع بعد</small>`):""}${t.output?`<small style="display:block">${esc(t.output)}</small>`:""}${t.type==="assigned"?taskThread(t,mine):""}</div>
     ${mine?"":`<button class="btn sm ghost" data-a="editTask" data-id="${esc(t.id)}">تعديل</button>`}
   </div>`;
 }
@@ -1351,7 +1359,7 @@ const seKpi = (v,t,k) => `<div class="kpi ${k||""}"><b>${v}</b><small>${t}</smal
 function seCard(r, own){
   const qs=seQs(r.member,r.date).sort((a,b)=>(a.arr||"").localeCompare(b.arr||"")), st=seStats(qs), bad=qs.filter(q=>q.verdict!=="في المهلة");
   const need=seN(r.need), cl=r.close&&r.close.list&&r.close.list.length?r.close:null;
-  return `<div class="card follow se"><div class="row" style="align-items:center;gap:8px"><h2 style="margin:0">📋 ${own?"تقييم شغلك":"تقييم "+esc(nameOf(r.member))} — ${esc(fmtDay(r.date))}</h2>${seTrial(r)?`<span class="pill gold">تجريبي · مش محسوب لحد ${esc(fmtDay(SE_TRIAL_UNTIL))}</span>`:""}</div>
+  return `<div class="card follow se"><div class="row" style="align-items:center;gap:8px"><h2 style="margin:0">📋 ${own?"تقييم شغلك":"تقييم "+esc(nameOf(r.member))} — ${esc(fmtDay(r.date))}</h2>${seClean(r)?`<span class="pill ok">✓ مفيش ملاحظات</span>`:""}${seTrial(r)?`<span class="pill gold">تجريبي · مش محسوب لحد ${esc(fmtDay(SE_TRIAL_UNTIL))}</span>`:""}</div>
   <p class="sub" style="font-size:13px;margin-top:4px">اتحسب الساعة 7 الصبح. بيشمل التفقدات اللي خانتها المفروضة ${own?"خانتك":"خانتها"}، والاستفسارات اللي وصلت في ${own?"ورديتك":"ورديتها"}.</p>
   <h3 class="seh3">التفقدات${r.slot?` <small class="sub">— ${esc(r.slot)}</small>`:""}</h3>
   ${need?`<div class="kpis">${seKpi(`${seN(r.sent)} من ${need}`,"اتبعتت في خانتها","ok")}${seKpi(seN(r.notSent),"ما اتبعتتش",seN(r.notSent)?"bad":"")}${seKpi(seN(r.stop),"إجراء توقف ناقص",seN(r.stop)?"bad":"")}${seKpi(seN(r.lateEx),"اعتذار متأخر فات",seN(r.lateEx)?"gold":"")}</div>
@@ -1368,15 +1376,11 @@ function seCard(r, own){
   ${r.fyi?`<h3 class="seh3">للعلم بس <small class="sub">— تجريبي ومش داخل في التقييم</small></h3><div class="row" style="gap:6px">${String(r.fyi).split("|").map(x=>`<span class="pill">${esc(x.trim())}</span>`).join("")}</div>`:""}
   ${cl?`<h3 class="seh3">${own?"تقفليها":"تقفلها"} في ${own?"خانتك":"خانتها"} الجاية${cl.when?` <small class="sub">— ${esc(cl.when)}</small>`:""}</h3><ul class="seul">${cl.list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
   ${r.note?`<p style="margin:8px 0 0"><b>ملاحظة:</b> ${esc(r.note)}</p>`:""}
-  ${own&&!r.ack?`<label style="margin-top:8px">تعليقك (اختياري)<input id="seack_${esc(r.id)}" maxlength="300"></label><div class="row" style="margin-top:6px"><button class="btn" data-a="seAck" data-id="${esc(r.id)}">اطّلعت</button></div>`
-   :r.ack?`<div class="banner" style="margin-top:8px">✓ اطّلعت ${esc(String(r.ack).slice(-5))}${r.ackNote?`: «${esc(r.ackNote)}»`:""} ${viaTag(r.ackBy)}</div>`:""}</div>`; }
-// في «يومي» عند المشرفة: التقييمات اللي لسه ما اطّلعتش عليها، واليوم اللي من غير ملاحظات سطر يختفي تاني يوم
-function seMine(mid){ if(!S.se) return ""; const y=addDays(today(),-1);
-  return S.se.ev.filter(r=>r.member===mid && !r.ack).sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>{
-    if(!seClean(r)) return seCard(r, mid===S.me.id || mid===ACT());
-    if(r.date!==y) return "";
-    const st=seStats(seQs(mid,r.date)), need=seN(r.need);
-    return `<div class="banner">✓ <b>تقييم شغلك — ${esc(fmtDay(r.date))}:</b> ${need?`${seN(r.sent)} من ${need} تفقدات في خانتها · `:""}${st.n?`${st.n} استفسار اترد عليهم كلهم خلال 15 د${st.avg!=null?` (متوسط ${st.avg} د)`:""}`:"مفيش استفسارات"}. مفيش ملاحظات.</div>`; }).join(""); }
+  ${own&&!r.ack?`<label style="margin-top:8px">تعليقك (اختياري)<textarea id="seack_${esc(r.id)}" rows="4" maxlength="1000" data-cnt="seackc_${esc(r.id)}"></textarea></label><small class="sub" id="seackc_${esc(r.id)}">0 / 1000</small><div class="row" style="margin-top:6px"><button class="btn" data-a="seAck" data-id="${esc(r.id)}">اطّلعت</button></div>`
+   :r.ack?`<div class="banner" style="margin-top:8px">✓ اطّلعت ${esc(String(r.ack).slice(-5))}${r.ackNote?`: «${esc(r.ackNote)}»`:""} ${viaTag(r.ackBy)}</div>${own&&String(r.ack).slice(0,10)===today()?`<label style="margin-top:8px">عدّل تعليقك أو كمّله <small class="sub">— لحد 12 بالليل</small><textarea id="seack_${esc(r.id)}" rows="4" maxlength="1000" data-cnt="seackc_${esc(r.id)}" data-pre="${esc(r.ackNote||"")}"></textarea></label><small class="sub" id="seackc_${esc(r.id)}">0 / 1000</small><div class="row" style="margin-top:6px"><button class="btn sm" data-a="seAck" data-id="${esc(r.id)}">حفظ التعديل</button></div>`:""}`:""}</div>`; }
+// في «يومي» عند المشرفة: كل تقييم لسه ما اطّلعتش عليه بيظهر كارت كامل بـ«اطّلعت» وخانة التعليق، حتى لو مفيهوش ملاحظات (🐞 19 نوفمبر)، ويفضل ظاهر يوم «اطّلعت» علشان التعليق يتعدّل
+function seMine(mid){ if(!S.se) return "";
+  return S.se.ev.filter(r=>r.member===mid && (!r.ack || String(r.ack).slice(0,10)===today())).sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>seCard(r, mid===S.me.id || mid===ACT())).join(""); }
 const seFlagsWaiting = () => canTFQ() && S.se ? S.se.q.filter(q=>q.flag && !q.dec) : [];
 // عند مسئولة شئون الطلاب ومسئول اللجنة: آخر يوم اتقيّم + «مش استفسار؟» المستنية
 function seHeadCard(){ if(!canTFQ() || !S.se) return "";
@@ -1394,7 +1398,7 @@ async function seAct(a, el, id){
   if(a==="seOpen"){ const r=S.se.ev.find(x=>x.id===id); if(r) open(seCard(r,false)+`<div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`); return true; }
   if(a==="seFlagAsk"){ open(seFlagForm(id)); return true; }
   if(a==="seAck"){ el.disabled=true; const n=document.getElementById("seack_"+id), note=n?n.value.trim():"";
-    try { const d=await api("seAck",{id, note}); if(!d.ok) return fail(); const r=S.se.ev.find(x=>x.id===id); if(r){ r.ack=today()+" "+cairoNow().hm; r.ackNote=note; } toast("شكرًا، اتسجّل اطّلاعك."); render(); } catch(e){ fail(); } return true; }
+    try { const d=await api("seAck",{id, note}); if(!d.ok) return fail(); const r=S.se.ev.find(x=>x.id===id); const ed=!!(r&&r.ack); if(r){ if(!r.ack) r.ack=today()+" "+cairoNow().hm; r.ackNote=note; } toast(ed?"اتعدّل تعليقك.":"شكرًا، اتسجّل اطّلاعك."); render(); } catch(e){ fail(); } return true; }
   if(a==="seFlag"){ el.disabled=true; const note=v("seflag_note");
     try { const d=await api("seFlag",{id, note}); if(!d.ok) return fail(); const q=S.se.q.find(x=>x.id===id); if(q){ q.flag=note||"مش استفسار"; } close(); toast("اتبعت للمسئولة."); render(); } catch(e){ fail(); } return true; }
   if(a==="seDec"){ el.disabled=true; const vv=el.dataset.v;
@@ -1566,9 +1570,11 @@ async function arAct(a, el, id){
 // المهام
 function viewTasks(){
   const ids=team().map(m=>m.id); const list=S.tasks.filter(t=>t.type!=="scheduled" && t.status!=="done" && (ids.includes(t.assignee)||t.assignee===S.me.id)).sort((a,b)=>(a.due||"").localeCompare(b.due||""));
+  const mineL=list.filter(t=>t.assignee===S.me.id), teamL=list.filter(t=>t.assignee!==S.me.id); // «مطلوبة منك» لوحدها (🐞 19 نوفمبر)
   const done=S.tasks.filter(t=>t.type!=="scheduled" && t.status==="done" && ids.includes(t.assignee)).sort((a,b)=>(b.doneAt||"").localeCompare(a.doneAt||"")).slice(0,8);
   return `<div class="row"><div class="grow"><h1>المهام</h1><p class="sub">أي شغل إضافي خارج الجدول</p></div><button class="btn" data-a="newTask">+ مهمة جديدة</button></div>
-  <div class="card"><h2>مفتوحة (${list.length})</h2>${list.length?list.map(t=>taskRow(t,false)).join(""):`<div class="empty">لا توجد مهام مفتوحة.</div>`}</div>
+  ${mineL.length||doneTodayRows(S.me.id)?`<div class="card"><h2>مطلوبة منك (${mineL.length})</h2>${mineL.map(t=>taskRow(t,true)).join("")}${doneTodayRows(S.me.id)}</div>`:""}
+  <div class="card"><h2>مهام الفريق (${teamL.length})</h2>${teamL.length?teamL.map(t=>taskRow(t,false)).join(""):`<div class="empty">لا توجد مهام مفتوحة.</div>`}</div>
   ${done.length?`<div class="card"><h2>آخر ما أُنجز</h2>${done.map(t=>`<div class="item done"><div class="what"><b>${esc(t.title)}</b><small>${esc(nameOf(t.assignee))} · تمت ${esc(fmtDay(t.doneAt))}${t.doneAt>t.due?" (بعد موعدها)":""}</small></div></div>`).join("")}</div>`:""}`;
 }
 function taskForm(t){
@@ -2092,7 +2098,12 @@ document.addEventListener("click", async e=>{
     if(st==="accepted" && sub) nc=await makeCovers(r, sub);
     if(await save("requests", id, {status:st, reply, decidedBy:me, decidedAt:Date.now()})) toast(st==="accepted"?(nc?`قُبل الطلب، و${nameOf(sub)} بديل في ${nc} محاضرة.`:fks.length?`قُبل الطلب، واتعلّم ${fks.length===1?"خطوة واحدة":fks.length+" خطوات"} بتصحيح مسئول.`:"قُبل الطلب."):"رُفض الطلب.");
     return; }
-  if(a==="task"){ el.disabled=true; await save("tasks", id, {status:"done", doneAt:d}); toast("أحسنت، سُجّلت المهمة كمنجزة."); return; }
+  if(a==="task"){ const t0=S.tasks.find(x=>x.id===id); return open(`<h2>متأكد إن المهمة خلصت؟</h2><p>«${esc(t0?t0.title:"")}»</p><p class="sub">لو ضغطت بالغلط، تقدر ترجّعها لحد 12 بالليل النهارده.</p><div class="row"><button class="btn" data-a="taskDone" data-id="${esc(id)}">أيوه، خلصت</button><button class="btn ghost" data-a="close">لأ</button></div>`); } // تأكيد قبل ✓ (🐞 19 نوفمبر)
+  if(a==="thAll"){ S.thAll=S.thAll||new Set(); S.thAll.add(id); render(); return; }
+  if(a==="taskUndo"){ el.disabled=true; if(await save("tasks", id, {status:"todo", doneAt:null})) toast("رجعت المهمة مفتوحة."); else el.disabled=false; return; }
+  if(a==="taskDone"){ el.disabled=true; close(); await save("tasks", id, {status:"done", doneAt:d}); toast("أحسنت، سُجّلت المهمة كمنجزة."); return; }
+  if(a==="taskSay"){ const ta=document.getElementById("tr_"+id), r=ta?ta.value.trim():""; if(!r) return toast("اكتب الرد."); el.disabled=true; ta.value="";
+    if(await save("tasks", id, {say:r})) toast("اتبعت."); else { const t2=document.getElementById("tr_"+id); if(t2) t2.value=r; el.disabled=false; } return; }
   if(a==="problem"){ const sid=el.dataset.slot; const s=S.slots.find(x=>x.id===sid);
     return open(`<h2>⚠️ ${s?esc(s.label):"مشكلة أو استفسار"}</h2><label>اكتب المشكلة في سطر أو سطرين<textarea id="p_note" placeholder="مثال: الشيخ لم يدخل حتى الآن / لم يصلني شيت الحضور"></textarea></label><div class="row"><button class="btn" data-a="sendProblem" data-slot="${esc(sid||"")}">إرسال للمسئول</button><button class="btn ghost" data-a="close">إلغاء</button></div>`); }
   if(a==="sendProblem"){ const note=v("p_note"); if(!note) return toast("اكتب المشكلة أولًا.");
@@ -2212,6 +2223,7 @@ document.addEventListener("click", async e=>{
   if(a==="delSlot"){ const m=el.dataset.m; await remove("slots", id); open(schedForm(m)); return; }
 });
 document.addEventListener("change", e=>{ const a=e.target.dataset.a; if(a==="fxPick"){ const id=e.target.dataset.id; S.fx=S.fx||{}; const o=S.fx[id]=S.fx[id]||{}; if(e.target.checked) o[e.target.value]=true; else delete o[e.target.value]; return; } if(a==="reqKind"){ open(reqForm(e.target.value)); return; } if(a==="day"){ S.day=e.target.value||today(); render(); } if(a==="month"){ S.month=e.target.value||today().slice(0,7); render(); } if(a==="sper"){ S.sper=e.target.value; render(); return; } if(a==="rmem"){ S.rmem=e.target.value; render(); } if(a==="rday"){ S.rday=e.target.value||today(); render(); } if(a==="myday"){ S.myday=e.target.value||today(); render(); } if(a==="arPick"){ S.arId=e.target.value; S.arF="need"; render(); } });
+document.addEventListener("input", e=>{ if(e.target.classList&&e.target.classList.contains("trmini")) e.target.classList.toggle("filled", !!e.target.value); const c=e.target.dataset&&e.target.dataset.cnt; if(c){ const s=document.getElementById(c); if(s) s.textContent=e.target.value.length+" / "+e.target.maxLength; } });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") close();
   const t=e.target; if((e.key==="Enter"||e.key===" ") && t && t.getAttribute && t.getAttribute("role")==="button" && t.dataset.a){ e.preventDefault(); t.click(); } });
 window.addEventListener("hashchange", ()=>{ S.view=location.hash.slice(1)||"today"; render(); });
