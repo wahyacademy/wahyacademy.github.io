@@ -346,6 +346,10 @@ details[open] .chev{transform:rotate(180deg)}
 .rbox{width:min(520px,100%);max-height:92vh;overflow:auto;padding:20px 18px}
 .rbox form{display:block}.rbox input{flex:none}
 .rsub{font-weight:600;color:var(--brand)!important;font-size:14px}
+.repq,.repa{border-radius:12px;padding:10px 14px;margin-top:10px}.repq{background:#f3f5f8}.repa{background:var(--gold-soft);border:1px solid var(--gold)}
+.repq small,.repa small{display:block;font-weight:700;color:var(--muted);font-size:12.5px;margin-bottom:4px}.repq p,.repa p{margin:0;white-space:pre-wrap;line-height:1.75;color:var(--ink)}
+#rep-modal .mbox{max-height:85vh;overflow:auto}.btn.reply{grid-column:1/-1}
+
 .rbox fieldset{border:0;margin:0 0 14px;padding:0}
 .rbox legend{font-weight:600;font-size:14.5px;margin-bottom:6px;padding:0;color:var(--ink)}
 .rbox legend i{color:#a63d32;font-style:normal}
@@ -397,6 +401,13 @@ details[open] .chev{transform:rotate(180deg)}
   <p class="rsub" id="rate-s"></p>
   <form id="rate-f" novalidate></form>
   <p class="mmsg" id="rate-msg"></p>
+</div></div>
+<div class="modal" id="rep-modal" hidden><div class="mbox" role="dialog" aria-modal="true" aria-labelledby="rep-t">
+  <button type="button" class="mx" id="rep-x" aria-label="إغلاق">×</button>
+  <h3 id="rep-t">📩 رد المحاضر على سؤالك</h3>
+  <p class="rsub" id="rep-s"></p>
+  <div class="repq"><small>سؤالك</small><p id="rep-q"></p></div>
+  <div class="repa"><small>رد المحاضر</small><p id="rep-a"></p></div>
 </div></div>
 <div class="modal" id="vid-modal" hidden><div class="vbox" role="dialog" aria-modal="true">
   <div class="vhead"><b id="vid-t"></b><button type="button" class="mx2" id="vid-x" aria-label="إغلاق">×</button></div>
@@ -597,6 +608,8 @@ function quick(){
   var tail = stu ? (u?'<span class="go">انضم ←</span>':'<span class="go">قريبًا</span>') : '<span class="go">🔒 للمشتركين</span>';
   var attrs = stu&&u ? 'href="'+esc(u)+'" target="_blank" rel="noopener"' : (stu?'':'href="#" data-login');
   html+='<a class="tg'+(stu&&!u?" off":"")+(stu?"":" locked")+'" '+attrs+'><span class="i">✈</span><span><b>مجموعة التيليجرام الخاصة بالدورة</b><small>'+(stu?'رابط الحضور قبل كل محاضرة بنصف ساعة · التنبيهات والمتابعات · الأسئلة والنقاش':'متاحة للطلاب المشتركين فقط · ادخل بحساب جوجل من زر «مسجّل بالفعل؟»')+'</small></span>'+tail+'</a>';
+  if(stu){var rs=replySeen();L.forEach(function(l){var r=replyOf(l);if(!r||rs.indexOf(replyKey(r))>-1)return;
+    html+='<div class="recent has"><div class="rh"><span class="nw">📩 رد جديد</span><span>أجاب <b>'+esc(l.lect)+'</b> على سؤالك في محاضرة <b>'+esc(l.field)+'</b></span><button type="button" class="seen" data-rseen="'+esc(replyKey(r))+'">✓ شفته</button></div><span class="acts"><button type="button" class="btn pri" data-reply="'+l.id+'">اقرأ الرد</button></span></div>';});}
   for(var i=L.length-1;i>=0;i--){ var l=L[i], e=start(l)+DUR, nx=L[i+1], until=nx?start(nx):e+7*864e5;
     if(now>=e && now<until){
       var got=stu?[recOf(l)?"التسجيل":"",trOf(l)?"تفريغ المحاضرة":"",bookOf(l)?"ترشيحات ومراجع":""].filter(Boolean):[];
@@ -605,7 +618,7 @@ function quick(){
         : '<span>✔ انتهت محاضرة <b>'+esc(l.field)+'</b> — '+(stu?'التسجيل يُضاف قريبًا، وشاركنا تقييمك الآن':'شاهد التسجيل وشاركنا تقييمك')+'</span>';
       var sk=l.id+":"+got.join("|"), seen="";try{seen=localStorage.getItem("wahy_humanities_seen")||"";}catch(_){}
       if(stu && seen===sk) break;
-      html+='<div class="recent'+(got.length?' has':'')+'"><div class="rh">'+head+(stu?'<button type="button" class="seen" data-seen="'+esc(sk)+'" title="إخفاء التنويه">✓ شفته</button>':'')+'</div><span class="acts">'+vidBtn(l,"▶ التسجيل")+rateBtn(l)+trBtn(l)+bookBtn(l)+'</span></div>';
+      html+='<div class="recent'+(got.length?' has':'')+'"><div class="rh">'+head+(stu?'<button type="button" class="seen" data-seen="'+esc(sk)+'" title="إخفاء التنويه">✓ شفته</button>':'')+'</div><span class="acts">'+vidBtn(l,"▶ التسجيل")+rateBtn(l)+trBtn(l)+bookBtn(l)+replyBtn(l)+'</span></div>';
       break; } }
   document.getElementById("quick").innerHTML=html;
 }
@@ -634,7 +647,7 @@ function list(){
   document.getElementById("list").innerHTML=L.map(function(l){
     var st=state(l,now), chip = st==="live"?'<span class="chip now">مباشر الآن</span>':st==="done"?'<span class="chip ok">انعقدت</span>':(l.id===nextId?'<span class="chip nx">القادمة</span>':'<span class="chip">قادمة</span>');
     var acts = (st==="done" ? vidBtn(l)+rateBtn(l)
-             : tgBtn("رابط الدخول في تليجرام")+(st==="live"?rateBtn(l):calBtns(l)))+trBtn(l)+bookBtn(l);
+             : tgBtn("رابط الدخول في تليجرام")+(st==="live"?rateBtn(l):calBtns(l)))+trBtn(l)+bookBtn(l)+replyBtn(l);
     return '<details class="lec" id="d-'+l.id+'"'+(l.id===nextId?" open":"")+'><summary>'+
       '<span class="num">'+ar(l.n)+'</span>'+
       '<span class="sp"><span class="f">'+esc(l.field)+'</span><div class="ti">'+esc(l.title)+'</div><div class="who">'+esc(l.lect)+'</div></span>'+
@@ -718,7 +731,7 @@ function recordings(){
   var now=Date.now();
   document.getElementById("recList").innerHTML=L.map(function(l){
     var st=state(l,now), d=new Date(l.date+"T12:00:00Z").toLocaleDateString("ar-EG",{day:"numeric",month:"long"});
-    var right = st==="done" ? '<div class="acts">'+vidBtn(l)+rateBtn(l)+trBtn(l)+bookBtn(l)+'</div>'
+    var right = st==="done" ? '<div class="acts">'+vidBtn(l)+rateBtn(l)+trBtn(l)+bookBtn(l)+replyBtn(l)+'</div>'
               : '<span class="soon">'+(st==="live"?"المحاضرة منعقدة الآن":"يُتاح بعد المحاضرة · "+esc(d))+'</span>';
     return '<div class="rec'+(st==="done"?" on":"")+'"><div class="rh"><span class="num">'+ar(l.n)+'</span><div class="sp"><span class="f">'+esc(l.field)+' · '+esc(d)+'</span><div class="ti">'+esc(l.title)+'</div><div class="who">'+esc(l.lect)+'</div></div></div>'+right+'</div>';
   }).join("");
@@ -730,16 +743,34 @@ var ME_KEY="wahy_humanities_student", ME_CACHE="wahy_humanities_links", ME_SES="
 function lsGet(k){try{return localStorage.getItem(k)||"";}catch(e){return "";}}
 function lsSet(k,v){try{if(v)localStorage.setItem(k,v);else localStorage.removeItem(k);}catch(e){}}
 function meGet(){return lsGet(ME_KEY);}
-function meSave(d){lsSet(ME_KEY,d.email||"");lsSet(ME_SES,d.session||"");lsSet(ME_CACHE,JSON.stringify({ok:true,tg:d.tg||"",playlist:d.playlist||"",rec:d.rec||{},books:d.books||{},tr:d.tr||{},rated:(STU&&STU.rated)||[]}));}
+function meSave(d){lsSet(ME_KEY,d.email||"");lsSet(ME_SES,d.session||"");lsSet(ME_CACHE,JSON.stringify({ok:true,tg:d.tg||"",playlist:d.playlist||"",rec:d.rec||{},books:d.books||{},tr:d.tr||{},rated:(STU&&STU.rated)||[],replies:(STU&&STU.replies)||[]}));}
 function meClear(){lsSet(ME_KEY,"");lsSet(ME_SES,"");lsSet(ME_CACHE,"");}
 function meCached(){try{var d=JSON.parse(lsGet(ME_CACHE)||"null");return d&&d.ok?d:null;}catch(e){return null;}}
-function setStu(d){STU=d&&d.ok?{ok:true,tg:d.tg||"",playlist:d.playlist||"",rec:d.rec||{},books:d.books||{},tr:d.tr||{},rated:d.rated||(STU&&STU.rated)||[]}:{ok:false,tg:"",playlist:"",rec:{},books:{},tr:{},rated:[]};}
+function setStu(d){STU=d&&d.ok?{ok:true,tg:d.tg||"",playlist:d.playlist||"",rec:d.rec||{},books:d.books||{},tr:d.tr||{},rated:d.rated||(STU&&STU.rated)||[],replies:d.replies||(STU&&STU.replies)||[]}:{ok:false,tg:"",playlist:"",rec:{},books:{},tr:{},rated:[],replies:[]};}
 function renderAll(){safe(quick,"quick");safe(list,"list");safe(next,"next");safe(recordings,"recordings");}
 function meApply(){var m=meGet();document.body.classList.toggle("student",!!m&&STU.ok);document.getElementById("me-mail").textContent=m;renderAll();}
 function rateBtn(l){if(!isStu())return lockBtn("التقييم للمشتركين");var dn=(STU.rated||[]).indexOf(l.id)>-1;return '<button type="button" class="btn rate'+(dn?' done':'')+'" data-rate="'+l.id+'">'+(dn?'✓ قيّمتها · تعديل':'★ قيّم المحاضرة واسأل المحاضر')+'</button>';}
+// ردود المحاضر على أسئلة الطالب (خاصة به وحده — تأتي من الخادم بعد التحقق من جلسته)
+function replyOf(l){if(!isStu())return null;var r=(STU.replies||[]).filter(function(x){return x.lec===l.id&&x.a;});return r[0]||null;}
+function replyKey(r){var h=0,s=r.lec+"|"+r.a;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return r.lec+":"+h;}
+function replySeen(){try{return JSON.parse(localStorage.getItem("wahy_humanities_rseen")||"[]");}catch(_){return [];}}
+function replyMark(k){var a=replySeen();if(a.indexOf(k)<0){a.push(k);try{localStorage.setItem("wahy_humanities_rseen",JSON.stringify(a));}catch(_){}}}
+function replyBtn(l){var r=replyOf(l);return r?'<button type="button" class="btn reply" data-reply="'+l.id+'">📩 رد المحاضر على سؤالك</button>':"";}
+function replyDrop(k){var n=document.querySelector('[data-rseen="'+k+'"]');if(n){var b=n.closest(".recent");if(b)b.remove();}}
+function openReply(id){var l=L.filter(function(x){return x.id===id;})[0],r=l&&replyOf(l);if(!r)return;
+  document.getElementById("rep-s").textContent="المحاضرة "+ar(l.n)+" · "+l.field+" — "+l.lect;
+  document.getElementById("rep-q").textContent=r.q||"";document.getElementById("rep-a").textContent=r.a;
+  document.getElementById("rep-modal").hidden=false;var k=replyKey(r);replyMark(k);replyDrop(k);}
+function closeReply(){document.getElementById("rep-modal").hidden=true;}
+function replyInit(){document.addEventListener("click",function(e){var t=e.target.closest&&e.target.closest("[data-reply]");if(t){e.preventDefault();openReply(t.getAttribute("data-reply"));return;}
+  var s=e.target.closest&&e.target.closest("[data-rseen]");if(s){e.preventDefault();var k=s.getAttribute("data-rseen");replyMark(k);replyDrop(k);}});
+  document.getElementById("rep-x").addEventListener("click",closeReply);
+  document.getElementById("rep-modal").addEventListener("click",function(e){if(e.target.id==="rep-modal")closeReply();});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape")closeReply();});}
+
 function apiPost(url,o){return fetch(url,{method:"POST",body:new URLSearchParams(o)}).then(function(r){return r.json();});}
 function rateSync(){var url=ok(CONFIG.verifyUrl),ses=lsGet(ME_SES);if(!url||!ses)return;
-  apiPost(url,{action:"list",session:ses}).then(function(d){if(d&&d.ok){STU.rated=d.rated||[];var c=meCached();if(c){c.rated=STU.rated;lsSet(ME_CACHE,JSON.stringify(c));}renderAll();}}).catch(function(){});}
+  apiPost(url,{action:"list",session:ses}).then(function(d){if(d&&d.ok){STU.rated=d.rated||[];STU.replies=d.replies||[];var c=meCached();if(c){c.rated=STU.rated;c.replies=STU.replies;lsSet(ME_CACHE,JSON.stringify(c));}renderAll();}}).catch(function(){});}
 var RQ=[["overall","التقييم العام للمحاضرة"],["content","وضوح المحتوى وتنظيمه"],["delivery","أسلوب المحاضر في العرض"],["outcomes","إلى أي حد تحققت مخرجات المحاضرة المعلنة؟"],["tech","جودة الصوت والبث / التسجيل"]];
 var RO=[["org","تنظيم المحاضرة (الالتزام بالموعد وسهولة الدخول)"],["links","وصول رابط الحضور والتنبيهات في وقتها"],["sa","متابعة شئون الطلاب والرد على استفساراتك"]];
 var RT=[["benefit","أبرز ما استفدته من المحاضرة"],["improve","ما الذي كان يمكن تحسينه؟"],["wish","موضوع تتمنى التوسع فيه لاحقًا"],["question","سؤال أو استفسار للمحاضر","اكتب «لا يوجد» إن لم يكن لديك سؤال"]];
@@ -866,7 +897,7 @@ safe(function(){var f=document.getElementById("fab"),c=ok(CONFIG.contactUrl);if(
   var ch=document.getElementById("lk-channel");if(ok(CONFIG.channelUrl))ch.href=CONFIG.channelUrl;
   var rg=document.getElementById("cta-reg"),r=ok(CONFIG.registerUrl);if(r)rg.href=r;else rg.style.display="none";
 },"links");
-safe(meInit,"me");safe(rateInit,"rate"); safe(route,"route"); safe(quick,"quick"); safe(list,"list"); safe(next,"next"); safe(people,"people"); safe(about,"about"); safe(faq,"faq"); safe(recordings,"recordings"); safe(route,"route2");
+safe(meInit,"me");safe(rateInit,"rate");safe(replyInit,"reply"); safe(route,"route"); safe(quick,"quick"); safe(list,"list"); safe(next,"next"); safe(people,"people"); safe(about,"about"); safe(faq,"faq"); safe(recordings,"recordings"); safe(route,"route2");
 if(window.__errs&&window.__errs.length){var d=document.createElement("div");d.style.cssText="background:#fde8e6;color:#8a1f12;padding:8px 14px;font-size:13px;text-align:center";d.textContent="تنبيه تقني: "+window.__errs.join(" | ");document.body.insertBefore(d,document.body.firstChild);}
 setInterval(next, 30000);
 })();
