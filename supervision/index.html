@@ -426,7 +426,7 @@ const canView = id => !!(isMgr() && id && id!==S.me.id && (isAdmin() ? S.members
 const VIEWER = () => S.as && canView(S.as) ? S.as : null;
 const meId = () => VIEWER() || S.me.id;
 const meName = () => VIEWER() ? nameOf(S.as) : S.me.name;
-const AS_OK = new Set(["thAll","doneAll","asExit","asView","actOn","actOff","toggleLec","copyZoom","print","logout","arOpen","arF","sdept","sper0","smode","sday","swk"]); // الأخيرة تغيّر العرض بس (معاينة شاشة المسئولة)
+const AS_OK = new Set(["thAll","doneAll","trOpen","asExit","asView","actOn","actOff","toggleLec","copyZoom","print","logout","arOpen","arF","sdept","sper0","smode","sday","swk"]); // الأخيرة تغيّر العرض بس (معاينة شاشة المسئولة)
 const asHead = () => { const id=VIEWER(); const m=id && S.members.find(x=>x.id===id); return m && m.role==="head" ? m : null; };
 // «✋ اشتغل بداله» (قرار المستخدم 18 نوفمبر): حساب شئون الطلاب بس يشتغل في شاشة أي عضو بدل صاحبها، والخادم بيسجّل كل حاجة باسمه
 const isSuper = () => !!(S.me && S.me.role==="committee" && S.me.id==="m_owner");
@@ -658,7 +658,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="16cf857381f3"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="176ed8a4ccbc"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1569,6 +1569,17 @@ async function arAct(a, el, id){
   return false; }
 
 // المهام
+// «آخر ما أُنجز»: المهمة كاملة للقراية من غير ما تتفتح تاني (🐞 19 نوفمبر)
+function doneRow(t){ const th=Array.isArray(t.thread)?t.thread:[], wr=S.trOpen&&S.trOpen.has(t.id), late=t.due&&t.doneAt&&t.doneAt>t.due, L=x=>`<small style="display:block;margin-top:3px">${x}</small>`;
+  return `<div class="item done"><div class="what"><b>${esc(t.title)}</b>
+    ${t.output?L(`📦 المطلوب تسليمه: ${esc(t.output)}`):""}
+    ${L(`👤 ${t.assigner?"كلّف بيها "+esc(nameOf(t.assigner))+" ← ":""}${esc(nameOf(t.assignee))}${t.createdAt?" · "+esc(seenWhen(t.createdAt)):""}`)}
+    ${L(`📅 الموعد: ${esc(taskWhen(t))}`)}
+    ${L(`${t.seenAt?"👁 اطّلع "+esc(seenWhen(t.seenAt))+" · ":""}✓ تمت ${esc(fmtDay(t.doneAt))}${late?` <span class="late">(بعد موعدها${t.delayReason?": "+esc(t.delayReason):""})</span>`:""}`)}
+    ${th.length?`<div class="tthread" style="margin-top:6px;border-inline-start:3px solid var(--line);padding-inline-start:8px">${th.map(m=>`<small style="display:block;margin:3px 0"><b>${esc(m.by===S.me.id?"أنت":nameOf(m.by))}</b> <span class="sub">${esc(seenWhen(m.at))}</span>: ${esc(m.t)}</small>`).join("")}</div>`:""}
+    ${t.type!=="assigned"?"":wr?`<div style="margin-top:6px"><textarea id="tr_${esc(t.id)}" maxlength="1000" data-cnt="trc_${esc(t.id)}" placeholder="💬 اكتب لـ${esc(nameOf(t.assignee))}…"></textarea><div class="row" style="margin-top:4px"><small class="sub grow" id="trc_${esc(t.id)}">0 / 1000</small><button class="btn sm" data-a="taskSay" data-id="${esc(t.id)}">ابعت</button></div></div>`
+      :`<div class="row" style="margin-top:6px;gap:6px"><button class="btn sm ghost" data-a="trOpen" data-id="${esc(t.id)}">💬 اكتب رد</button></div>`}
+  </div><button class="btn sm ghost" data-a="taskReopen" data-id="${esc(t.id)}" style="font-size:12px">↩ افتحها تاني</button></div>`; }
 function viewTasks(){
   const ids=team().map(m=>m.id); const list=S.tasks.filter(t=>t.type!=="scheduled" && t.status!=="done" && (ids.includes(t.assignee)||t.assignee===S.me.id)).sort((a,b)=>(a.due||"").localeCompare(b.due||""));
   const mineL=list.filter(t=>t.assignee===S.me.id), teamL=list.filter(t=>t.assignee!==S.me.id); // «مطلوبة منك» لوحدها (🐞 19 نوفمبر)
@@ -1576,7 +1587,7 @@ function viewTasks(){
   return `<div class="row"><div class="grow"><h1>المهام</h1><p class="sub">أي شغل إضافي خارج الجدول</p></div><button class="btn" data-a="newTask">+ مهمة جديدة</button></div>
   ${mineL.length||doneTodayRows(S.me.id)?`<div class="card"><h2>مطلوبة منك (${mineL.length})</h2>${mineL.map(t=>taskRow(t,true)).join("")}${doneTodayRows(S.me.id)}</div>`:""}
   <div class="card"><h2>مهام الفريق (${teamL.length})</h2>${teamL.length?teamL.map(t=>taskRow(t,false)).join(""):`<div class="empty">لا توجد مهام مفتوحة.</div>`}</div>
-  ${done.length?`<div class="card"><h2>آخر ما أُنجز</h2>${done.map(t=>`<div class="item done"><div class="what"><b>${esc(t.title)}</b><small>${esc(nameOf(t.assignee))} · تمت ${esc(fmtDay(t.doneAt))}${t.doneAt>t.due?" (بعد موعدها)":""}</small>${t.type==="assigned"?taskThread(t,false):""}</div><button class="btn sm ghost" data-a="taskReopen" data-id="${esc(t.id)}">↩ افتحها تاني</button></div>`).join("")}${doneAll.length>done.length?`<div class="row"><button class="btn sm ghost" data-a="doneAll">عرض الكل (${doneAll.length})</button></div>`:""}</div>`:""}`;
+  ${done.length?`<div class="card"><h2>آخر ما أُنجز</h2>${done.map(doneRow).join("")}${doneAll.length>done.length?`<div class="row"><button class="btn sm ghost" data-a="doneAll">عرض الكل (${doneAll.length})</button></div>`:""}</div>`:""}`;
 }
 function taskForm(t){
   const isNew=!t; t=t||{due:today()}; const ppl=team();
@@ -2101,6 +2112,7 @@ document.addEventListener("click", async e=>{
     return; }
   if(a==="task"){ const t0=S.tasks.find(x=>x.id===id); return open(`<h2>متأكد إن المهمة خلصت؟</h2><p>«${esc(t0?t0.title:"")}»</p><p class="sub">لو ضغطت بالغلط، تقدر ترجّعها لحد 12 بالليل النهارده.</p><div class="row"><button class="btn" data-a="taskDone" data-id="${esc(id)}">أيوه، خلصت</button><button class="btn ghost" data-a="close">لأ</button></div>`); } // تأكيد قبل ✓ (🐞 19 نوفمبر)
   if(a==="thAll"){ S.thAll=S.thAll||new Set(); S.thAll.add(id); render(); return; }
+  if(a==="trOpen"){ S.trOpen=S.trOpen||new Set(); S.trOpen.add(id); render(); const x=document.getElementById("tr_"+id); if(x) x.focus(); return; }
   if(a==="doneAll"){ S.doneAll=true; render(); return; }
   if(a==="taskReopen"){ el.disabled=true; if(await save("tasks", id, {status:"todo", doneAt:null})) toast("المهمة رجعت مفتوحة."); else el.disabled=false; return; }
   if(a==="taskUndo"){ el.disabled=true; if(await save("tasks", id, {status:"todo", doneAt:null})) toast("رجعت المهمة مفتوحة."); else el.disabled=false; return; }
