@@ -658,7 +658,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="2b7692b420cd"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="b276f23074dc"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1262,14 +1262,26 @@ function dayTable(d){
     const pill = off ? (off.kind==="sheikh" ? `<span class="pill gray">اعتذر الشيخ</span>` : /^emg_/.test(off.id||"") ? `<span class="pill gold">بديل طارئ</span>` : `<span class="pill gray">${esc(okLabel(off))}</span>`)
       : done ? `<span class="pill ok">✓ تمت</span>` : late ? `<span class="pill bad">خطوات متأخرة</span>` : st==="on" ? `<span class="pill acct">في الدوام</span>`
       : isNow ? `<span class="pill bad">الآن — لم يبدأ</span>` : past ? `<span class="pill bad">لم تُنجز</span>` : `<span class="pill">لم يبدأ</span>`;
+    const sub = off && lec && off.kind!=="sheikh" ? S.slots.find(x=>x.cover===m.id && x.lec===s.lec && slotsOf(x.owner,d).some(y=>y.id===x.id)) : null; // البديل جنب المعتذر (🐞 20 نوفمبر)
+    const subTag = off && lec && off.kind!=="sheikh" ? (sub ? ` <span class="pill acct">البديل: ${esc(nameOf(sub.owner))}</span>` : ` <span class="pill bad">⚠️ مفيش بديل</span>`) : "";
     const l=lec?lecOf(s):null, z=l&&safeUrl(l.zoom), sh=l&&safeUrl(l.sheet), rf=off?[]:repFlags((slotTask(d,s.id)||{}).report);
     return `<tr class="${isNow&&!off?"nowr":""}${off||done?" dim":""}"><td class="tm">${s.start?esc(t12(s.start))+(s.end?`<small>${esc(t12(s.end))}</small>`:""):"—"}</td>
       <td><b>${lec?"🎓 ":""}${esc(s.label)}</b>${l&&l.sheikh?` <span class="shk">${esc(l.sheikh)}</span>`:""}${s.cover?` <span class="pill gold">بديل عن ${esc(nameOf(s.cover))}</span>`:""}</td>
-      <td class="who">${avatar(m,ix(m.id))}${esc(m.name)}</td><td>${pill}${rf.length?` <span class="pill bad" title="${esc(rf.join("، "))}">⚠️ ${rf.length} في التقرير</span>`:""}</td>
+      <td class="who">${avatar(m,ix(m.id))}${esc(m.name)}</td><td>${pill}${subTag}${rf.length?` <span class="pill bad" title="${esc(rf.join("، "))}">⚠️ ${rf.length} في التقرير</span>`:""}</td>
       <td class="lk">${z?`<a href="${esc(z)}" target="_blank" rel="noopener noreferrer" title="فتح زووم">🎥</a>`:""}${sh?`<a href="${esc(sh)}" target="_blank" rel="noopener noreferrer" title="شيت الحضور">📊</a>`:""}${asBtn(m.id).replace("👁 شاشته","👁")}</td></tr>`; }).join("");
-  const seg = isAdmin() ? `<div class="seg sm" style="width:auto">${[["all","الكل"],["lec","المحاضرات"],["sa","شئون الطلاب"]].map(([k,l])=>`<button class="${k===f?"on":""}" data-a="dtf" data-v="${k}">${l}</button>`).join("")}</div>` : "";
+  const seg = isAdmin() ? `<div class="seg sm" style="width:auto">${[["all","الكل"],["lec","المحاضرات"],["sa","شئون الطلاب"],["heads","مسئولين الأقسام"]].map(([k,l])=>`<button class="${k===f?"on":""}" data-a="dtf" data-v="${k}">${l}</button>`).join("")}</div>` : "";
+  if(f==="heads") return `<div class="card dtab"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><h2 class="grow" style="margin:0">📋 جدول ${d===today()?"اليوم":esc(fmtDay(d))} — مسئولين الأقسام</h2>${seg}</div>${headsDay(d)}</div>`;
   return `<div class="card dtab"><div class="row" style="align-items:center;flex-wrap:wrap;gap:8px"><h2 class="grow" style="margin:0">📋 جدول ${d===today()?"اليوم":esc(fmtDay(d))} <small class="sub">· ${rows.length}</small></h2>${seg}</div>
   ${rows.length?`<div class="tsw-scroll"><table class="dt"><thead><tr><th>الوقت</th><th>الشغل</th><th>المسئول</th><th>الحالة</th><th></th></tr></thead><tbody>${body}</tbody></table></div>`:`<div class="empty">لا يوجد شغل مجدول.</div>`}</div>`; }
+// «مسئولين الأقسام» في جدول اليوم: جدول كل مسئولة ومهامها المفتوحة (🐞 20 نوفمبر)
+function headsDay(d){ const H=S.members.filter(m=>m.role==="head" && m.active!==false); if(!H.length) return `<div class="empty">مفيش مسئولين أقسام.</div>`;
+  return H.map((m,i)=>{ const sl=slotsOf(m.id,d), tk=openTasks(m.id), sh=slotShiftAny(m.id,d);
+    return `<div style="border-top:1px solid var(--line);padding:10px 0"><div class="who" style="font-weight:700">${avatar(m,i)}${esc(m.name)} <small class="sub">· ${m.dept==="org"?"التنظيم":m.dept==="sa"?"شئون الطلاب":esc(m.dept||"")}</small>${sh}</div>
+      <div class="sub" style="margin:6px 0 2px;font-weight:700">🗓 الجدول (${sl.length})</div>${sl.length?sl.map(s=>{ const off=slotOff(m.id,d,s.id), done=isSlotDone(d,s.id);
+        return `<div class="item"><div class="what"><b>${isLecture(s)?"🎓 ":""}${esc(s.label)}</b><small>${s.start?esc(t12(s.start))+(s.end?" – "+esc(t12(s.end)):""):"—"}</small></div>${off?`<span class="pill gray">${esc(off.kind==="sheikh"?"اعتذر الشيخ":okLabel(off))}</span>`:done?`<span class="pill ok">✓ تمت</span>`:""}</div>`; }).join(""):`<div class="sub" style="font-size:13px">مفيش خانات النهارده.</div>`}
+      <div class="sub" style="margin:8px 0 2px;font-weight:700">📌 المهام المفتوحة (${tk.length})</div>${tk.length?tk.map(t=>{ const late=t.due && t.due<today();
+        return `<div class="item"><div class="what"><b>${esc(t.title)}</b><small class="${late?"late":""}">${late?"متأخرة — ":""}التسليم: ${esc(taskWhen(t))}${t.assigner?" · من "+esc(nameOf(t.assigner)):""}</small></div>${t.seenAt?`<span class="pill ok">اطّلعت</span>`:`<span class="pill">لم تطّلع</span>`}</div>`; }).join(""):`<div class="sub" style="font-size:13px">مفيش مهام مفتوحة.</div>`}</div>`; }).join(""); }
+const slotShiftAny = (mid,d) => { const x=S.shifts.find(z=>z.member===mid && z.date===d && z.start && !z.end); return x?` <span class="pill acct">في الدوام</span>`:""; };
 function viewTeamToday(){
   const d=S.day||today(); const ppl=team();
   const mineSl=slotsOf(S.me.id,d);
