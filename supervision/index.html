@@ -658,7 +658,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="6a04d93bf22c"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="2cf8ed7fa494"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1364,6 +1364,8 @@ const seQs = (mid,ds) => ((S.se||{}).q||[]).filter(q=>q.member===mid && q.date==
 function seStats(qs){ const c=qs.filter(q=>q.dec!=="مش استفسار"), ok=c.filter(q=>q.verdict==="في المهلة").length, mins=c.map(q=>Number(q.min)).filter(x=>!isNaN(x)&&x>=0);
   return {n:c.length, ok, pct:c.length?Math.round(ok*100/c.length):null, avg:mins.length?Math.round(mins.reduce((a,b)=>a+b,0)/mins.length):null}; }
 const SE_K = {"ما اتبعتش":"bad","ناقص":"bad","اعتذار فاتك":"gold","متأخر":"gold"};
+// عناوين الكارت بالفصحى (🐞 20 نوفمبر، قرار المستخدم «عدل ونفذ»): القيم في الشيت زي ما هي، والعرض بس اللي بيتغيّر
+const SE_LBL = {"ما اتبعتش":"لم يُرسَل","ناقص":"غير مكتمل","اعتذار فاتك":"اعتذار لم يُراجَع","متأخر":"أُرسل متأخرًا"};
 const seN = x => Number(x)||0;
 const seClean = r => !seN(r.notSent) && !seN(r.stop) && !seN(r.lateEx) && !(r.items||[]).length && seStats(seQs(r.member,r.date)).ok===seStats(seQs(r.member,r.date)).n;
 const seTrial = r => (r.date||"") < SE_TRIAL_UNTIL;
@@ -1372,25 +1374,25 @@ const seKpi = (v,t,k) => `<div class="kpi ${k||""}"><b>${v}</b><small>${t}</smal
 function seCard(r, own){
   const qs=seQs(r.member,r.date).sort((a,b)=>(a.arr||"").localeCompare(b.arr||"")), st=seStats(qs), bad=qs.filter(q=>q.verdict!=="في المهلة");
   const need=seN(r.need), cl=r.close&&r.close.list&&r.close.list.length?r.close:null;
-  return `<div class="card follow se"><div class="row" style="align-items:center;gap:8px"><h2 style="margin:0">📋 ${own?"تقييم شغلك":"تقييم "+esc(nameOf(r.member))} — ${esc(fmtDay(r.date))}</h2>${seClean(r)?`<span class="pill ok">✓ مفيش ملاحظات</span>`:""}${seTrial(r)?`<span class="pill gold">تجريبي · مش محسوب لحد ${esc(fmtDay(SE_TRIAL_UNTIL))}</span>`:""}</div>
-  <p class="sub" style="font-size:13px;margin-top:4px">اتحسب الساعة 7 الصبح. بيشمل التفقدات اللي خانتها المفروضة ${own?"خانتك":"خانتها"}، والاستفسارات اللي وصلت في ${own?"ورديتك":"ورديتها"}.</p>
+  return `<div class="card follow se"><div class="row" style="align-items:center;gap:8px"><h2 style="margin:0">📋 ${own?"تقييم عملك":"تقييم عمل "+esc(nameOf(r.member))} — ${esc(fmtDay(r.date))}</h2>${seClean(r)?`<span class="pill ok">✓ لا توجد ملاحظات</span>`:""}${seTrial(r)?`<span class="pill gold">تقييم تجريبي · لا يُحتسب حتى ${esc(fmtDay(SE_TRIAL_UNTIL))}</span>`:""}</div>
+  <p class="sub" style="font-size:13px;margin-top:4px">أُعدّ هذا التقييم في السابعة صباحًا، ويشمل التفقدات المطلوبة في ${own?"موعد متابعتك":"موعد متابعتها"}، والاستفسارات التي وصلت أثناء ${own?"ورديتك":"ورديتها"}.</p>
   <h3 class="seh3">التفقدات${r.slot?` <small class="sub">— ${esc(r.slot)}</small>`:""}</h3>
-  ${need?`<div class="kpis">${seKpi(`${seN(r.sent)} من ${need}`,"اتبعتت في خانتها","ok")}${seKpi(seN(r.notSent),"ما اتبعتتش",seN(r.notSent)?"bad":"")}${seKpi(seN(r.stop),"إجراء توقف ناقص",seN(r.stop)?"bad":"")}${seKpi(seN(r.lateEx),"اعتذار متأخر فات",seN(r.lateEx)?"gold":"")}</div>
-  ${(r.items||[]).map(it=>`<div class="item"><div class="what"><b>${esc(it.n||"")}</b><small>${esc(it.c||"")}${it.w?" — "+esc(it.w):""}</small></div><span class="pill ${SE_K[it.k]||""}">${esc(it.k||"")}</span></div>`).join("")}`
-  :`<p class="sub">مفيش خانة متابعة حضور وغياب خلصت امبارح.</p>`}
+  ${need?`<div class="kpis">${seKpi(`${seN(r.sent)} من ${need}`,"أُرسلت في الموعد","ok")}${seKpi(seN(r.notSent),"لم تُرسَل",seN(r.notSent)?"bad":"")}${seKpi(seN(r.stop),"إجراءات توقف لم تكتمل",seN(r.stop)?"bad":"")}${seKpi(seN(r.lateEx),"اعتذار متأخر لم يُراجَع",seN(r.lateEx)?"gold":"")}</div>
+  ${(r.items||[]).map(it=>`<div class="item"><div class="what"><b>${esc(it.n||"")}</b><small>${esc(it.c||"")}${it.w?" — "+esc(it.w):""}</small></div><span class="pill ${SE_K[it.k]||""}">${esc(SE_LBL[it.k]||it.k||"")}</span></div>`).join("")}`
+  :`<p class="sub">لم يكن ${own?"لديك":"لديها"} موعد متابعة حضور وغياب أمس.</p>`}
   <h3 class="seh3">الرد على الاستفسارات خلال 15 دقيقة${r.shift?` <small class="sub">— ${own?"ورديتك":"الوردية"} ${esc(r.shift)}</small>`:""}</h3>
-  ${st.n?`<div class="kpis">${seKpi(st.n,"استفسار")}${seKpi(st.pct+"%",`اترد خلال 15 د (${st.ok} من ${st.n})`,st.pct>=90?"ok":st.pct>=70?"gold":"bad")}${seKpi(st.avg!=null?st.avg+" د":"—","متوسط أول رد")}</div>
-  ${bad.map(q=>{ const fl=q.flag, dc=q.dec; return `<div class="item sewrap"><div class="what"><b>وصل ${esc(q.arr||"")}${q.where?` <small class="sub">· ${esc(q.where)}</small>`:""}</b><small>${q.first?`أول رد ${esc(q.first.slice(-5))} · بعد ${esc(q.min||"")} دقيقة`:"ما اترَدّش لحد نهاية الوردية"} · ${esc(q.kind||"")}${fl?` · «مش استفسار؟»${fl!=="مش استفسار"?": «"+esc(fl)+"»":""}${q.flagBy?" · ✋ بواسطة مسئول اللجنة":""}`:""}</small></div>
-    ${dc==="مش استفسار"?`<span class="pill ok">اتشال — مش استفسار</span>`:`<span class="pill ${q.first?"gold":"bad"}">${q.first?"متأخر":"ما اترَدّش"}</span>`}${dc==="استفسار"?`<span class="pill gray">«مش استفسار» اترفض</span>`:""}
-    ${own&&!fl&&!dc?`<button class="btn sm ghost" data-a="seFlagAsk" data-id="${esc(q.id)}">مش استفسار؟</button>`:""}${own&&fl&&!dc?`<span class="pill">مستني رأي المسئولة</span>`:""}
+  ${st.n?`<div class="kpis">${seKpi(st.n,"استفسار")}${seKpi(st.pct+"%",`رُدّ عليها خلال 15 دقيقة (${st.ok} من ${st.n})`,st.pct>=90?"ok":st.pct>=70?"gold":"bad")}${seKpi(st.avg!=null?st.avg+" د":"—","متوسط أول رد")}</div>
+  ${bad.map(q=>{ const fl=q.flag, dc=q.dec; return `<div class="item sewrap"><div class="what"><b>وصل ${esc(q.arr||"")}${q.where?` <small class="sub">· ${esc(q.where)}</small>`:""}</b><small>${q.first?`أول رد ${esc(q.first.slice(-5))} · بعد ${esc(q.min||"")} دقيقة`:"لم يُرَدّ عليه حتى نهاية الوردية"} · ${esc(q.kind||"")}${fl?` · «مش استفسار؟»${fl!=="مش استفسار"?": «"+esc(fl)+"»":""}${q.flagBy?" · ✋ بواسطة مسئول اللجنة":""}`:""}</small></div>
+    ${dc==="مش استفسار"?`<span class="pill ok">حُذف — ليس استفسارًا</span>`:`<span class="pill ${q.first?"gold":"bad"}">${q.first?"رُدّ متأخرًا":"لم يُرَدّ عليه"}</span>`}${dc==="استفسار"?`<span class="pill gray">اعتُبر استفسارًا</span>`:""}
+    ${own&&!fl&&!dc?`<button class="btn sm ghost" data-a="seFlagAsk" data-id="${esc(q.id)}">ليس استفسارًا؟</button>`:""}${own&&fl&&!dc?`<span class="pill">بانتظار رأي المسئولة</span>`:""}
     ${!own&&fl&&!dc&&canTFQ()?`<button class="btn sm" data-a="seDec" data-id="${esc(q.id)}" data-v="مش استفسار">✓ مش استفسار</button><button class="btn sm ghost" data-a="seDec" data-id="${esc(q.id)}" data-v="استفسار">لأ، استفسار</button>`:""}</div>`; }).join("")}
-  <p class="sub" style="font-size:12.5px">بيظهر الوقت والنوع بس — من غير نص الرسالة ولا اسم أو رقم صاحبها.${own?" تقدري تلاقي الرسالة في تيليجرام بالوقت.":""}</p>`
-  :`<p class="sub">مفيش استفسارات في ${own?"ورديتك":"الوردية"}.</p>`}
-  ${r.fyi?`<h3 class="seh3">للعلم بس <small class="sub">— تجريبي ومش داخل في التقييم</small></h3><div class="row" style="gap:6px">${String(r.fyi).split("|").map(x=>`<span class="pill">${esc(x.trim())}</span>`).join("")}</div>`:""}
-  ${cl?`<h3 class="seh3">${own?"تقفليها":"تقفلها"} في ${own?"خانتك":"خانتها"} الجاية${cl.when?` <small class="sub">— ${esc(cl.when)}</small>`:""}</h3><ul class="seul">${cl.list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
+  <p class="sub" style="font-size:12.5px">يظهر الوقت والنوع فقط، دون نص الرسالة أو اسم صاحبها أو رقمه.${own?" ويمكن الوصول إلى الرسالة في تيليجرام بالوقت.":""}</p>`
+  :`<p class="sub">لم تصل استفسارات أثناء ${own?"ورديتك":"الوردية"}.</p>`}
+  ${r.fyi?`<h3 class="seh3">للعلم <small class="sub">— تجريبي، ولا يدخل في التقييم</small></h3><div class="row" style="gap:6px">${String(r.fyi).split("|").map(x=>`<span class="pill">${esc(x.trim())}</span>`).join("")}</div>`:""}
+  ${cl?`<h3 class="seh3">المطلوب في موعد المتابعة القادم${cl.when?` <small class="sub">— ${esc(cl.when)}</small>`:""}</h3><ul class="seul">${cl.list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
   ${r.note?`<p style="margin:8px 0 0"><b>ملاحظة:</b> ${esc(r.note)}</p>`:""}
   ${own&&!r.ack?`<label style="margin-top:8px">تعليقك (اختياري)<textarea id="seack_${esc(r.id)}" rows="4" maxlength="1000" data-cnt="seackc_${esc(r.id)}"></textarea></label><small class="sub" id="seackc_${esc(r.id)}">0 / 1000</small><div class="row" style="margin-top:6px"><button class="btn" data-a="seAck" data-id="${esc(r.id)}">اطّلعت</button></div>`
-   :r.ack?`<div class="banner" style="margin-top:8px">✓ اطّلعت ${esc(String(r.ack).slice(-5))}${r.ackNote?`: «${esc(r.ackNote)}»`:""} ${viaTag(r.ackBy)}</div>${own&&String(r.ack).slice(0,10)===today()?`<label style="margin-top:8px">عدّل تعليقك أو كمّله <small class="sub">— لحد 12 بالليل</small><textarea id="seack_${esc(r.id)}" rows="4" maxlength="1000" data-cnt="seackc_${esc(r.id)}" data-pre="${esc(r.ackNote||"")}"></textarea></label><small class="sub" id="seackc_${esc(r.id)}">0 / 1000</small><div class="row" style="margin-top:6px"><button class="btn sm" data-a="seAck" data-id="${esc(r.id)}">حفظ التعديل</button></div>`:""}`:""}</div>`; }
+   :r.ack?`<div class="banner" style="margin-top:8px">✓ اطّلعت ${esc(String(r.ack).slice(-5))}${r.ackNote?`: «${esc(r.ackNote)}»`:""} ${viaTag(r.ackBy)}</div>${own&&String(r.ack).slice(0,10)===today()?`<label style="margin-top:8px">يمكنك تعديل تعليقك أو إكماله <small class="sub">— حتى منتصف الليل</small><textarea id="seack_${esc(r.id)}" rows="4" maxlength="1000" data-cnt="seackc_${esc(r.id)}" data-pre="${esc(r.ackNote||"")}"></textarea></label><small class="sub" id="seackc_${esc(r.id)}">0 / 1000</small><div class="row" style="margin-top:6px"><button class="btn sm" data-a="seAck" data-id="${esc(r.id)}">حفظ التعديل</button></div>`:""}`:""}</div>`; }
 // في «يومي» عند المشرفة: كل تقييم لسه ما اطّلعتش عليه بيظهر كارت كامل بـ«اطّلعت» وخانة التعليق، حتى لو مفيهوش ملاحظات (🐞 19 نوفمبر)، ويفضل ظاهر يوم «اطّلعت» علشان التعليق يتعدّل
 function seMine(mid){ if(!S.se) return "";
   return S.se.ev.filter(r=>r.member===mid && (!r.ack || String(r.ack).slice(0,10)===today())).sort((a,b)=>(a.date||"").localeCompare(b.date||"")).map(r=>seCard(r, mid===S.me.id || mid===ACT())).join(""); }
@@ -1405,13 +1407,13 @@ function seHeadCard(){ if(!canTFQ() || !S.se) return "";
   return `${rows.length?`<div class="card"><div class="row" style="align-items:center;gap:8px"><h2 style="margin:0">📋 تقييم الورديات — ${esc(fmtDay(ds))}</h2>${ds<SE_TRIAL_UNTIL?`<span class="pill gold">تجريبي لحد ${esc(fmtDay(SE_TRIAL_UNTIL))}</span>`:""}</div>${rows.map(blk).join("")}<p class="sub" style="font-size:12.5px;margin-top:6px">الضغط على اسم المشرفة يفتح نفس الكارت اللي هي شايفاه.</p></div>`:""}
   ${fl.length?`<div class="card"><h2>«مش استفسار؟» — مستني رأيك <span class="pill">${fl.length}</span></h2>${fl.map(q=>`<div class="item sewrap"><div class="what"><b>${esc(nameOf(q.member))} · ${esc(fmtDay(q.date))} · وصل ${esc(q.arr||"")}</b><small>${q.first?`أول رد بعد ${esc(q.min||"")} د`:"ما اترَدّش"} · ${esc(q.kind||"")}${q.flag&&q.flag!=="مش استفسار"?` · كتبت: «${esc(q.flag)}»`:""}</small></div><button class="btn sm" data-a="seDec" data-id="${esc(q.id)}" data-v="مش استفسار">✓ مش استفسار — يتشال</button><button class="btn sm ghost" data-a="seDec" data-id="${esc(q.id)}" data-v="استفسار">لأ، استفسار</button></div>`).join("")}<p class="sub" style="font-size:12.5px">لو وافقتي يتشال من النسبة على طول. ولو رفضتي، المشرفة تشوف «اترفض» جنبه.</p></div>`:""}`; }
 function seFlagForm(id){ const q=(S.se.q||[]).find(x=>x.id===id); if(!q) return "";
-  return `<h2>مش استفسار؟</h2><p class="sub">وصل ${esc(q.arr||"")} · ${esc(q.kind||"")}. الطلب بيروح لمسئولة شئون الطلاب تراجعه، ولو وافقت يتشال من النسبة.</p><label>إيه الرسالة دي؟ (اختياري)<input id="seflag_note" maxlength="300" placeholder="مثلًا: رسالة شكر بس"></label><div class="row"><button class="btn" data-a="seFlag" data-id="${esc(id)}">ابعت للمسئولة</button><button class="btn ghost" data-a="close">إلغاء</button></div>`; }
+  return `<h2>ليس استفسارًا؟</h2><p class="sub">وصلت الرسالة ${esc(q.arr||"")} · ${esc(q.kind||"")}. يُرسَل طلبك إلى مسئولة شئون الطلاب لمراجعته، وإن وافقت حُذفت الرسالة من النسبة.</p><label>ما هذه الرسالة؟ (اختياري)<input id="seflag_note" maxlength="300" placeholder="مثلًا: رسالة شكر فقط"></label><div class="row"><button class="btn" data-a="seFlag" data-id="${esc(id)}">أرسِل إلى المسئولة</button><button class="btn ghost" data-a="close">إلغاء</button></div>`; }
 async function seAct(a, el, id){
   const fail=()=>{ el.disabled=false; toast("ما اتحفظش. جرّب تاني."); };
   if(a==="seOpen"){ const r=S.se.ev.find(x=>x.id===id); if(r) open(seCard(r,false)+`<div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`); return true; }
   if(a==="seFlagAsk"){ open(seFlagForm(id)); return true; }
   if(a==="seAck"){ el.disabled=true; const n=document.getElementById("seack_"+id), note=n?n.value.trim():"";
-    try { const d=await api("seAck",{id, note}); if(!d.ok) return fail(); const r=S.se.ev.find(x=>x.id===id); const ed=!!(r&&r.ack); if(r){ if(!r.ack) r.ack=today()+" "+cairoNow().hm; r.ackNote=note; } toast(ed?"اتعدّل تعليقك.":"شكرًا، اتسجّل اطّلاعك."); render(); } catch(e){ fail(); } return true; }
+    try { const d=await api("seAck",{id, note}); if(!d.ok) return fail(); const r=S.se.ev.find(x=>x.id===id); const ed=!!(r&&r.ack); if(r){ if(!r.ack) r.ack=today()+" "+cairoNow().hm; r.ackNote=note; } toast(ed?"عُدِّل تعليقك.":"شكرًا، سُجِّل اطّلاعك."); render(); } catch(e){ fail(); } return true; }
   if(a==="seFlag"){ el.disabled=true; const note=v("seflag_note");
     try { const d=await api("seFlag",{id, note}); if(!d.ok) return fail(); const q=S.se.q.find(x=>x.id===id); if(q){ q.flag=note||"مش استفسار"; } close(); toast("اتبعت للمسئولة."); render(); } catch(e){ fail(); } return true; }
   if(a==="seDec"){ el.disabled=true; const vv=el.dataset.v;
