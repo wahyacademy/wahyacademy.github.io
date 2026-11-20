@@ -598,7 +598,7 @@ async function api(action, payload={}, ms=30000){
     return d;
   } catch(e){ if(e && e.reason) throw e; throw {reason:"network", timeout:ctl.signal.aborted}; } finally { clearTimeout(tm); }
 }
-function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals","fwds","lecreqs"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.nb=d.nb||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="org")) && !S.ar) setTimeout(()=>loadAR(false),0); if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="sa")) && !S.tfq) setTimeout(()=>loadTFQ(false),0); if(canSE() && !S.se) setTimeout(()=>loadSE(false),0); }
+function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals","fwds","lecreqs"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.nb=d.nb||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="org")) && !S.ar) setTimeout(()=>loadAR(false),0); if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="sa")) && !S.tfq) setTimeout(()=>loadTFQ(false),0); if(canSE() && !S.se) setTimeout(()=>loadSE(false),0); if(canTFQ() && !S.tg) setTimeout(()=>loadTG(),0); }
 async function refresh(quiet){
   const f=document.activeElement; if(quiet && f && /INPUT|TEXTAREA|SELECT/.test(f.tagName) && f.value) return; // لا نمسح ما يكتبه
   if(quiet && PENDING) return; // حفظ جارٍ: لا نكتب فوقه ببيانات أقدم
@@ -658,7 +658,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="b33b41193960"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="6a04d93bf22c"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1298,11 +1298,11 @@ function viewTeamToday(){
   <details class="card teamd"><summary><h2 style="display:inline">الفريق — تفاصيل كل شخص</h2></summary>${teamRows(d, rows)}</details>
   ${d===today()?ckAllCard():""}`; }
 function inboxCard(d, reqs, needReply){
-  const parts = [d===today()?lrCard()+fwdCard()+sysCard()+nbCard()+riskCard()+arInbox()+stepMissCard()+tfqInbox():"", reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}${fixPick(r)}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button>${fwdBtn("request",r.id,nameOf(r.member)+" · "+(REQ[r.kind]||"")+" — "+reqDesc(r),true)}</div></div></div>`).join("")}</div>`:"",
+  const parts = [d===today()?lrCard()+fwdCard()+sysCard()+nbCard()+riskCard()+arInbox()+arFyiCard()+stepMissCard()+tfqInbox()+tgCard():"", reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b><small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}${fixPick(r)}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button>${fwdBtn("request",r.id,nameOf(r.member)+" · "+(REQ[r.kind]||"")+" — "+reqDesc(r),true)}</div></div></div>`).join("")}</div>`:"",
   needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>{ const n=ckMsgs(p).length; return `<div class="item"><div class="what"><b>${n>1?"💬 رد جديد — ":"⚠️ "}${esc(m.name)}</b><small>${esc(fmtDay(p.date))} · ${esc(ckAgo(ckLast(p).at))}</small><div class="prob">${esc(p.note)}${n>1?`<span class="rep"><b>${esc(m.name)}:</b> ${esc(ckLastText(p))}</span>`:""}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button><button class="btn sm ghost" data-a="ckOpen" data-id="${esc(p.id)}">💬 النقاش${n>1?" ("+n+")":""}</button></div></div></div>`; }).join("")}</div>`:"",
   d===today()&&ckTeam().filter(ckWaitClose).length?`<div class="card"><h2>⏳ مستنية تأكيد القفل (${ckTeam().filter(ckWaitClose).length})</h2><p class="sub" style="font-size:13px">اتردّ عليها من أكتر من 3 أيام، وصاحبتها ما ردّتش ولا قفلتها.</p>${ckTeam().filter(ckWaitClose).map(ckRow).join("")}</div>`:"",
   d===today()?sheikhReqCard():"", d===today()?reqDecCard():""].join("").trim();
-  const n = reqs.length + needReply.length + (d===today()?(isAdmin()?fwdOpen().length+lrPend().length:0)+sheikhReqs().length+arPending().length+ckTeam().filter(ckWaitClose).length+stepMiss().length+tfqAttn().length+reqDecOther().length:0);
+  const n = reqs.length + needReply.length + (d===today()?(isAdmin()?fwdOpen().length+lrPend().length:0)+sheikhReqs().length+arPending().length+ckTeam().filter(ckWaitClose).length+stepMiss().length+tfqAttn().length+reqDecOther().length+arFyi().length+tgPend().length:0);
   return parts ? `<div class="card inbox"><h2>يحتاج تدخّلك${n?` (${n})`:""}</h2>${parts}</div>` : `<div class="card inbox"><h2>يحتاج تدخّلك</h2><div class="empty">✓ لا شيء يحتاج تدخّلك الآن.</div></div>`; }
 function teamRows(d, rows){ return `${rows.length? rows.map(({m,sl,exp,dn,pr,late})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${esc(DEPTS[m.dept]||"")}</small></span>${asBtn(m.id)}${dutyPill(m.id,d)}${pr.length?`<span class="pill gold">⚠️ ${pr.length}</span>`:""}${late?`<span class="pill bad">${late} متأخرة</span>`:""}${exp.length?`<span class="pill ${dn===exp.length?"ok":""}">${dn} من ${exp.length}</span>`:""}</summary>
     <div class="mini">${sl.map(s=>{ const off=slotOff(m.id,d,s.id), ok=isSlotDone(d,s.id), lec=isLecture(s);
@@ -1485,6 +1485,23 @@ function stepMissCard(){ const L=stepMiss(); if(!L.length) return "";
 function arInbox(){ const p=arPending(); if(!p.length) return "";
   return `<div class="card"><h2>🔎 مراجعة حضور جاهزة (${p.length})</h2>${p.map(rv=>{ const c=t=>rv.items.filter(i=>i.j===t).length;
     return `<div class="item"><div class="what"><b>${esc(rv.title)} — ${esc(fmtDay(rv.date))}</b> ${arDuePill()}<small>راجعها Claude من تقرير زووم وجروب تيليجرام · دقة التسجيل <b style="color:var(--ok);display:inline">${esc(rv.acc)}</b> · <span style="color:var(--bad)">${c("خطأ")} خطأ</span> · <span style="color:var(--gold-ink)">${c("ناقص تنويه")} ناقص تنويه</span>${c("لم يُسجَّل")?` · ${c("لم يُسجَّل")} لم يُسجَّلوا`:""}</small></div><button class="btn sm" data-a="arOpen" data-id="${esc(rv.id)}">راجِع</button></div>`; }).join("")}</div>`; }
+// البند 3 (20 نوفمبر): المراجعة اللي مفيهاش ملاحظات، و«محتاج مراجعة» على طالب حكمه مش بند — توصل لمسئول التنظيم للعلم.
+// «اطّلعت» بتتحفظ في evals ar_<رقم> كـ metrics.fyiAck من غير sent ولا closed ⇒ ما تظهرش للمنظّم وما تدخلش في كارت «⏱» ولا في الدقة.
+const AR_FYI_DAYS = 3;
+const arNeed = rv => rv.need || [];
+const arNeedTxt = x => String(x.note||"").replace(/^محتاج مراجعة\s*:?\s*/,"");
+function arFyi(){ if(!canAR() || !S.ar) return []; const from=addDays(today(),-AR_FYI_DAYS);
+  return S.ar.filter(rv=>rv.date>=from && !rv.items.length && !(((arDoc(rv.id)||{}).metrics||{}).fyiAck)); }
+function arFyiCard(){ const L=arFyi(); if(!L.length) return "";
+  return `<div class="card"><h2>👁 مراجعات للعلم (${L.length}) <small class="sub">· مش محتاجة اعتماد ومش بتروح للمنظّم</small></h2>${L.map(rv=>{ const o=arOrg(rv), nd=arNeed(rv);
+    return `<div class="item"><div class="what"><b>${esc(rv.title)} — ${esc(fmtDay(rv.date))}</b><small>${o?esc(nameOf(o))+" · ":""}${nd.length?`<span style="color:var(--gold-ink)">مفيش أخطاء على المنظّم · ${nd.length} محتاج مراجعتك</span>`:`✓ مفيش ملاحظات — دقة التسجيل ${esc(rv.acc||"100%")}`}</small>${nd.map(x=>`<div class="prob"><b>${esc(x.n)}</b> — ${esc(arNeedTxt(x))}</div>`).join("")}</div><button class="btn sm" data-a="arFyiAck" data-id="${esc(rv.id)}">اطّلعت</button></div>`; }).join("")}</div>`; }
+const arNeedCard = rv => { const nd=arNeed(rv); return nd.length?`<div class="card"><h2>🟠 محتاج مراجعتك (${nd.length}) <small class="sub">· مش محسوب على المنظّم ومش بيتبعتله</small></h2>${nd.map(x=>`<div class="item"><div class="what"><b>${esc(x.n)} <small>م ${esc(x.no)}</small></b><small>${esc(arNeedTxt(x))}</small></div></div>`).join("")}</div>`:""; };
+// البند 4 (20 نوفمبر): تأكيد ربط الطالب بحسابه في تيليجرام — لمسئول شئون الطلاب ومسئول اللجنة، من غير معرّف الحساب ولا أي يوزر
+function loadTG(){ if(!canTFQ() || S.tgLoading) return; S.tgLoading=true;
+  api("tgLinks",{}).then(d=>{ S.tgLoading=false; S.tg = d.ok ? (d.rows||[]) : []; render(); }).catch(()=>{ S.tgLoading=false; }); }
+const tgPend = () => canTFQ() ? (S.tg||[]) : [];
+function tgCard(){ const L=tgPend(); if(!L.length) return "";
+  return `<div class="card"><h2>🔗 حسابات تيليجرام محتاجة تأكيد (${L.length})</h2><p class="sub" style="font-size:13px">ده الحساب اللي Claude لقاه للطالب في جروب الدورة. أكّدي إنه هو، علشان تفقداته تتراجع على الحساب الصح.</p>${L.map(x=>`<div class="item"><div class="what"><b>${esc(x.n)}</b><small>${esc(x.course||"")} · اسمه في تيليجرام: «${esc(x.tg||"—")}»</small>${S.tgNo===x.r?`<div class="row" style="margin-top:6px"><input id="tgn_${x.r}" maxlength="150" placeholder="اسم الحساب الصح في تيليجرام (اختياري، من غير يوزر)" class="grow" style="width:auto"><button class="btn sm danger" data-a="tgSet" data-r="${x.r}" data-v="مش هو">تأكيد «مش هو»</button><button class="btn sm ghost" data-a="tgNo" data-r="">إلغاء</button></div>`:""}</div>${S.tgNo===x.r?"":`<button class="btn sm" data-a="tgSet" data-r="${x.r}" data-v="هو">✓ هو</button><button class="btn sm ghost" data-a="tgNo" data-r="${x.r}">✗ مش هو</button>`}</div>`).join("")}</div>`; }
 // شاشة المراجعة للمسئول
 function viewAttRev(){
   if(!S.ar) return `<div class="card empty">${S.arErr?`تعذّر تحميل المراجعات${S.arErr==="review_sheet"?" (شيت المراجعة غير متاح لحساب الأكاديمية)":""}. <button class="btn sm" data-a="arReload">⟳ إعادة المحاولة</button>`:"جارٍ تحميل المراجعة…"}</div>`;
@@ -1512,6 +1529,7 @@ function viewAttRev(){
   ${(!sent && ((doc||{}).metrics||{}).closed)?`<div class="banner">✓ اتقفلت المراجعة — كل الملاحظات مستبعدة، ومفيش حاجة اتبعتت للمنظّم.</div>`:""}
   ${sent?`<div class="banner">📤 ${doc.evaluator?`أرسلها ${esc(nameOf(doc.evaluator))} `:"أُرسلت "}للمنظّم ${esc(nameOf(doc.member))} · صحّح <b>${sentFix}</b> من ${sentN}${doc.ack?` · ✓ علّم «صحّحت الكل»${doc.ackNote?`: ${esc(doc.ackNote)}`:""}`:""}</div>`:""}
   <div class="kq6"><div class="kq"><b>${esc(rv.total)}</b><small>طالب</small></div><div class="kq ok"><b>${esc(rv.ok)}</b><small>صح</small></div><div class="kq bad"><b>${esc(rv.bad)}</b><small>خطأ</small></div><div class="kq gold"><b>${esc(rv.note)}</b><small>ناقص تنويه</small></div><div class="kq gray"><b>${esc(rv.unreg||0)}</b><small>لم يُسجَّلوا</small></div></div>
+  ${arNeedCard(rv)}
   <div class="arbar"><span>دقة المنظّم <small class="sub">(للتقييم · الهدف ${GOAL.att}%)</small></span><div class="bar"><i style="width:${acc||0}%"></i></div><b style="color:${acc>=GOAL.att?"var(--ok)":"var(--bad)"}">${acc}%</b>${pacc!=null?`<small class="${acc>=pacc?"up":"late"}">${acc>=pacc?"▲":"▼"} من ${pacc}% في المراجعة السابقة</small>`:""}</div>
   <p class="sub" style="font-size:12.5px;margin:-6px 0 0">من شيت المنظّم كما سلّمه أول مرة قبل أي تصحيح: كل ملاحظة تعتمدها تُحسب عليه (ناقص التنويه بنصف)، والمستبعد يُحسب صح. قبل قرارك: ${esc(rv.acc)} من مقارنة Claude.</p>
   <div class="arseg">${segs.filter(s=>s[2]||s[0]==="need").map(([k,l,n])=>`<button class="${f===k?"on":""}" data-a="arF" data-v="${esc(k)}">${l} (${n})</button>`).join("")}</div>
@@ -1554,6 +1572,9 @@ async function arAct(a, el, id){
   if(a==="arBack"){ location.hash="today"; S.view="today"; render(); return true; }
   if(a==="arReload"){ S.ar=null; S.arErr=""; render(); loadAR(true); return true; }
   if(a==="arF"){ S.arF=el.dataset.v; render(); return true; }
+  if(a==="arFyiAck"){ const r=(S.ar||[]).find(x=>x.id===id); if(!r) return true; const old=arDoc(r.id); el.disabled=true;
+    const mx=Object.assign({}, (old||{}).metrics||{kind:"att", rid:r.id, title:r.title, date:r.date, total:r.total, acc:r.acc, items:[]}, {fyi:true, fyiAck:Date.now(), fyiBy:S.me.id});
+    const ok=await save("evals", arId(r.id), {member:(old&&old.member)||arOrg(r)||S.me.id, month:r.date, metrics:mx}, true); el.disabled=false; if(ok){ toast("✓ اطّلعت."); render(); } return true; }
   if(!rv && /^ar(St|All|Save)$/.test(a)) return true;
   if(a==="arSt"){ const d=arDec(rv), k=el.dataset.k; d.org=v("ar_org")||d.org; d.note=v("arn_note"); d.st[k]= d.st[k]===el.dataset.v ? "" : el.dataset.v; render(); return true; }
   if(a==="arAll"){ const d=arDec(rv); d.org=v("ar_org")||d.org; d.note=v("arn_note"); rv.items.forEach(it=>{ if(!d.st[arKey(it)]) d.st[arKey(it)]="y"; }); render(); return true; }
@@ -2155,6 +2176,10 @@ document.addEventListener("click", async e=>{
   if(a==="fwdSeen"){ open(fwdRepliesModal()); for(const f of fwdNew()) await save("fwds", f.id, {seenAt:1}); open(fwdRepliesModal()); return; }
   if(a==="tfqOpen") return open(tfqModal(id));
   if(a==="tfqReload"){ S.tfq=null; S.tfqErr=""; render(); loadTFQ(true); return; }
+  if(a==="tgNo"){ S.tgNo = el.dataset.r ? Number(el.dataset.r) : null; render(); return; }
+  if(a==="tgSet"){ const r=Number(el.dataset.r), x=(S.tg||[]).find(y=>y.r===r); if(!x) return; const vv=el.dataset.v, note=vv==="مش هو"?v("tgn_"+r):"";
+    el.disabled=true; try { const d=await api("tgLinkSet",{r, n:x.n, v:vv, note}); if(d.ok){ S.tg=S.tg.filter(y=>y.r!==r); S.tgNo=null; toast(vv==="هو"?"✓ اتأكد الحساب.":"اتسجّل إنه مش هو — Claude هيدوّر على الحساب الصح."); render(); }
+      else { el.disabled=false; toast(d.reason==="changed"?"الصف اتغيّر — حدّث الصفحة.":"ما اتسجّلش، حاول تاني."); if(d.reason==="changed") loadTG(); } } catch(_){ el.disabled=false; toast("ما اتسجّلش، حاول تاني."); } return; }
   if(a==="tfqWk"){ S.tfqWk = el.dataset.v==="0" ? 0 : (S.tfqWk||0)+Number(el.dataset.v); render(); return; }
   if(a==="tfqOp"){ const vv=el.dataset.v; el.disabled=true; try { const d=await api("tfqOpinion",{id, v:vv}); if(d.ok){ const r=(S.tfq||[]).find(x=>x.id===id); if(r){ r.op=vv; r.opBy=vv?S.me.name:""; r.opAt=vv?today()+" "+cairoNow().hm:""; } toast(vv?"اتسجّل رأيك.":"اتمسح رأيك."); render(); open(tfqModal(id)); } else { el.disabled=false; toast("ما اتسجّلش، حاول تاني."); } } catch(e){ el.disabled=false; toast("لا يوجد اتصال."); } return; }
   if(a==="ckCloseAsk") return open(ckCloseForm(id));
