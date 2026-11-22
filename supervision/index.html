@@ -265,6 +265,10 @@ details.dr summary{flex-wrap:wrap;gap:6px}
 .ckev{text-align:center;color:var(--muted);font-size:12.5px}
 .late{color:var(--bad);font-weight:600}
 .pill{display:inline-block;font-size:12.5px;border-radius:999px;padding:1px 10px;background:var(--soft);color:var(--brand);font-weight:600}
+.stugrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin:10px 0}.stuitem{border:1px solid #E3E9F1;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}.stuitem small{color:var(--muted)}.goldtx{color:var(--gold-ink);font-weight:700}.stuitem .bad{color:var(--bad);font-weight:700}
+.stufl{gap:10px;align-items:flex-end}.stufl label{display:flex;flex-direction:column;gap:4px;font-size:13px;flex:1 1 180px}.stufl label:first-child{flex:2 1 240px}.stutb td,.stutb th{white-space:nowrap}.stupii{background:#F6F8FB;border-radius:10px;padding:10px 12px;line-height:1.9;margin-bottom:8px;font-size:14px}
+button.lnk{background:none;border:0;padding:0;color:var(--brand);cursor:pointer;font:inherit;text-align:start}button.lnk:hover{text-decoration:underline}
+.stustack{display:flex;flex-direction:column;gap:14px}.stur{display:inline-flex;align-items:center;gap:6px;font-size:15px;min-height:44px;margin-inline-end:14px}
 .pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.gold{background:var(--gold-soft);color:var(--gold-ink)}
 .btn{border:1px solid var(--brand);background:var(--brand);color:#fff;border-radius:10px;padding:9px 16px;font-weight:600;cursor:pointer}
 .btn.ghost{background:var(--paper);color:var(--brand)}
@@ -663,7 +667,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="f1bd6480cb27"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="fcea02b6098c"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -726,18 +730,18 @@ function renderInner(){
   hday.innerHTML = `<div class="hd-date"><b>${DAYS[dayIdx(parse(td))]}</b><span>${esc(gregFull(td))}<i>◆</i>${esc(hijri(td))}</span></div><div class="hclk" aria-label="الساعة بتوقيت القاهرة"><span class="ic"></span><span class="hm" data-live="hm"></span><span class="sx"><span class="ss" data-live="ss"></span><span class="ap" data-live="ap"></span></span></div>`;
   const banner = S.msg ? `<div class="banner">${esc(S.msg)}</div>` : "";
   const asv=VIEWER(); document.body.classList.toggle("asmode", !!asv);
-  if(!isMgr() || asv){ const me=meId(), mt=[["today","يومي",S.evals.filter(e=>e.member===me&&!e.ack&&!arHidden(e)).length+newTasks(me).length],["week","جدولي الأسبوعي",0],["mine","تقريري",0],["reqs","طلباتي",0]];
+  if(!isMgr() || asv){ const me=meId(), mt=[["today","يومي",S.evals.filter(e=>e.member===me&&!e.ack&&!arHidden(e)).length+newTasks(me).length],["week","جدولي الأسبوعي",0],["mine","تقريري",0],["reqs","طلباتي",0]].concat(!asv && S.me.role==="sa" ? [["stu","الطلاب",0]] : []);
     if(!mt.some(t=>t[0]===S.view)) S.view="today";
     const asBar = !asv ? "" : ACT() ? `<div class="asbar act noprint"><span>✋ أنت <b>تشتغل بدل ${esc(nameOf(asv))}</b> — أي حاجة تعملها هتتسجّل باسمك</span><span class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm ghost" data-a="actOff">👁 رجوع للعرض فقط</button><button class="btn sm" data-a="asExit">↩ رجوع لشاشتي</button></span></div>`
       : `<div class="asbar noprint"><span>👁 أنت تشاهد شاشة <b>${esc(nameOf(asv))}</b> كما تظهر له — <b>للعرض فقط</b></span><span class="row" style="gap:6px;flex-wrap:nowrap">${isSuper()?`<button class="btn sm gold" data-a="actOn">✋ اشتغل بداله</button>`:""}<button class="btn sm" data-a="asExit">↩ رجوع</button></span></div>`;
     nav.hidden=false; $("#tabs").innerHTML = mt.map(([k,l,n])=>`<a href="#${k}" class="${S.view===k?"on":""}">${l}${n?`<span class="n">${n}</span>`:""}</a>`).join("");
-    app.innerHTML = asBar + banner + ({today:viewMine, week:()=>weekCard(me), mine:viewMyReport, reqs:viewMyReqs}[S.view])(); return; }
+    app.innerHTML = asBar + banner + ({today:viewMine, week:()=>weekCard(me), mine:viewMyReport, reqs:viewMyReqs, stu:viewStudents}[S.view])(); return; }
   const pend = ckTeam().filter(ckWaitMe).length + pendingReqs().length + (isOrgHead()?arPending().length:0) + (isAdmin()?fwdOpen().length+lrPend().length:fwdNew().length+lrNew().length);
-  const tabs = [["today","اليوم",pend]].concat(canTFQ()?[["tfq","التفقدات",tfqAttn().length]]:[],[["tasks","المهام",0]]).concat([["sched","جداول الفريق",0],["report","التقارير",0],["lreps","تقارير المحاضرات",0]]).concat(isMgr()?[["academy","جدول الأكاديمية",lecEd()?unassigned().length:0],["team","الفريق والجداول",0]]:[]);
+  const tabs = [["today","اليوم",pend]].concat(canTFQ()?[["tfq","التفقدات",tfqAttn().length]]:[],[["tasks","المهام",0]],[["stu","الطلاب",0]]).concat([["sched","جداول الفريق",0],["report","التقارير",0],["lreps","تقارير المحاضرات",0]]).concat(isMgr()?[["academy","جدول الأكاديمية",lecEd()?unassigned().length:0],["team","الفريق والجداول",0]]:[]);
   if(!tabs.some(t=>t[0]===S.view) && !(S.view==="attrev" && canAR())) S.view="today";
   nav.hidden=false;
   $("#tabs").innerHTML = tabs.map(([k,l,n])=>`<a href="#${k}" class="${S.view===k?"on":""}">${l}${n?`<span class="n">${n}</span>`:""}</a>`).join("");
-  app.innerHTML = banner + ({today:viewTeamToday, tasks:viewTasks, report:viewReport, lreps:viewLecReports, academy:viewAcademy, team:viewTeam, sched:viewTeamSched, attrev:viewAttRev, tfq:viewTfq}[S.view])();
+  app.innerHTML = banner + ({today:viewTeamToday, tasks:viewTasks, report:viewReport, lreps:viewLecReports, academy:viewAcademy, team:viewTeam, sched:viewTeamSched, attrev:viewAttRev, tfq:viewTfq, stu:viewStudents}[S.view])();
 }
 
 // جداول الفريق (قرار المستخدم 9 نوفمبر): للمسئول، ولمسئول القسم لقسمه فقط — عرض «يوم» (خط زمني) و«أسبوع»
@@ -1996,6 +2000,104 @@ function open(html){ $("#modal").innerHTML=`<div class="ov" data-a="bg"><div cla
 function close(){ $("#modal").innerHTML=""; }
 const v = id => { const e=document.getElementById(id); return e?e.value.trim():""; };
 
+// ===== تبويب «الطلاب» (22 نوفمبر): للمشرفين ورؤساء الأقسام ومسئول اللجنة — المنظّم مالوش التبويب. البيانات من قاعدة بيانات الطلاب (قراية بس) =====
+const canSTU = () => !!S.me && (S.me.role==="sa" || S.me.role==="head" || S.me.role==="committee");
+const STU_RES = ["رد","ما ردّش","اعتذر"];
+const STU_RES_LBL = {"رد":"ردّ","ما ردّش":"لم يردّ","اعتذر":"اعتذر"};
+function loadStu(){ if(!canSTU() || S.stuLoading) return; S.stuLoading=true;
+  api("students",{},60000).then(d=>{ S.stuLoading=false; if(d.ok){ S.stu=d; S.stuErr=""; } else S.stuErr=d.reason||"err"; render(); })
+    .catch(()=>{ S.stuLoading=false; S.stuErr="network"; render(); }); }
+const stuDays = d => d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? Math.round((Date.parse(today())-Date.parse(d))/864e5) : null;
+function stuSt(r){ if(!r.n) return {k:"none", l:"لم يبدأ الحضور", c:"gray"}; const dd=stuDays(r.last);
+  if(r.pct<50 || dd===null || dd>30) return {k:"bad", l:"منقطع", c:"bad"};
+  if(r.pct<75 || r.gap>=2) return {k:"gold", l:"بحاجة إلى متابعة", c:"gold"};
+  return {k:"ok", l:"ملتزم", c:"ok"}; }
+const stuAllSt = s => /ملتزم/.test(s||"") ? "ok" : /متابعة/.test(s||"") ? "gold" : /منقطع/.test(s||"") ? "bad" : "none";
+function stuIdx(){ const D=S.stu; if(D._ix) return D._ix;
+  const byC={}; D.students.forEach(s=>byC[s.c]=s); const sum={}; D.sums.forEach(x=>sum[x.c+"|"+x.k]=x);
+  const fuBy={}; (D.fu||[]).forEach(f=>(fuBy[f.c]=fuBy[f.c]||[]).push(f)); Object.values(fuBy).forEach(a=>a.sort((x,y)=>y.at.localeCompare(x.at)));
+  const rows=D.regs.map(r=>{ const s=byC[r.c]; if(!s) return null; const m=sum[r.c+"|"+r.k]||{}, co=D.courses[r.k]||{};
+    const row={c:r.c, name:s.n, k:r.k, kn:co.n||r.k, prog:co.t==="برنامج", sub:r.sub||"", n:m.n||0, h:m.h||0, pct:m.n?Math.round(100*((m.h||0)+(m.x||0)+(m.t||0))/m.n):null, last:m.last||"", gap:(m.gap===""||m.gap==null)?null:Number(m.gap)};
+    row.st=stuSt(row); return row; }).filter(Boolean);
+  return D._ix={byC, rows, fuBy}; }
+const stuGrant = r => r.sub==="منحة جزئية";
+function stuWhy(r){ const dd=stuDays(r.last);
+  if(r.gap>=2) return r.gap===2?"غاب آخر محاضرتين":"غاب آخر "+r.gap+" محاضرات";
+  if(stuGrant(r) && r.gap>=1) return "غاب المحاضرة الأخيرة";
+  if(dd!==null && dd>30) return "لا حضور منذ "+dd+" يومًا";
+  return "الالتزام "+r.pct+"%"; }
+const stuRecentFu = (c,k) => ((stuIdx().fuBy[c])||[]).find(f=>(!k||!f.k||f.k===k) && stuDays(f.at.slice(0,10))!==null && stuDays(f.at.slice(0,10))<=3);
+function stuNeed(){ return stuIdx().rows.filter(r=>r.n && (r.st.k==="gold" || r.st.k==="bad" || (stuGrant(r) && r.gap>=1)))
+  .sort((a,b)=>(stuGrant(b)-stuGrant(a)) || ((b.gap||0)-(a.gap||0)) || ((a.pct||0)-(b.pct||0))); }
+const stuSubPill = r => r.prog ? "" : r.sub==="منحة جزئية" ? `<span class="pill gold">منحة جزئية</span>` : r.sub==="كامل" ? `<span class="pill gray">كامل</span>` : `<span class="pill gray">غير معروف</span>`;
+const stuBar = p => p===null ? "—" : `<div class="row" style="gap:8px;flex-wrap:nowrap"><div class="bar" style="width:90px"><i style="width:${Math.max(0,Math.min(100,p))}%;background:${p>=75?"var(--ok)":p>=50?"var(--gold)":"var(--bad)"}"></i></div><span style="font-variant-numeric:tabular-nums">${p}%</span></div>`;
+function viewStudents(){
+  if(!canSTU()) return `<div class="card empty">ليست لديك صلاحية لهذه الصفحة.</div>`;
+  if(!S.stu){ if(!S.stuLoading && !S.stuErr) loadStu();
+    return S.stuErr ? `<div class="card empty">تعذّر تحميل بيانات الطلاب.<div class="row" style="justify-content:center;margin-top:12px"><button class="btn" data-a="stuReload">⟳ إعادة المحاولة</button></div></div>` : `<div class="card empty">جارٍ تحميل بيانات الطلاب…</div>`; }
+  const D=S.stu, ix=stuIdx(), F=S.stuF=S.stuF||{q:"",k:"",sub:"",st:""}, mgr=isMgr();
+  const cnt={ok:0,gold:0,bad:0,none:0}; D.students.forEach(s=>cnt[stuAllSt(s.st)]++);
+  const need=stuNeed(), needOpen=need.filter(r=>!stuRecentFu(r.c,r.k)), needDone=need.length-needOpen.length, showN=S.stuNeedAll?needOpen.length:Math.min(12,needOpen.length);
+  const needCard=`<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">بحاجة إلى متابعة</h2><small class="sub" style="margin:0">طلاب المنح أولًا، لأن شرط المنحة ألا يتكرر الغياب مرتين</small></div>
+    ${needOpen.length?`<div class="stugrid">${needOpen.slice(0,showN).map(r=>`<div class="stuitem"><button class="lnk" data-a="stuOpen" data-id="${esc(r.c)}"><b>${esc(r.name)}</b></button><small>${esc(r.kn)}</small><span class="${r.st.k==="bad"?"bad":"goldtx"}">${esc(stuWhy(r))}</span>${stuGrant(r)?`<span class="pill gold">منحة جزئية</span>`:""}<button class="btn sm ghost" data-a="stuFu" data-id="${esc(r.c)}" data-k="${esc(r.k)}">تواصلت</button></div>`).join("")}</div>
+      ${needOpen.length>showN?`<button class="btn sm ghost" data-a="stuNeedAll">عرض الكل (${needOpen.length})</button>`:""}`:`<p class="sub">✓ لا أحد بحاجة إلى متابعة الآن.</p>`}
+    ${needDone?`<small class="sub">تمت متابعة ${needDone} خلال آخر 3 أيام.</small>`:""}</div>`;
+  let sumCard="";
+  if(mgr){ const by={}; ix.rows.forEach(r=>{ const o=by[r.k]=by[r.k]||{k:r.k,n:r.kn,cnt:0,p:[],bad:0,gr:0,prog:r.prog}; o.cnt++; if(r.pct!==null) o.p.push(r.pct); if(r.st.k==="bad") o.bad++; if(stuGrant(r)) o.gr++; });
+    const ls=Object.values(by).sort((a,b)=>(b.bad-a.bad)||(b.cnt-a.cnt));
+    sumCard=`<details class="card teamd"${S.stuSumOpen?" open":""}><summary data-a="stuSum"><h2 style="display:inline;margin:0">ملخص الدورات</h2></summary><div style="overflow-x:auto;margin-top:10px"><table><thead><tr><th>الدورة</th><th class="c">الطلاب</th><th class="c">متوسط الالتزام</th><th class="c">منقطعون</th><th class="c">منح</th></tr></thead><tbody>${ls.map(o=>`<tr><td><button class="lnk" data-a="stuPickK" data-id="${esc(o.k)}">${esc(o.n)}</button></td><td class="c">${o.cnt}</td><td class="c">${o.p.length?Math.round(o.p.reduce((a,b)=>a+b,0)/o.p.length)+"%":"—"}</td><td class="c">${o.bad?`<span class="pill bad">${o.bad}</span>`:"0"}</td><td class="c">${o.prog?"—":o.gr}</td></tr>`).join("")}</tbody></table></div></details>`; }
+  const q=(F.q||"").trim(), stOrd={bad:0,gold:1,none:2,ok:3};
+  let rows=ix.rows.filter(r=>(!F.k||r.k===F.k) && (!F.st||r.st.k===F.st) && (!F.sub||(!r.prog && r.sub===F.sub)) && (!q||r.name.indexOf(q)>=0||(D.pii&&D.pii[r.c]&&(D.pii[r.c].e||"").toLowerCase().indexOf(q.toLowerCase())>=0)));
+  rows.sort((a,b)=>(stOrd[a.st.k]-stOrd[b.st.k])||a.name.localeCompare(b.name,"ar"));
+  const lim=S.stuMore||100, cs=Object.keys(D.courses).filter(k=>ix.rows.some(r=>r.k===k)).sort();
+  const table=`<div class="card"><div class="row stufl"><label>بحث بالاسم${D.pii?" أو الإيميل":""}<input id="stuq_" type="search" data-a="stuQ" value="${esc(F.q)}" placeholder="اكتب جزءًا من الاسم ثم Enter"></label>
+    <label>الدورة<select data-a="stuK"><option value="">كل الدورات</option>${cs.map(k=>`<option value="${esc(k)}" ${F.k===k?"selected":""}>${esc(D.courses[k].n)}</option>`).join("")}</select></label>
+    <label>الاشتراك<select data-a="stuSub"><option value="">الكل</option><option value="كامل" ${F.sub==="كامل"?"selected":""}>اشتراك كامل</option><option value="منحة جزئية" ${F.sub==="منحة جزئية"?"selected":""}>منحة جزئية</option></select></label>
+    <label>الحالة<select data-a="stuSt"><option value="">كل الحالات</option>${[["ok","ملتزم"],["gold","بحاجة إلى متابعة"],["bad","منقطع"],["none","لم يبدأ الحضور"]].map(([k,l])=>`<option value="${k}" ${F.st===k?"selected":""}>${l}</option>`).join("")}</select></label></div>
+    <small class="sub">${rows.length} صفًّا (كل صف طالب في دورة)</small>
+    <div style="overflow-x:auto"><table class="stutb"><thead><tr><th>الطالب</th><th>الدورة</th><th>الاشتراك</th><th>الالتزام</th><th>آخر حضور</th><th class="c">غياب متتالٍ</th><th>الحالة</th></tr></thead><tbody>
+    ${rows.slice(0,lim).map(r=>`<tr><td><button class="lnk" data-a="stuOpen" data-id="${esc(r.c)}"><b>${esc(r.name)}</b></button></td><td>${esc(r.kn)}</td><td>${stuSubPill(r)}</td><td>${stuBar(r.pct)}</td><td>${esc(r.last||"—")}</td><td class="c">${r.gap===null?"—":r.gap}</td><td><span class="pill ${r.st.c}">${esc(r.st.l)}</span></td></tr>`).join("")}</tbody></table></div>
+    ${rows.length>lim?`<button class="btn sm ghost" data-a="stuMore">عرض 100 أخرى</button>`:""}
+    <small class="sub">${D.pii?"أرقام الهواتف والبريد الإلكتروني في بطاقة الطالب.":"لا تظهر أرقام الهواتف ولا البريد الإلكتروني ولا السن هنا؛ فهي متاحة لمسئولي الأقسام ومسئول اللجنة فقط."}</small></div>`;
+  return `<div class="row" style="justify-content:space-between;align-items:flex-end;margin-bottom:12px"><div><h1 style="margin:0">الطلاب</h1><small class="sub">كل الطلاب المشتركين حاليًا · آخر تحديث للبيانات ${esc(D.at||"")} <button class="lnk" data-a="stuReload">⟳ تحديث</button></small></div>
+    <div class="row" style="gap:8px">${[["ok","ملتزم"],["gold","بحاجة إلى متابعة"],["bad","منقطع"],["none","لم يبدأ الحضور"]].map(([k,l])=>`<span class="pill ${k==="none"?"gray":k}">${l} ${cnt[k]}</span>`).join("")}</div></div>
+    <div class="stustack">${needCard}${sumCard}${table}</div>`;
+}
+function stuCardHtml(code){ const D=S.stu, ix=stuIdx(), s=ix.byC[code]; if(!s) return `<h2>الطالب غير موجود</h2><div class="row"><button class="btn" data-a="close">إغلاق</button></div>`;
+  const mine=ix.rows.filter(r=>r.c===code), p=D.pii&&D.pii[code], cd=(S.stuCards||{})[code], fus=ix.fuBy[code]||[], k=stuAllSt(s.st);
+  const kpi=(v,t)=>`<div class="kpi"><b style="font-size:20px">${esc(v||"—")}</b><small>${t}</small></div>`;
+  return `<h2 style="margin-bottom:6px">${esc(s.n)}</h2><span class="pill ${k==="none"?"gray":k}">${esc((s.st||"").replace(/^\S+\s/,""))}</span>
+    <div class="stugrid" style="margin:12px 0">${kpi(s.pct,"الالتزام العام")}${kpi(s.last,"آخر حضور")}${kpi(s.gC,"متوسط اختبارات المقرر")}</div>
+    ${p?`<div class="stupii"><div>الهاتف: <b dir="ltr">${esc(p.ph||"—")}</b></div><div>البريد: <b dir="ltr">${esc(p.e||"—")}</b></div><div>السن: ${esc(p.age||"—")} · الإقامة: ${esc(p.res||"—")}</div></div>`:""}
+    <h3>الدورات الحالية</h3>${mine.map(r=>`<div class="item"><div class="what"><b>${esc(r.kn)}</b><small>${r.n?`حضر ${r.h} من ${r.n} محاضرة`:"لم يبدأ الحضور"}${r.gap?` · غياب متتالٍ ${r.gap}`:""}</small></div>${stuSubPill(r)}<span class="pill ${r.st.c}">${r.pct===null?"—":r.pct+"%"}</span></div>`).join("")||`<p class="sub">لا توجد دورات حالية.</p>`}
+    <h3>آخر 8 محاضرات</h3>${!cd?`<p class="sub">جارٍ التحميل…</p>`:cd.err?`<p class="sub">تعذّر التحميل.</p>`:(cd.lec||[]).length?(cd.lec||[]).map(l=>`<div class="item"><div class="what">${esc(l.d)} · ${esc((D.courses[l.k]||{}).n||l.k)}</div><span class="pill ${/حضور/.test(l.v)?"ok":/غياب/.test(l.v)?"bad":"gold"}">${esc(l.v)}</span></div>`).join(""):`<p class="sub">لا يوجد حضور مسجّل.</p>`}
+    ${cd&&(cd.grades||[]).length?`<h3>الدرجات</h3>${cd.grades.map(g=>`<div class="item"><div class="what">${esc(g.s)} · ${esc(g.t)}</div><b>${esc(g.g)} / ${esc(g.m)}</b></div>`).join("")}`:""}
+    <h3>المتابعة</h3>${fus.length?fus.slice(0,10).map(f=>`<div class="item"><div class="what"><b>${esc(STU_RES_LBL[f.r]||f.r)}</b><small>${esc(f.at)} · ${esc(nameOf(f.by))}${f.k?" · "+esc((D.courses[f.k]||{}).n||f.k):""}</small>${f.note?`<small style="display:block">${esc(f.note)}</small>`:""}</div></div>`).join(""):`<p class="sub">لم تُسجَّل متابعة بعد.</p>`}
+    <div class="row" style="margin-top:14px"><button class="btn" data-a="stuFu" data-id="${esc(code)}" data-k="${esc(mine.length===1?mine[0].k:"")}">تواصلت</button><button class="btn ghost" data-a="close">إغلاق</button></div>`; }
+function stuFuForm(code, k){ const ix=stuIdx(), s=ix.byC[code]; if(!s) return ""; const mine=ix.rows.filter(r=>r.c===code);
+  return `<h2>تسجيل متابعة: ${esc(s.n)}</h2>
+    <label>الدورة<select id="stufk">${mine.map(r=>`<option value="${esc(r.k)}" ${r.k===k?"selected":""}>${esc(r.kn)}</option>`).join("")}<option value="" ${!k&&mine.length!==1?"selected":""}>عامة (أكثر من دورة)</option></select></label>
+    <div class="row" style="margin:10px 0">${STU_RES.map((x,i)=>`<label class="stur"><input type="radio" name="stufr" value="${esc(x)}" ${i===0?"checked":""}> ${esc(STU_RES_LBL[x])}</label>`).join("")}</div>
+    <label>ملاحظة (اختيارية)<textarea id="stufn" maxlength="300" rows="3" placeholder="مثال: وعد بالحضور في المحاضرة القادمة"></textarea></label>
+    <div class="row" style="margin-top:12px"><button class="btn" data-a="stuFuSave" data-id="${esc(code)}">حفظ</button><button class="btn ghost" data-a="close">إلغاء</button></div>`; }
+async function stuAct(a, el, id){
+  if(a==="stuReload"){ S.stu=null; S.stuErr=""; S.stuCards={}; loadStu(); render(); return true; }
+  if(a==="stuNeedAll"){ S.stuNeedAll=true; render(); return true; }
+  if(a==="stuMore"){ S.stuMore=(S.stuMore||100)+100; render(); return true; }
+  if(a==="stuSum"){ S.stuSumOpen=!S.stuSumOpen; return false; }
+  if(a==="stuPickK"){ S.stuF=Object.assign(S.stuF||{}, {k:id}); S.stuMore=100; render(); const t=document.querySelector(".stutb"); if(t) t.scrollIntoView({block:"start"}); return true; }
+  if(a==="stuOpen"){ S.stuCards=S.stuCards||{}; S.stuOpenC=id; open(stuCardHtml(id));
+    if(!S.stuCards[id]) api("stuCard",{code:id},45000).then(d=>{ S.stuCards[id]=d.ok?d:{err:1}; if(S.stuOpenC===id && $("#modal").innerHTML) open(stuCardHtml(id)); }).catch(()=>{ S.stuCards[id]={err:1}; if(S.stuOpenC===id && $("#modal").innerHTML) open(stuCardHtml(id)); delete S.stuCards[id]; });
+    return true; }
+  if(a==="stuFu"){ S.stuOpenC=null; open(stuFuForm(id, el.dataset.k||"")); return true; }
+  if(a==="stuFuSave"){ const r=(document.querySelector('input[name="stufr"]:checked')||{}).value, k=($("#stufk")||{}).value||"", note=($("#stufn")||{}).value||"";
+    if(!r) return true; el.disabled=true;
+    try { const d=await api("stuFollow",{code:id, course:k, r, note}); if(!d.ok) throw d;
+      S.stu.fu=(S.stu.fu||[]).concat([d.fu]); delete S.stu._ix; close(); toast("سُجِّلت المتابعة."); render(); }
+    catch(e){ el.disabled=false; toast(e.reason==="forbidden"?"ليست لديك صلاحية لهذا.":"لم تُحفظ المتابعة، حاول مرة أخرى."); }
+    return true; }
+  return false; }
+
 document.addEventListener("click", async e=>{
   const el=e.target.closest("[data-a]"); if(!el) return; const a=el.dataset.a, id=el.dataset.id;
   if(a==="bg"){ if(e.target===el) close(); return; }
@@ -2010,6 +2112,7 @@ document.addEventListener("click", async e=>{
   if(a==="gprompt") return loadGsi(()=>{ try { google.accounts.id.prompt(); } catch(err){ toast("تعذّر فتح نافذة الدخول؛ جرّب Chrome محدّثًا."); } });
   if(a==="close") return close();
   if(/^se[A-Z]/.test(a)){ e.preventDefault(); if(await seAct(a,el,id)) return; }
+  if(/^stu[A-Z]/.test(a)){ if(a!=="stuSum") e.preventDefault(); if(await stuAct(a,el,id)) return; }
   if(a==="slot"){ const s=S.slots.find(x=>x.id===id); const tid=slotDoneId(d,id);
     if(isSlotDone(d,id)){ saveFast("tasks", tid, {status:"todo", doneAt:null}); return; }
     saveFast("tasks", tid, {title:s.label, type:"scheduled", assignee:me, due:d, status:"done", doneAt:d, slot:id}); return; }
@@ -2292,7 +2395,7 @@ document.addEventListener("click", async e=>{
     close(); toast(want.length?"تم التكليف.":"أُلغي التكليف."); return; }
   if(a==="delSlot"){ const m=el.dataset.m; await remove("slots", id); open(schedForm(m)); return; }
 });
-document.addEventListener("change", e=>{ const a=e.target.dataset.a; if(a==="fxPick"){ const id=e.target.dataset.id; S.fx=S.fx||{}; const o=S.fx[id]=S.fx[id]||{}; if(e.target.checked) o[e.target.value]=true; else delete o[e.target.value]; return; } if(a==="reqKind"){ open(reqForm(e.target.value)); return; } if(a==="day"){ S.day=e.target.value||today(); render(); } if(a==="month"){ S.month=e.target.value||today().slice(0,7); render(); } if(a==="sper"){ S.sper=e.target.value; render(); return; } if(a==="rmem"){ S.rmem=e.target.value; render(); } if(a==="rday"){ S.rday=e.target.value||today(); render(); } if(a==="myday"){ S.myday=e.target.value||today(); render(); } if(a==="arPick"){ S.arId=e.target.value; S.arF="need"; render(); } });
+document.addEventListener("change", e=>{ const a=e.target.dataset.a; if(a==="fxPick"){ const id=e.target.dataset.id; S.fx=S.fx||{}; const o=S.fx[id]=S.fx[id]||{}; if(e.target.checked) o[e.target.value]=true; else delete o[e.target.value]; return; } if(a==="reqKind"){ open(reqForm(e.target.value)); return; } if(a==="day"){ S.day=e.target.value||today(); render(); } if(a==="month"){ S.month=e.target.value||today().slice(0,7); render(); } if(a==="sper"){ S.sper=e.target.value; render(); return; } if(a==="rmem"){ S.rmem=e.target.value; render(); } if(a==="rday"){ S.rday=e.target.value||today(); render(); } if(a==="myday"){ S.myday=e.target.value||today(); render(); } if(a==="arPick"){ S.arId=e.target.value; S.arF="need"; render(); } if(a==="stuQ"||a==="stuK"||a==="stuSub"||a==="stuSt"){ S.stuF=S.stuF||{q:"",k:"",sub:"",st:""}; S.stuF[{stuQ:"q",stuK:"k",stuSub:"sub",stuSt:"st"}[a]]=e.target.value; S.stuMore=100; render(); } });
 document.addEventListener("input", e=>{ if(e.target.classList&&e.target.classList.contains("trmini")) e.target.classList.toggle("filled", !!e.target.value); const c=e.target.dataset&&e.target.dataset.cnt; if(c){ const s=document.getElementById(c); if(s) s.textContent=e.target.value.length+" / "+e.target.maxLength; } });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") close();
   const t=e.target; if((e.key==="Enter"||e.key===" ") && t && t.getAttribute && t.getAttribute("role")==="button" && t.dataset.a){ e.preventDefault(); t.click(); } });
