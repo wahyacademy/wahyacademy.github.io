@@ -773,15 +773,15 @@ function rateSync(){var url=ok(CONFIG.verifyUrl),ses=lsGet(ME_SES);if(!url||!ses
   apiPost(url,{action:"list",session:ses}).then(function(d){if(d&&d.ok){STU.rated=d.rated||[];STU.replies=d.replies||[];var c=meCached();if(c){c.rated=STU.rated;c.replies=STU.replies;lsSet(ME_CACHE,JSON.stringify(c));}renderAll();}}).catch(function(){});}
 var RQ=[["overall","التقييم العام للمحاضرة"],["content","وضوح المحتوى وتنظيمه"],["delivery","أسلوب المحاضر في العرض"],["outcomes","إلى أي حد تحققت مخرجات المحاضرة المعلنة؟"],["tech","جودة الصوت والبث / التسجيل"]];
 var RO=[["org","تنظيم المحاضرة (الالتزام بالموعد وسهولة الدخول)"],["links","وصول رابط الحضور والتنبيهات في وقتها"],["sa","متابعة شئون الطلاب والرد على استفساراتك"]];
-var RT=[["benefit","أبرز ما استفدته من المحاضرة"],["improve","ما الذي كان يمكن تحسينه؟"],["wish","موضوع تتمنى التوسع فيه لاحقًا"],["question","سؤال أو استفسار للمحاضر","اكتب «لا يوجد» إن لم يكن لديك سؤال"]];
-var RT2=[["orgnote","ملاحظاتك على التنظيم ومتابعة شئون الطلاب","اكتب «لا يوجد» إن لم تكن لديك ملاحظات"]];
+var RT=[["benefit","أبرز ما استفدته من المحاضرة (اختياري)"],["improve","ما الذي كان يمكن تحسينه؟ (اختياري)"],["wish","موضوع تتمنى التوسع فيه لاحقًا (اختياري)"],["question","سؤال أو استفسار للمحاضر (اختياري)","يصلك رد المحاضر هنا على الموقع"]];
+var RT2=[["orgnote","ملاحظاتك على التنظيم ومتابعة شئون الطلاب (اختياري)"]];
 var RA=["حضرت البث المباشر","شاهدت التسجيل","حضرت جزءًا وأكملت من التسجيل"], RID="";
 function rPills(name,lo,hi){var h='<div class="rpills">';for(var i=lo;i<=hi;i++)h+='<label><input type="radio" name="'+name+'" value="'+i+'"><span>'+ar(i)+'</span></label>';return h+'</div>';}
 function openRate(id){var l=L.filter(function(x){return x.id===id;})[0];if(!l)return;if(!isStu()){openLogin();return;}RID=id;
   document.getElementById("rate-s").textContent="المحاضرة "+ar(l.n)+" · "+l.field+": "+l.title;
   var sc=function(q){return '<fieldset data-q="'+q[0]+'"><legend>'+q[1]+'</legend>'+rPills(q[0],1,5)+'<div class="rends"><span>ضعيف</span><span>ممتاز</span></div></fieldset>';};
   var tx=function(t){return '<label class="rtxt" data-q="'+t[0]+'"><span>'+t[1]+'</span><textarea name="'+t[0]+'" rows="2" maxlength="600"'+(t[2]?' placeholder="'+t[2]+'"':'')+'></textarea></label>';};
-  var h='<p class="rnote">جميع الأسئلة مطلوبة، ولا يستغرق التقييم أكثر من دقيقتين.</p><h4 class="rsec">أولًا: تقييم المحاضرة</h4>';
+  var h='<p class="rnote">أسئلة الدرجات مطلوبة، وخانات الكتابة اختيارية. لا يستغرق التقييم أكثر من دقيقة.</p><h4 class="rsec">أولًا: تقييم المحاضرة</h4>';
   h+='<fieldset data-q="attended"><legend>كيف تابعت المحاضرة؟</legend><div class="rchips">'+RA.map(function(a){return '<label><input type="radio" name="attended" value="'+esc(a)+'"><span>'+esc(a)+'</span></label>';}).join("")+'</div></fieldset>';
   h+=RQ.map(sc).join("");
   h+='<fieldset data-q="nps"><legend>ما مدى ترشيحك لهذه المحاضرة لزميل؟</legend>'+rPills("nps",0,10)+'<div class="rends"><span>لن أرشحها</span><span>بالتأكيد</span></div></fieldset>';
@@ -793,7 +793,7 @@ function openRate(id){var l=L.filter(function(x){return x.id===id;})[0];if(!l)re
 function closeRate(){document.getElementById("rate-modal").hidden=true;}
 function sendRate(e){e.preventDefault();var f=e.target,m=document.getElementById("rate-msg"),url=ok(CONFIG.verifyUrl),ses=lsGet(ME_SES);
   var o={session:ses,lecture:RID},fd=new FormData(f);fd.forEach(function(v,k){o[k]=v;});
-  var need=["attended"].concat(RQ.map(function(q){return q[0];}),["nps"],RT.map(function(t){return t[0];}),RO.map(function(q){return q[0];}),RT2.map(function(t){return t[0];}));
+  var need=["attended"].concat(RQ.map(function(q){return q[0];}),["nps"],RO.map(function(q){return q[0];}));
   f.querySelectorAll(".rmiss").forEach(function(x){x.classList.remove("rmiss");});
   var miss=need.filter(function(k){return !String(o[k]||"").trim();});
   if(miss.length){miss.forEach(function(k){var el=f.querySelector('[data-q="'+k+'"]');if(el)el.classList.add("rmiss");});
@@ -803,7 +803,7 @@ function sendRate(e){e.preventDefault();var f=e.target,m=document.getElementById
   var b=f.querySelector(".rsend");b.disabled=true;m.className="mmsg";m.textContent="جارٍ الإرسال…";
   apiPost(url,o).then(function(d){b.disabled=false;
     if(d&&d.ok){STU.rated=d.rated||[];var c=meCached();if(c){c.rated=STU.rated;lsSet(ME_CACHE,JSON.stringify(c));}renderAll();m.className="mmsg good";m.textContent="جزاك الله خيرًا، وصل تقييمك ✓";setTimeout(closeRate,1400);}
-    else if(d&&d.reason==="missing"){m.className="mmsg bad";m.textContent="من فضلك أجب عن كل الأسئلة.";}
+    else if(d&&d.reason==="missing"){m.className="mmsg bad";m.textContent="من فضلك أجب عن أسئلة الدرجات.";}
     else if(d&&d.reason==="admin"){m.className="mmsg bad";m.textContent="حساب الإدارة للمشاهدة فقط، والتقييم للطلاب المشتركين.";}
     else if(d&&d.reason==="not_yet"){m.className="mmsg bad";m.textContent="يُفتح تقييم المحاضرة مع بدء موعدها.";}
     else if(d&&(d.reason==="expired"||d.reason==="not_registered")){m.className="mmsg bad";m.textContent="انتهت جلستك، ادخل مرة أخرى بحساب جوجل.";setStu(null);meClear();meApply();}
