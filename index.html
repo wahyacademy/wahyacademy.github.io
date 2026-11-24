@@ -846,7 +846,7 @@ function onGoogle(resp){
   var done=false,t=setTimeout(function(){if(!done){done=true;msg.className="mmsg bad";msg.textContent="تعذّر الاتصال الآن، حاول بعد قليل.";}},25000);
   api(url,"idtoken="+encodeURIComponent(resp.credential)).then(function(d){
     if(done)return;done=true;clearTimeout(t);
-    if(d&&d.ok){setStu(d);meSave(d);meApply();rateSync();if(!location.hash||location.hash==="#about")show("lectures",true);msg.className="mmsg good";msg.textContent="تم التحقق ✓ حيّاك الله.";setTimeout(function(){document.getElementById("me-modal").hidden=true;},900);}
+    if(d&&d.ok){setStu(d);meSave(d);meApply();rateSync();var pr="";try{pr=sessionStorage.getItem("wahy_pending_rate")||"";sessionStorage.removeItem("wahy_pending_rate");}catch(_){}if(pr){setTimeout(function(){document.getElementById("me-modal").hidden=true;openRate(pr);},900);}if(!location.hash||location.hash==="#about")show("lectures",true);msg.className="mmsg good";msg.textContent="تم التحقق ✓ حيّاك الله.";setTimeout(function(){document.getElementById("me-modal").hidden=true;},900);}
     else if(d&&d.reason==="not_registered"){msg.className="mmsg bad";msg.innerHTML="حساب جوجل <b dir=\"ltr\">"+esc(d.email||"")+"</b> غير موجود ضمن المشتركين في الدورة. ادخل بالحساب الذي سجّلت به، أو <a href=\""+esc(ok(CONFIG.contactUrl)||"#")+"\" target=\"_blank\" rel=\"noopener\">راسل شئون الطلاب</a>.";}
     else{msg.className="mmsg bad";msg.textContent="لم يكتمل التحقق، حاول مرة أخرى.";}
   }).catch(function(){if(done)return;done=true;clearTimeout(t);msg.className="mmsg bad";msg.textContent="تعذّر الاتصال الآن، حاول بعد قليل.";});
@@ -877,6 +877,8 @@ function meInit(){
 function route(){
   var h=(location.hash||"").replace("#",""), v=["about","lectures","lecturers","faq","wahy","recordings"].indexOf(h)>-1?h:(/^lecture-/.test(h)?"lectures":(lsGet(ME_SES)?"lectures":"about")); // المشترك يبدأ بالمحاضرات، والزائر بـ«عن الدورة»
   show(v,false);
+  var rr=h.match(/^rate-(L\d)$/); // رابط مباشر للتقييم من تيليجرام: wahyacademy.github.io/#rate-L3
+  if(rr){show("lectures",false);if(isStu())setTimeout(function(){openRate(rr[1]);},80);else{try{sessionStorage.setItem("wahy_pending_rate",rr[1]);}catch(_){}openLogin();}return;}
   var m=h.match(/^lecture-(L\d)$/);
   if(m){var d=document.getElementById("d-"+m[1]); if(d){d.open=true; setTimeout(function(){d.scrollIntoView({behavior:"smooth",block:"start"});},50);}}
   
