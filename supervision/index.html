@@ -513,16 +513,18 @@ const adminLec = s => !!(s && isLecture(s) && memberOf(s.owner).role==="committe
 const isSlotDone = (date, sid) => { const t=slotTask(date,sid); if(!t) return false; const s=S.slots.find(x=>x.id===sid);
   if(adminLec(s)) return t.status==="done";
   return isLecture(s) && t.marks ? stepsFor(date,s).every(([k])=>t.marks[k]) : t.status==="done"; };
-// البديل: محاضرات الطلب التي ستحتاج من يغطيها
+// البديل: خانات الطلب التي ستحتاج من يغطيها — المحاضرات، ومع «إجازة» و«اعتذار عن يوم» و«استئذان» كل خانات الشغل كمان (قرار المستخدم 25 نوفمبر)
 function reqDates(r){ const out=[]; let d=r.date; const end=(r.kind==="leave"||r.kind==="lecture")?(r.dateTo||r.date):r.date; for(let i=0;i<70 && d<=end;i++){ out.push(d); d=addDays(d,1); } return out; }
 function reqLectures(r){ if(r.kind==="fix" || r.kind==="offer") return [];
-  if(r.kind==="hours") return slotsOf(r.member,r.date).filter(s=>isLecture(s) && s.start && s.end && r.start && r.end && toMin(r.start)<=toMin(s.start) && toMin(r.end)>=toMin(s.end)).map(s=>({d:r.date,s}));
-  return reqDates(r).flatMap(d=>slotsOf(r.member,d).filter(s=>isLecture(s) && (r.kind!=="lecture" || s.id===r.slot)).map(s=>({d,s}))); }
+  const cov = s => isLecture(s) || r.kind!=="lecture";
+  if(r.kind==="hours") return slotsOf(r.member,r.date).filter(s=>cov(s) && s.start && s.end && r.start && r.end && toMin(r.start)<=toMin(s.start) && toMin(r.end)>=toMin(s.end)).map(s=>({d:r.date,s}));
+  return reqDates(r).flatMap(d=>slotsOf(r.member,d).filter(s=>cov(s) && (r.kind!=="lecture" || s.id===r.slot)).map(s=>({d,s}))); }
+const covWord = ls => { const n=ls.length, lec=ls.every(x=>isLecture(x.s)); return lec ? (n>2&&n<11?"محاضرات":"محاضرة") : (n>2&&n<11?"خانات":"خانة"); };
 function coverSelect(r){ const ls=reqLectures(r); if(!ls.length) return "";
   const ppl=S.members.filter(m=>m.active!==false && m.role!=="committee" && m.id!==r.member && (isAdmin() || m.dept===S.me.dept));
-  return `<select id="cv_${esc(r.id)}" style="width:auto" title="من يغطي ${ls.length} محاضرة"><option value="">بلا بديل (${ls.length} ${ls.length>2&&ls.length<11?"محاضرات":"محاضرة"})</option>${ppl.map(m=>`<option value="${esc(m.id)}">البديل: ${esc(m.name)}</option>`).join("")}</select>`; }
+  return `<select id="cv_${esc(r.id)}" style="width:auto" title="من يغطي ${ls.length} ${covWord(ls)}"><option value="">بلا بديل (${ls.length} ${covWord(ls)})</option>${ppl.map(m=>`<option value="${esc(m.id)}">البديل: ${esc(m.name)}</option>`).join("")}</select>`; }
 async function makeCovers(r, sub){ let n=0;
-  for(const {d,s} of reqLectures(r)){ const doc={owner:sub, date:d, day:dayIdx(parse(d)), start:s.start||"", end:s.end||"", kind:"fixed", label:s.label, lecture:true, cover:r.member}; if(s.lec) doc.lec=s.lec;
+  for(const {d,s} of reqLectures(r)){ const doc={owner:sub, date:d, day:dayIdx(parse(d)), start:s.start||"", end:s.end||"", kind:"fixed", label:s.label, lecture:isLecture(s), cover:r.member}; if(s.lec) doc.lec=s.lec;
     if(await save("slots", "cov_"+d+"_"+s.id, doc, false)) n++; }
   return n; }
 
@@ -667,7 +669,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="877c7fba38aa"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="9ea64450cc89"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -2308,7 +2310,7 @@ document.addEventListener("click", async e=>{
       if(await save("requests", id, {status:st, reply, decidedBy:me, decidedAt:Date.now()})) toast(`أُضيف «${l.name}» لجدول ${nameOf(r.member)}.`); return; }
     const sub=v("cv_"+id); let nc=0;
     if(st==="accepted" && sub) nc=await makeCovers(r, sub);
-    if(await save("requests", id, {status:st, reply, decidedBy:me, decidedAt:Date.now()})) toast(st==="accepted"?(nc?`قُبل الطلب، و${nameOf(sub)} بديل في ${nc} محاضرة.`:fks.length?`قُبل الطلب، واتعلّم ${fks.length===1?"خطوة واحدة":fks.length+" خطوات"} بتصحيح مسئول.`:"قُبل الطلب."):"رُفض الطلب.");
+    if(await save("requests", id, {status:st, reply, decidedBy:me, decidedAt:Date.now()})) toast(st==="accepted"?(nc?`قُبل الطلب، و${nameOf(sub)} بديل في ${nc} ${covWord(reqLectures(r).slice(0,nc))}.`:fks.length?`قُبل الطلب، واتعلّم ${fks.length===1?"خطوة واحدة":fks.length+" خطوات"} بتصحيح مسئول.`:"قُبل الطلب."):"رُفض الطلب.");
     return; }
   if(a==="task"){ const t0=S.tasks.find(x=>x.id===id); return open(`<h2>متأكد إن المهمة خلصت؟</h2><p>«${esc(t0?t0.title:"")}»</p><p class="sub">لو ضغطت بالغلط، تقدر ترجّعها لحد 12 بالليل النهارده.</p><label style="margin-top:8px">اللي اتعمل <small class="sub">(لازم)</small><textarea id="dn_${esc(id)}" maxlength="1000" placeholder="اكتب باختصار اللي اتعمل في المهمة…"></textarea></label><div class="row" style="margin-top:8px"><button class="btn" data-a="taskDone" data-id="${esc(id)}">أيوه، خلصت</button><button class="btn ghost" data-a="close">لأ</button></div>`); } // تأكيد قبل ✓ (🐞 19 نوفمبر)
   if(a==="thAll"){ S.thAll=S.thAll||new Set(); S.thAll.add(id); render(); return; }
