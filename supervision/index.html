@@ -449,6 +449,11 @@ function team(){ // من أتابعهم
   if(S.me.role==="head") return act.filter(m => m.dept===S.me.dept && m.id!==S.me.id);
   return [];
 }
+// مسئول التنظيم: عضوات شئون الطلاب اللي بينظّموا محاضرات — محاضراتهم بس (قرار المستخدم 25 نوفمبر)
+const orgHead = () => !!(S.me && S.me.role==="head" && S.me.dept==="org");
+function lecOrgPpl(){ if(!orgHead()) return []; const own=new Set(S.slots.filter(s=>s.lec && !s.date).map(s=>s.owner));
+  return S.members.filter(m=>m.active!==false && m.role!=="committee" && m.dept==="sa" && own.has(m.id)); }
+const isLecOrg = mid => lecOrgPpl().some(m=>m.id===mid);
 
 // ---------- بيانات اليوم ----------
 // إيقاف مؤقت لمحاضرة (قرار المستخدم 8 نوفمبر): من تاريخ إلى تاريخ، لا تظهر ولا تُحسب ثم تعود وحدها
@@ -463,6 +468,7 @@ function twinLabel(ss){ const w=ss.map(s=>String(s.label||"").split(" ")); let k
 function mergeTwins(list){ return list.filter(s=>!list.some(o=>o.id<s.id && sameRun(o,s))).map(s=>{ const tw=list.filter(o=>o.id>s.id && sameRun(s,o)); return tw.length ? {...s, label:twinLabel([s,...tw]), twinLecs:tw.map(o=>o.lec)} : s; }); }
 const allSlotsOf = (mid, date) => mergeTwins(S.slots.filter(s => s.owner===mid && s.kind!=="flex" && (s.date ? s.date===date : Number(s.day)===dayIdx(parse(date))) && !(s.lec && lecPaused(S.lectures.find(l=>l.id===s.lec), date)))).sort((a,b)=>(a.start||"99").localeCompare(b.start||"99")||(a.label||"").localeCompare(b.label||""));
 const slotsOf = (mid, date) => allSlotsOf(mid,date).filter(s=>!isBreak(s));
+const SLOTS_OF = (mid, date) => slotsOf(mid,date);
 const breakRow = s => `<div class="item brk"><span class="chk" aria-hidden="true">☕</span><div class="what"><b>${esc(s.label)}</b><small>${s.start?esc(t12(s.start))+(s.end?" – "+esc(t12(s.end)):""):""}</small></div></div>`;
 const slotDoneId = (date, sid) => "sch_"+date+"_"+sid;
 const slotTask = (date, sid) => S.tasks.find(t => t.id===slotDoneId(date,sid));
@@ -669,7 +675,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="9ea64450cc89"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="024278a0e717"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1284,7 +1290,7 @@ function sysCard(){ if(!isAdmin()) return ""; const since=NOW()-48*36e5, es=(S.e
     ${es.length?`<details class="dr"><summary>${es.length} عطل في آخر 48 ساعة</summary>${es.slice(0,20).map(e=>`<div class="item"><div class="what"><b>${esc(e.where||"")}</b><small>${esc(new Date(Number(e.at)).toLocaleString("ar-EG",{timeZone:"Africa/Cairo",dateStyle:"short",timeStyle:"short"}))} · ${esc(e.msg||"")}</small></div></div>`).join("")}</details>`:""}</div>`; }
 function riskCard(){
   const d=today(), now=toMin(cairoNow().hm), items=[];
-  team().concat(isMgr()?[S.me]:[]).forEach(m=>{
+  team().concat(lecOrgPpl(), isMgr()?[S.me]:[]).forEach(m=>{
     slotsOf(m.id,d).filter(s=>isLecture(s) && !adminLec(s) && s.start && !slotOff(m.id,d,s.id) && !slotShift(m.id,d,s.id)).forEach(s=>{ const st=toMin(s.start), en=s.end?toMin(s.end):st+90;
       // «🚨 بديل طارئ» و«🕌 اعتذر الشيخ» جنب السطر (قرار المستخدم 18 نوفمبر، «سجل المشاكل» رقم 10) — نفس شروط «الفريق — تفاصيل كل شخص»
       const act = canEmg(m.id) && (!VIEWER() || !!ACT()) && !isSlotDone(d,s.id) ? `<span class="row emgx" style="gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn sm ghost warn" data-a="emgOpen" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}">🚨 بديل طارئ</button><button class="btn sm ghost" data-a="admExc" data-id="${esc(s.id)}" data-m="${esc(m.id)}" data-d="${esc(d)}" data-v="sheikh">🕌 اعتذر الشيخ</button></span>` : "";
@@ -1296,7 +1302,7 @@ function riskCard(){
   return `<div class="card" style="border-color:var(--bad);background:var(--bad-soft)"><h2 style="color:var(--bad)">⚠️ محاضرات تحتاج تدخّلك الآن (${items.length})</h2>${items.map(x=>`<div class="item${x.act?" emgi":""}"><div class="what">${x.html}</div>${x.lid?`<button class="btn sm" data-a="coverLec" data-id="${esc(x.lid)}">تكليف لليوم</button>`:x.act||""}</div>`).join("")}</div>`;
 }
 // «🚨 بديل طارئ» (قرار المستخدم 9 نوفمبر): مسئول اللجنة (والقسم لقسمه) يسجّل اعتذارًا إداريًا عن المنظّم ويوجّه المحاضرة لبديل أو لنفسه، وتُحسب للبديل
-const canEmg = mid => isMgr() && mid!==S.me.id && (isAdmin() || team().some(m=>m.id===mid));
+const canEmg = mid => isMgr() && mid!==S.me.id && (isAdmin() || team().some(m=>m.id===mid) || isLecOrg(mid)); // مسئول التنظيم كمان لمحاضرات عضوات شئون الطلاب
 const ovl = (mid, ds, s) => slotsOf(mid,ds).some(x=>x.start && s.start && x.start<(s.end||"99") && (x.end||"99")>s.start && !slotOff(mid,ds,x.id));
 function emgForm(mid, sid, d){ const s=slotsOf(mid,d).find(x=>x.id===sid); if(!s) return "";
   const ppl=(isAdmin()?S.members.filter(m=>m.active!==false && m.role!=="committee"):team()).filter(m=>m.id!==mid && m.id!==S.me.id);
@@ -1309,9 +1315,9 @@ function emgForm(mid, sid, d){ const s=slotsOf(mid,d).find(x=>x.id===sid); if(!s
 // «📋 جدول اليوم» (طلب المستخدم 11 نوفمبر): لمسئول اللجنة (الكل) ومسئول القسم (قسمه) — كل شغل اليوم مرتبًا بالوقت مع حالته
 function dayTable(d){
   const cur = d===today() ? cairoMinOf(NOW(), d) : d<today() ? 1e9 : -1;
-  const seen=new Set(), ppl=[S.me].concat(team(), isAdmin()?S.members.filter(m=>m.role==="committee" && m.active!==false):[]).filter(m=>m && !seen.has(m.id) && seen.add(m.id));
+  const seen=new Set(), ppl=[S.me].concat(team(), lecOrgPpl(), isAdmin()?S.members.filter(m=>m.role==="committee" && m.active!==false):[]).filter(m=>m && !seen.has(m.id) && seen.add(m.id));
   const f = isAdmin() ? (S.dtf||"all") : "all";
-  let rows=[]; ppl.forEach(m=>slotsOf(m.id,d).forEach(s=>rows.push({m,s,lec:isLecture(s)})));
+  let rows=[]; ppl.forEach(m=>slotsOf(m.id,d).filter(s=>!isLecOrg(m.id) || isLecture(s)).forEach(s=>rows.push({m,s,lec:isLecture(s)})));
   if(f==="lec") rows=rows.filter(r=>r.lec); else if(f==="sa") rows=rows.filter(r=>!r.lec);
   rows.sort((x,y)=>(x.s.start||"99").localeCompare(y.s.start||"99") || x.m.name.localeCompare(y.m.name));
   const ix = id => ppl.findIndex(m=>m.id===id);
@@ -1342,9 +1348,9 @@ function headsDay(d){ const H=S.members.filter(m=>m.role==="head" && m.active!==
         return `<div class="item"><div class="what"><b>${esc(t.title)}</b><small class="${late?"late":""}">${late?"متأخرة — ":""}التسليم: ${esc(taskWhen(t))}${t.assigner?" · من "+esc(nameOf(t.assigner)):""}</small></div>${t.seenAt?`<span class="pill ok">اطّلعت</span>`:`<span class="pill">لم تطّلع</span>`}</div>`; }).join(""):`<div class="sub" style="font-size:13px">مفيش مهام مفتوحة.</div>`}</div>`; }).join(""); }
 const slotShiftAny = (mid,d) => { const x=S.shifts.find(z=>z.member===mid && z.date===d && z.start && !z.end); return x?` <span class="pill acct">في الدوام</span>`:""; };
 function viewTeamToday(){
-  const d=S.day||today(); const ppl=team();
+  const d=S.day||today(); const ppl=team().concat(lecOrgPpl());
   const mineSl=slotsOf(S.me.id,d);
-  const rows = ppl.map(m=>{ const sl=slotsOf(m.id,d), exp=sl.filter(s=>!slotOff(m.id,d,s.id)), dn=exp.filter(s=>isSlotDone(d,s.id)).length, pr=problemsOf(m.id,d), late=openTasks(m.id).filter(t=>t.due<today()).length; return {m,sl,exp,dn,pr,late,sh:shiftOf(m.id,d)||S.shifts.find(x=>x.member===m.id&&x.date===d&&x.start)}; })
+  const rows = ppl.map(m=>{ const sl=slotsOf(m.id,d).filter(s=>!isLecOrg(m.id) || isLecture(s)), exp=sl.filter(s=>!slotOff(m.id,d,s.id)), dn=exp.filter(s=>isSlotDone(d,s.id)).length, pr=problemsOf(m.id,d), late=openTasks(m.id).filter(t=>t.due<today()).length; return {m,sl,exp,dn,pr,late,sh:shiftOf(m.id,d)||S.shifts.find(x=>x.member===m.id&&x.date===d&&x.start)}; })
     .filter(r=>r.sl.length||r.pr.length||r.late||r.sh);
   const needReply = d===today() ? ckTeam().filter(ckWaitMe).sort((a,b)=>ckLast(a).at-ckLast(b).at).map(p=>({p,m:S.members.find(x=>x.id===p.member)||{name:"—"}})) : rows.flatMap(r=>r.pr.filter(p=>!p.reply).map(p=>({p,m:r.m})));
   const reqs = pendingReqs().sort((a,b)=>(a.date||"").localeCompare(b.date||""));
@@ -1370,7 +1376,7 @@ function teamRows(d, rows){ return `${rows.length? rows.map(({m,sl,exp,dn,pr,lat
 
 // ملخص اليوم للمسئول: محاضرات اليوم، تمت، متأخرة الآن، اعتذار الشيخ
 function daySummary(d){ let tot=0, dn=0, late=0, exc=0;
-  team().concat(isAdmin()?S.members.filter(m=>m.role==="committee" && m.active!==false):[]).forEach(m=>slotsOf(m.id,d).filter(isLecture).forEach(s=>{ const off=slotOff(m.id,d,s.id);
+  team().concat(lecOrgPpl(), isAdmin()?S.members.filter(m=>m.role==="committee" && m.active!==false):[]).forEach(m=>slotsOf(m.id,d).filter(isLecture).forEach(s=>{ const off=slotOff(m.id,d,s.id);
     if(off && off.kind==="sheikh"){ exc++; return; } if(off) return; tot++;
     if(isSlotDone(d,s.id)){ dn++; return; } if(adminLec(s)) return; const mk=marksOf(d,s.id); if(stepsFor(d,s).some(st=>stepState(d,s,st,mk[st[0]])==="late")) late++; }));
   const t=(n,l,c)=>`<div class="kpi ${c}"><b>${n}</b><small>${l}</small></div>`;
@@ -1706,8 +1712,8 @@ function taskForm(t){
 // التقرير الشهري
 function monthStats(mid, month){ const [y,mo]=month.split("-").map(Number); return periodStats(mid, month+"-01", month+"-"+pad(new Date(y,mo,0).getDate())); }
 // إحصاءات أي فترة (يوم/أسبوع/شهر)
-function periodStats(mid, from, to){
-  const t0=today();
+function periodStats(mid, from, to, lecOnly){ // lecOnly: محاضرات العضو بس (عضوات شئون الطلاب عند مسئول التنظيم، 25 نوفمبر)
+  const t0=today(), slotsOf=(m,d)=>lecOnly?SLOTS_OF(m,d).filter(isLecture):SLOTS_OF(m,d), dutyExp=(m,d)=>slotsOf(m,d).filter(s=>s.start && !slotOff(m,d,s.id));
   let exp=0, dn=0, work=0, present=0, lates=0, noEnd=0, mins=0, lec=0, lecDone=0, days=0, stepAll=0, stepOn=0, stepLate=0, repNeed=0, repCnt=0, repZoom=0, exc=0, tech=0;
   for(let ds=from; ds<=to; ds=addDays(ds,1)){ if(ds>t0) break; days++;
     const sh=shiftOf(mid,ds), perSlot=ds>=SLOT_DUTY_SINCE; if(!perSlot){ mins+=shMin(sh); if(shState(sh)==="open") noEnd++; }
@@ -1719,9 +1725,9 @@ function periodStats(mid, from, to){
     else if(es.length && ds>=GOAL.since && !(ds===t0 && !sh)){ work++; if(sh){ present++; if(lateBy(mid,ds)) lates++; } }
     es.forEach(s=>{ exp++; const ok=isSlotDone(ds,s.id); if(ok) dn++; if(isLecture(s)){ lec++; if(ok) lecDone++;
       if(ds>=STEPS_SINCE && ds<t0 && s.start){ const mk=marksOf(ds,s.id); STEPS.forEach(st=>{ stepAll++; const v=mk[st[0]]; if(v && stepState(ds,s,st,v)==="done") stepOn++; else if(v) stepLate++; }); } } }); }
-  const tk=S.tasks.filter(t=>t.type!=="scheduled" && t.assignee===mid && t.due>=from && t.due<=to && t.due<=t0);
+  const tk=lecOnly?[]:S.tasks.filter(t=>t.type!=="scheduled" && t.assignee===mid && t.due>=from && t.due<=to && t.due<=t0);
   const onTime=tk.filter(t=>t.status==="done" && (t.doneAt||"")<=t.due).length;
-  const pr=S.checkins.filter(c=>c.member===mid && c.mark==="warn" && c.date>=from && c.date<=to).length;
+  const pr=lecOnly?0:S.checkins.filter(c=>c.member===mid && c.mark==="warn" && c.date>=from && c.date<=to).length;
   const weekly = lec ? Math.round(lecDone*10/Math.max(1,days/7))/10 : null;
   return {exp,dn,tk:tk.length,onTime,pr,work,present,lates,noEnd,mins,lec,lecDone,weekly,stepAll,stepOn,stepLate,repNeed,repCnt,repAvg:repCnt?Math.round(repZoom/repCnt):null,exc,tech};
 }
@@ -1741,8 +1747,8 @@ function viewReport(){
     : P.per==="week" ? `<button class="btn sm ghost" data-a="rwk" data-v="-1">‹ السابق</button>${S.rwk?`<button class="btn sm ghost" data-a="rwk" data-v="0">هذا الأسبوع</button>`:""}<button class="btn sm ghost" data-a="rwk" data-v="1">التالي ›</button>`
     : `<input type="month" data-a="month" value="${esc(P.month)}" style="width:auto">`;
   const head = `${ptitle("التقرير "+({day:"اليومي",week:"الأسبوعي",month:"الشهري"}[P.per])+" — "+P.label)}<div class="row noprint"><div class="grow"><h1>التقارير</h1><p class="sub">${esc(P.label)}</p></div>${ctl}<button class="btn ghost" data-a="print">🖨️ طباعة / PDF</button></div>${seg}`;
-  if(P.per==="day") return head + viewDayReport(P.from, ppl) + absReportCard(P, ppl) + hdCard(P);
-  return head + periodTable(P, ppl.map(m=>({m,...periodStats(m.id,P.from,P.to)}))) + hoursReportCard(P, ppl) + absReportCard(P, ppl) + ckReportCard(P, ppl) + hdCard(P);
+  if(P.per==="day") return head + viewDayReport(P.from, ppl.concat(lecOrgPpl())) + absReportCard(P, ppl.concat(lecOrgPpl())) + hdCard(P);
+  return head + periodTable(P, ppl.map(m=>({m,...periodStats(m.id,P.from,P.to)})).concat(lecOrgPpl().map(m=>({m, lo:true, ...periodStats(m.id,P.from,P.to,true)})))) + hoursReportCard(P, ppl) + absReportCard(P, ppl.concat(lecOrgPpl())) + ckReportCard(P, ppl) + hdCard(P);
 }
 // التقرير اليومي للفريق: سطر لكل شخص يُفتح بالضغط
 function viewDayReport(d, ppl){
@@ -1773,14 +1779,14 @@ function periodTable(P, rows){
   return `<div class="card" style="overflow-x:auto"><table><thead><tr><th>المشرف</th><th class="c">حضور الدوام<br><small>الهدف ${GOAL.attend}%</small></th><th class="c">إنجاز الجدول<br><small>الهدف ${GOAL.done}%</small></th><th class="c">محاضرات منظّمة<br><small>الهدف ${GOAL.weekly} أسبوعيًا</small></th><th class="c">الخطوات في موعدها<br><small>الهدف ${GOAL.done}%</small></th><th class="c">ساعات الدوام</th><th class="c">المهام في موعدها</th><th class="c">مشكلات رُفعت</th><th class="c">دقة تسجيل الحضور<br><small>الهدف ${GOAL.att}% · من أول تسليم</small></th><th class="c">ملاحظات الحضور اتصلّحت</th>${month?`<th class="c">التقييم</th>`:""}<th class="c noprint">إرسال له</th></tr></thead><tbody>${rows.map(r=>{ const at=pc(r.present,r.work), a=pc(r.dn,r.exp), b=pc(r.onTime,r.tk);
     const notes=[r.lates?`تأخر ${r.lates}`:"", r.noEnd?`بلا نهاية ${r.noEnd}`:""].filter(Boolean).join(" · ");
     const sent=S.evals.find(e=>e.id===repId(r.m.id,P.key));
-    return `<tr><td><b>${esc(r.m.name)}</b></td>
+    return `<tr><td><b>${esc(r.m.name)}</b>${r.lo?`<br><small class="sub">محاضراتها فقط (من شئون الطلاب)</small>`:""}</td>
     <td class="c">${r.work?`<span class="pill ${tone(at,GOAL.attend)}">${at}%</span> <small class="sub">${r.present}/${r.work}</small>${notes?`<br><small class="late">${notes}</small>`:""}`:"—"}</td>
     <td class="c">${r.exp?`<span class="pill ${tone(a,GOAL.done)}">${a}%</span> <small class="sub">${r.dn}/${r.exp}</small>`:"—"}</td>
     <td class="c">${r.weekly!=null?`<span class="pill ${r.weekly>=GOAL.weekly?"ok":r.weekly>=GOAL.weekly-1?"gold":"bad"}">${r.weekly}</span> <small class="sub">${r.lecDone} في الفترة</small>`:"—"}</td>
     <td class="c">${r.stepAll?`<span class="pill ${tone(pc(r.stepOn,r.stepAll),GOAL.done)}">${pc(r.stepOn,r.stepAll)}%</span> <small class="sub">${r.stepOn}/${r.stepAll}</small>${r.stepLate?`<br><small class="late">متأخرة ${r.stepLate}</small>`:""}`:"—"}</td>
     <td class="c">${r.mins?dur(r.mins):"—"}</td>
-    <td class="c">${r.tk?`<span class="pill ${tone(b,90)}">${b}%</span> <small class="sub">${r.onTime}/${r.tk}</small>`:"—"}</td><td class="c">${r.pr||"—"}</td>${(()=>{ const q=arStats(r.m.id,P.from,P.to); return q?`<td class="c">${q.acc!=null?`<span class="pill ${tone(q.acc,GOAL.att)}">${q.acc}%</span>`:"—"} <small class="sub">${q.revs} محاضرة</small></td><td class="c">${q.tot?`<span class="pill ${q.fix===q.tot?"ok":"gold"}">${q.fix} من ${q.tot}</span>`:"—"}</td>`:`<td class="c"><small class="sub">لم تُراجع</small></td><td class="c">—</td>`; })()}${month?`<td class="c">${(()=>{ const e=evalOf(r.m.id,month); return e?`<button class="btn sm ghost" data-a="evalM" data-id="${esc(r.m.id)}">${e.ack?"✓ اطّلع":"✓ قُيّم"}</button>`:`<button class="btn sm" data-a="evalM" data-id="${esc(r.m.id)}">تقييم</button>`; })()}</td>`:""}
-    <td class="c noprint">${sent?`<button class="btn sm ghost" data-a="sendRep" data-id="${esc(r.m.id)}">${sent.ack?"✓ اطّلع":"✓ أُرسل"}</button>`:`<button class="btn sm" data-a="sendRep" data-id="${esc(r.m.id)}">📤 إرسال</button>`}</td></tr>`; }).join("")}</tbody></table>
+    <td class="c">${r.tk?`<span class="pill ${tone(b,90)}">${b}%</span> <small class="sub">${r.onTime}/${r.tk}</small>`:"—"}</td><td class="c">${r.pr||"—"}</td>${(()=>{ const q=arStats(r.m.id,P.from,P.to); return q?`<td class="c">${q.acc!=null?`<span class="pill ${tone(q.acc,GOAL.att)}">${q.acc}%</span>`:"—"} <small class="sub">${q.revs} محاضرة</small></td><td class="c">${q.tot?`<span class="pill ${q.fix===q.tot?"ok":"gold"}">${q.fix} من ${q.tot}</span>`:"—"}</td>`:`<td class="c"><small class="sub">لم تُراجع</small></td><td class="c">—</td>`; })()}${month&&r.lo?`<td class="c">—</td>`:""}${month&&!r.lo?`<td class="c">${(()=>{ const e=evalOf(r.m.id,month); return e?`<button class="btn sm ghost" data-a="evalM" data-id="${esc(r.m.id)}">${e.ack?"✓ اطّلع":"✓ قُيّم"}</button>`:`<button class="btn sm" data-a="evalM" data-id="${esc(r.m.id)}">تقييم</button>`; })()}</td>`:""}
+    <td class="c noprint">${r.lo?"—":sent?`<button class="btn sm ghost" data-a="sendRep" data-id="${esc(r.m.id)}">${sent.ack?"✓ اطّلع":"✓ أُرسل"}</button>`:`<button class="btn sm" data-a="sendRep" data-id="${esc(r.m.id)}">📤 إرسال</button>`}</td></tr>`; }).join("")}</tbody></table>
   <p class="sub" style="font-size:13px;margin-top:10px">الأخضر = بلغ الهدف · الذهبي = قريب منه · الأحمر = بعيد عنه. «إرسال» يرسل للمشرف أرقامه في هذه الفترة في «يومي» عنده، ويضغط «اطّلعت».</p></div>
   ${rows.some(r=>r.repNeed||r.exc)?`<div class="card" style="overflow-x:auto"><h2>📝 تقارير المحاضرات</h2><table><thead><tr><th>المنظّم</th><th class="c">تقارير مرسلة</th><th class="c">متوسط الحضور على زووم</th><th class="c">اعتذار الشيخ</th><th class="c">مشاكل تقنية</th></tr></thead><tbody>${rows.filter(r=>r.repNeed||r.exc).map(r=>`<tr><td><b>${esc(r.m.name)}</b></td><td class="c">${r.repNeed?`<span class="pill ${tone(pc(r.repCnt,r.repNeed),GOAL.done)}">${r.repCnt}/${r.repNeed}</span>`:"—"}</td><td class="c">${r.repAvg!=null?r.repAvg:"—"}</td><td class="c">${r.exc||"—"}</td><td class="c">${r.tech||"—"}</td></tr>`).join("")}</tbody></table></div>`:""}`;
 }
@@ -1792,10 +1798,10 @@ function sendRepForm(mid){ const P=repPeriod(), x=snapPeriod(mid,P), e=S.evals.f
   <div class="row"><button class="btn" data-a="doSendRep" data-id="${esc(mid)}">${e.id?"تحديث وإرسال":"إرسال"}</button><button class="btn ghost" data-a="close">إلغاء</button></div>`; }
 // تقارير المحاضرات (للمسئول): كل التقارير في الشهر مع فلتر بالمنظّم
 function viewLecReports(){
-  const month=S.month||today().slice(0,7), who=S.rmem||"", ids=team().map(m=>m.id).concat([S.me.id], isAdmin()?S.members.filter(m=>m.role==="committee").map(m=>m.id):[]);
+  const month=S.month||today().slice(0,7), who=S.rmem||"", ids=team().concat(lecOrgPpl()).map(m=>m.id).concat([S.me.id], isAdmin()?S.members.filter(m=>m.role==="committee").map(m=>m.id):[]);
   const list=S.tasks.filter(t=>/^sch_/.test(t.id) && (t.report||t.excused==="sheikh"||(t.status==="done" && adminLec(S.slots.find(s=>s.id===t.slot)))) && (t.due||"").slice(0,7)===month && ids.includes(t.assignee) && (!who || t.assignee===who))
     .sort((a,b)=>(b.due||"").localeCompare(a.due||"")||(a.title||"").localeCompare(b.title||""));
-  const ppl=team().filter(m=>m.active!==false);
+  const ppl=team().concat(lecOrgPpl()).filter(m=>m.active!==false);
   return `${ptitle("تقارير المحاضرات — "+monthName(month)+(who?" — "+nameOf(who):""))}<div class="row noprint"><div class="grow"><h1>تقارير المحاضرات</h1><p class="sub">${list.length} تقرير في ${esc(monthName(month))}</p></div>
     <select data-a="rmem" style="width:auto"><option value="">كل المنظّمين</option>${ppl.map(m=>`<option value="${esc(m.id)}" ${who===m.id?"selected":""}>${esc(m.name)}</option>`).join("")}</select>
     <input type="month" data-a="month" value="${esc(month)}" style="width:auto"><button class="btn ghost" data-a="print">🖨️ طباعة / PDF</button></div>
