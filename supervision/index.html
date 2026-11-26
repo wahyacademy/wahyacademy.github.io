@@ -675,7 +675,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="303e6b2f1fd9"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="f66347944d3c"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1200,7 +1200,7 @@ function ckReportCard(P, ppl){ const rows=ppl.map(m=>{ const ps=ckAll().filter(p
 // ===== ⏱ وقت وصول كل حاجة لمسئول القسم ومدة تأخيره (طلب المستخدم 18 نوفمبر 8:17 م) =====
 // قراءة بس من البيانات الموجودة؛ مفيش تعديل في الخادم. اللي اتعمل نيابة بـ«✋ اشتغل بداله» بيتحسب لها ومعاه ✋ (قرار المستخدم).
 const HD_SINCE = "2026-11-18";          // أول يوم بيتحسب
-const HD_TRIAL_UNTIL = "2026-11-25";    // للعلم لحد 25 نوفمبر زي باقي المؤشرات الجديدة
+const HD_TRIAL_UNTIL = "2026-11-28";    // للعلم لحد السبت 28 نوفمبر، وبعده محسوب (قرار المستخدم 26 نوفمبر)
 const HD_NIGHT = ["22:00","08:00"];     // من 10 م لـ 8 ص ما بيتحسبش في مهلة الطلبات والمشاكل
 const HD_K = {req:{ic:"📨",l:"الطلبات",h:4,night:true}, ck:{ic:"⚠️",l:"المشاكل (أول رد)",h:2,night:true}, ar:{ic:"✅",l:"مراجعات الحضور"}, se:{ic:"📋",l:"«مش استفسار؟»",h:24}, tfq:{ic:"📞",l:"رأي في تفقد",h:24}};
 const cDate = ms => { const o={}; new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Cairo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(ms)).forEach(x=>o[x.type]=x.value); return o.year+"-"+o.month+"-"+o.day; };
@@ -1310,7 +1310,7 @@ function emgForm(mid, sid, d){ const s=slotsOf(mid,d).find(x=>x.id===sid); if(!s
   <div class="form"><div class="row"><label class="grow">من تاريخ<input type="date" id="e_date" value="${esc(d)}" min="${today()}"></label><label class="grow">عدد المرات<select id="e_n">${[1,2,3,4,5,6,7,8].map(n=>`<option value="${n}">${n===1?"هذه المرة فقط":n+" أسابيع"}</option>`).join("")}</select></label></div>
   <label class="full">من ينظّمها<select id="e_sub"><option value="__me">🙋 أنا أنظّمها</option>${ppl.map(m=>`<option value="${esc(m.id)}">${esc(m.name)}${ovl(m.id,d,s)?" — ⚠️ مشغول في نفس الوقت":""}</option>`).join("")}</select></label>
   <label class="full">السبب (اختياري، يظهر للمنظّم)<input id="e_note" placeholder="ظرف طارئ"></label><div class="row full" style="gap:6px;flex-wrap:wrap"><button type="button" class="btn sm ghost" onclick="document.getElementById('e_note').value='انقطاع الإنترنت'">انقطاع الإنترنت</button><button type="button" class="btn sm ghost" onclick="document.getElementById('e_note').value='انقطاع الكهرباء'">انقطاع الكهرباء</button><button type="button" class="btn sm ghost" onclick="document.getElementById('e_note').value='ظرف خاص'">ظرف خاص</button></div>
-  <p class="sub" style="font-size:13px">تُسجَّل للمنظّم «اعتذار إداري» معتمد فلا تُحسب عليه ولا يُذكَّر بها، وتظهر للبديل بخطواتها وتُحسب له.</p>
+  <p class="sub" style="font-size:13px">تُسجَّل للمنظّم «اعتذار إداري» معتمد فلا تُحسب عليه ولا يُذكَّر بها، وتظهر للبديل بخطواتها وتُحسب له. ويتحسب في درجة الشهر كبديل طارئ، إلا لو السبب «ظرف خاص» (مستثنى). والبديل بياخد +3.</p>
   <div class="row"><button class="btn" data-a="emgSave" data-id="${esc(sid)}" data-m="${esc(mid)}">تأكيد</button><button class="btn ghost" data-a="close">إلغاء</button></div></div>`; }
 // «📋 جدول اليوم» (طلب المستخدم 11 نوفمبر): لمسئول اللجنة (الكل) ومسئول القسم (قسمه) — كل شغل اليوم مرتبًا بالوقت مع حالته
 function dayTable(d){
@@ -1423,7 +1423,7 @@ function loadTFQ(force){ if(!canTFQ() || S.tfqLoading) return; S.tfqLoading=true
   api("tafaqqud",{force:!!force}).then(d=>{ S.tfqLoading=false; if(d.ok){ S.tfq=d.rows||[]; S.tfqErr=""; } else S.tfqErr=d.reason||"err"; render(); })
     .catch(()=>{ S.tfqLoading=false; S.tfqErr="network"; render(); }); }
 // ===== تقييم الوردية (18 نوفمبر): من ورقتي «تقييم الورديات» و«الاستفسارات» اللي Claude بيكتبهم الساعة 7 الصبح — الخادم بيبعت لكل مشرفة صفوفها بس =====
-const SE_TRIAL_UNTIL = "2026-11-25"; // أول أسبوع تجريبي وما يتحسبش (قرار المستخدم 17 نوفمبر)
+const SE_TRIAL_UNTIL = "2026-11-28"; // محسوب من السبت 28 نوفمبر (قرار المستخدم 26 نوفمبر)
 const canSE = () => !!S.me && (S.me.role==="sa" || S.me.dept==="sa" || canTFQ());
 function loadSE(force){ if(!canSE() || S.seLoading) return; S.seLoading=true;
   api("shiftEval",{force:!!force}).then(d=>{ S.seLoading=false; if(d.ok){ S.se={ev:d.ev||[], q:d.q||[]}; } render(); }).catch(()=>{ S.seLoading=false; }); }
@@ -1455,7 +1455,7 @@ function seCard(r, own){
     ${!own&&fl&&!dc&&canTFQ()?`<button class="btn sm" data-a="seDec" data-id="${esc(q.id)}" data-v="مش استفسار">✓ ليس استفسارًا</button><button class="btn sm ghost" data-a="seDec" data-id="${esc(q.id)}" data-v="استفسار">بل هو استفسار</button>`:""}</div>`; }).join("")}
   <p class="sub" style="font-size:12.5px">يظهر الوقت والنوع فقط، دون نص الرسالة أو اسم صاحبها أو رقمه.${own?" ويمكن الوصول إلى الرسالة في تيليجرام بالوقت.":""}</p>`
   :`<p class="sub">لم تصل استفسارات أثناء ${own?"ورديتك":"الوردية"}.</p>`}
-  ${r.fyi?`<h3 class="seh3">للعلم <small class="sub">— تجريبي، ولا يدخل في التقييم</small></h3><div class="row" style="gap:6px">${String(r.fyi).split("|").map(x=>`<span class="pill">${esc(x.trim())}</span>`).join("")}</div>`:""}
+  ${r.fyi?`<h3 class="seh3">للعلم <small class="sub">— لا يدخل في التقييم</small></h3><div class="row" style="gap:6px">${String(r.fyi).split("|").map(x=>`<span class="pill">${esc(x.trim())}</span>`).join("")}</div>`:""}
   ${cl?`<h3 class="seh3">المطلوب في موعد المتابعة القادم${cl.when?` <small class="sub">— ${esc(cl.when)}</small>`:""}</h3><ul class="seul">${cl.list.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}
   ${r.note?`<p style="margin:8px 0 0"><b>ملاحظة:</b> ${esc(r.note)}</p>`:""}
   ${own&&!r.ack?`<label style="margin-top:8px">تعليقك (اختياري)<textarea id="seack_${esc(r.id)}" rows="4" maxlength="1000" data-cnt="seackc_${esc(r.id)}"></textarea></label><small class="sub" id="seackc_${esc(r.id)}">0 / 1000</small><div class="row" style="margin-top:6px"><button class="btn" data-a="seAck" data-id="${esc(r.id)}">اطّلعت</button></div>`
@@ -1509,8 +1509,8 @@ function viewTfq(){
   const sups=S.members.filter(m=>m.active!==false && m.dept==="sa" && m.role==="sa");
   const by=(m,f)=>done.filter(r=>(r.sentBy||r.due)===m.id).filter(f);
   const tri=(m,c)=>{ const a=by(m,r=>r[c]==="✓").length, b=by(m,r=>r[c]==="✓"||r[c]==="✗").length; return frac(a,b); };
-  const qual=`<div class="card"><h2>جودة كل مشرفة — ${esc(fmtDay(W.from))} إلى ${esc(fmtDay(W.to))}</h2><div class="tsw-scroll"><table class="dt"><thead><tr><th>المشرفة</th><th>اتبعت</th><th>في خانته</th><th>إجراءات التوقف</th><th>الصيغة <span class="pill gray">تجريبي</span></th><th>شيّكت الاعتذار المتأخر <span class="pill gray">تجريبي</span></th><th>الرد المناسب <span class="pill gray">تجريبي</span></th></tr></thead><tbody>${sups.map(m=>{ const due=done.filter(r=>r.due===m.id), st=by(m,r=>!!r.stop);
-      return `<tr><td><b>${esc(m.name)}</b></td><td>${frac(due.filter(r=>r.sentAt).length,due.length)}</td><td>${frac(by(m,r=>r.inSlot==="نعم").length,by(m,r=>r.inSlot==="نعم"||r.inSlot==="لا").length)}</td><td>${frac(st.filter(r=>!/✗/.test(r.stop)).length,st.length)}</td><td>${tri(m,"form")}</td><td>${tri(m,"late")}</td><td>${tri(m,"fit")}</td></tr>`; }).join("")}</tbody></table></div><p class="sub" style="font-size:12.5px">المشرفين مش بيشوفوا الأرقام دي. «تجريبي» يعني مش داخل في الحساب لحد ما دقة التصنيف تثبت برأيك على كل تفقد.</p></div>`;
+  const qual=`<div class="card"><h2>جودة كل مشرفة — ${esc(fmtDay(W.from))} إلى ${esc(fmtDay(W.to))}</h2><div class="tsw-scroll"><table class="dt"><thead><tr><th>المشرفة</th><th>اتبعت</th><th>في خانته</th><th>إجراءات التوقف</th><th>الصيغة</th><th>شيّكت الاعتذار المتأخر</th><th>الرد المناسب</th></tr></thead><tbody>${sups.map(m=>{ const due=done.filter(r=>r.due===m.id), st=by(m,r=>!!r.stop);
+      return `<tr><td><b>${esc(m.name)}</b></td><td>${frac(due.filter(r=>r.sentAt).length,due.length)}</td><td>${frac(by(m,r=>r.inSlot==="نعم").length,by(m,r=>r.inSlot==="نعم"||r.inSlot==="لا").length)}</td><td>${frac(st.filter(r=>!/✗/.test(r.stop)).length,st.length)}</td><td>${tri(m,"form")}</td><td>${tri(m,"late")}</td><td>${tri(m,"fit")}</td></tr>`; }).join("")}</tbody></table></div><p class="sub" style="font-size:12.5px">المشرفين مش بيشوفوا الأرقام دي. كل البنود محسوبة من السبت 28 نوفمبر.</p></div>`;
   const nav=`<div class="row noprint"><button class="btn sm ghost" data-a="tfqWk" data-v="-1">‹ الأسبوع اللي فات</button>${S.tfqWk?`<button class="btn sm ghost" data-a="tfqWk" data-v="0">الأسبوع ده</button>`:""}<button class="btn sm ghost" data-a="tfqWk" data-v="1">اللي بعده ›</button><button class="btn sm ghost" data-a="tfqReload">⟳ تحديث</button></div>`;
   const list=`<details class="card teamd"><summary><h2 style="display:inline">كل تفقدات الأسبوع (${rows.length})</h2></summary>${rows.map(r=>`<div class="item"><div class="what"><b>${esc(r.student||"")} — ${esc(r.course||"")}</b><small>${esc(r.kind||"")}${r.n?" · "+esc(r.n):""} · ${esc(tfqWho(r.due))}${r.sentAt?" · اتبعت "+esc(r.sentAt.slice(5)):""}</small></div>${tfqPill(r)}${r.op?`<span class="pill gray">${esc(r.op)}</span>`:""}<button class="btn sm ghost" data-a="tfqOpen" data-id="${esc(r.id)}">تفاصيل</button></div>`).join("")||`<div class="empty">مفيش تفقدات في الأسبوع ده.</div>`}</details>`;
   return `<div class="row"><div class="grow"><h1>مراقبة التفقدات</h1><p class="sub">من سجل التفقدات اللي Claude بيكتبه كل يوم في مراجعة 7 الصبح · ${esc(fmtDay(W.from))} – ${esc(fmtDay(W.to))}</p></div></div>${nav}${kpi}
@@ -1524,10 +1524,10 @@ function tfqModal(id){ const r=(S.tfq||[]).find(x=>x.id===id); if(!r) return `<h
    ${li("📋","الغياب",`اتعتمد ${esc(r.appr||"—")}${r.rev?" ("+esc(r.rev)+")":""}`)}
    ${li("🗓","الخانة المفروضة",`${esc(tfqWho(r.due))} · ${esc(tfqSlot(r.slot))}`)}
    ${li(r.sentAt?ic(r.inSlot):"❌","اتبعت",r.sentAt?`${esc(r.sentAt)} — ${esc(tfqWho(r.sentBy))}${r.inSlot==="نعم"?" · جوه الخانة":r.inSlot==="لا"?" · برّه الخانة":""}`:"لأ")}
-   ${li(ic(r.form),"الصيغة",(r.form||"—")+" <small class='sub'>(تجريبي)</small>")}
-   ${li(ic(r.late),"الاعتذار المتأخر",(r.late||"—")+" <small class='sub'>(تجريبي)</small>")}
+   ${li(ic(r.form),"الصيغة",(r.form||"—")+"")}
+   ${li(ic(r.late),"الاعتذار المتأخر",(r.late||"—")+"")}
    ${li("💬","رد الطالب",esc(r.reply||"—"))}
-   ${li(ic(r.fit),"الرد المناسب",(r.fit||"—")+" <small class='sub'>(تجريبي)</small>")}
+   ${li(ic(r.fit),"الرد المناسب",(r.fit||"—")+"")}
    ${r.stop?li(/✗/.test(r.stop)?"❌":"✅","إجراءات التوقف",esc(r.stop)):""}
   </ul>${r.note?`<div class="banner">${esc(r.note)}</div>`:""}
   <p class="sub" style="font-size:12.5px">مش بيتخزّن نص الرسائل. بيتخزّن بس النوع والوقت ومين بعت.</p>
@@ -1741,6 +1741,70 @@ function repPeriod(){ const per=S.rper||"day", t=today();
   if(per==="week"){ const f=addDays(weekStart(t), 7*(S.rwk||0)), to=addDays(f,6); return {per, from:f, to, key:"W"+f, label:"أسبوع "+fmtDay(f)+" – "+fmtDay(to)}; }
   const m=S.month||t.slice(0,7), [y,mo]=m.split("-").map(Number); return {per, from:m+"-01", to:m+"-"+pad(new Date(y,mo,0).getDate()), key:"M"+m, label:monthName(m), month:m}; }
 const repId = (mid, key) => "rp_"+mid+"_"+key;
+// ===== 🏅 درجة الشهر من 100 (قرار المستخدم 26 نوفمبر — ملف «اقتراح معتمد - درجة الشهر والسماحية وزيادة البديل») =====
+// المؤشر ياخد وزنه كامل عند الهدف، وبينزل لصفر عند 50%. المؤشر اللي مالوش بيانات وزنه بيتوزّع. للعلم قبل SC_SINCE.
+const SC_SINCE = "2026-12";
+const SC_W = {
+  org:[["steps","الخطوات في موعدها",95,25],["acc","دقة تسجيل الحضور",95,25],["attend","الدوام",90,15],["ontime","بدء الدوام في موعده",90,10],["fix","تصحيح ملاحظات المراجعة",95,10]],
+  sa:[["tfq","التفقد في خانته",95,30],["q15","الرد على الاستفسار خلال 15 دقيقة",90,25],["stop","إجراءات التوقف كاملة",100,15],["attend","الدوام",90,15],["done","إنجاز الجدول",95,15]],
+  head:[["hd","الرد في المهلة (الطلبات والمشاكل والاعتماد)",90,40],["dept","متابعة القسم",90,30],["ad","الدوام وإنجاز الجدول",90,30]] };
+const SC_KN = {org:"منظّم", sa:"مشرف شئون الطلاب", head:"مسئول قسم"};
+const scIn = (d,P) => !!d && d>=P.from && d<=P.to;
+const scKind = m => m.role==="head" ? "head" : m.dept==="sa" ? "sa" : "org";
+const scExempt = r => /مستثنى/.test(r.reply||"") || (/^emg_/.test(r.id||"") && /ظرف خاص/.test(r.note||""));
+function scVals(m,P,kind){
+  const r=periodStats(m.id,P.from,P.to), q=arStats(m.id,P.from,P.to)||{}, v={};
+  v.attend=pc(r.present,r.work); v.done=pc(r.dn,r.exp); v.steps=pc(r.stepOn,r.stepAll);
+  v.ontime=r.present?pc(r.present-r.lates,r.present):null; v.acc=q.acc??null; v.fix=q.tot?pc(q.fix,q.tot):null;
+  v._det={attend:`${r.present}/${r.work}`, done:`${r.dn}/${r.exp}`, steps:`${r.stepOn}/${r.stepAll}`, ontime:`${r.present-r.lates}/${r.present}`, acc:q.revs?`${q.revs} مراجعة`:"", fix:q.tot?`${q.fix}/${q.tot}`:""};
+  if(kind==="sa"){ const ev=((S.se||{}).ev||[]).filter(e=>e.member===m.id && scIn(e.date,P)), qs=((S.se||{}).q||[]).filter(x=>x.member===m.id && scIn(x.date,P));
+    const need=ev.reduce((a,e)=>a+seN(e.need),0), sent=ev.reduce((a,e)=>a+seN(e.sent),0), stop=ev.reduce((a,e)=>a+seN(e.stop),0);
+    const c=qs.filter(x=>x.dec!=="مش استفسار"), ok=c.filter(x=>x.verdict==="في المهلة").length;
+    v.tfq=need?pc(sent,need):null; v.q15=c.length?pc(ok,c.length):null; v.stop=ev.length?Math.max(0,100-stop*20):null;
+    Object.assign(v._det,{tfq:need?`${sent}/${need}`:"", q15:c.length?`${ok}/${c.length}`:"", stop:ev.length?(stop?`${stop} ناقصة`:"كاملة"):""}); }
+  if(kind==="head"){ const st=hdStats(hdItems(m,P.from,P.to)), den=st.on+st.late+st.waitLate; v.hd=den?pc(st.on,den):null; v._det.hd=den?`${st.on}/${den}`:"";
+    const tm=S.members.filter(x=>x.dept===m.dept && x.id!==m.id && x.active!==false && x.role!=="committee"); let t=0,f=0; tm.forEach(x=>{ const z=arStats(x.id,P.from,P.to); if(z){ t+=z.tot; f+=z.fix; } });
+    v.dept=m.dept==="org"&&t?pc(f,t):null; v._det.dept=v.dept!=null?`ملاحظات اتصلّحت ${f}/${t}`:"مش متاح لسه";
+    v.ad=(v.attend!=null&&v.done!=null)?Math.round((v.attend+v.done)/2):(v.attend??v.done); v._det.ad=`${v._det.attend} · ${v._det.done}`; }
+  return v; }
+function scDed(m,P){
+  const rq=S.requests.filter(r=>r.member===m.id && r.status==="accepted" && scIn(r.date,P) && !scExempt(r)), a=absStats(m.id,P.from,P.to), ex=new Set(S.requests.filter(scExempt).map(r=>r.id));
+  const lateIds=new Set(a.ab.filter(x=>!ex.has(x.r.id) && (x.emg||x.w.k==="after"||x.w.k==="short")).map(x=>x.r.id));
+  const late=lateIds.size, norm=rq.filter(r=>r.kind==="lecture" && !lateIds.has(r.id)).length;
+  let days=0; rq.forEach(r=>{ if(r.kind==="day") days++; if(r.kind==="leave") days+=reqDates(r).filter(d=>scIn(d,P)).length; });
+  const hrs=rq.filter(r=>r.kind==="hours"&&r.start&&r.end).reduce((s,r)=>s+toMin(r.end)-toMin(r.start),0);
+  const L=[["اعتذار متأخر أو بديل طارئ",late,1,5],["اعتذار عن محاضرة أو مهمة في وقته",norm,2,3],["أيام اعتذار أو إجازة",days,2,3],["مشاكل إنترنت",a.net,2,3]].map(([l,n,ok,per])=>({l,n,ok,d:Math.max(0,n-ok)*per}));
+  L.push({l:"ساعات استئذان",n:Math.round(hrs/6)/10,ok:4,d:Math.max(0,Math.ceil((hrs-240)/60)),unit:"ساعة"});
+  return {L, tot:Math.min(15,L.reduce((s,x)=>s+x.d,0)), ex:S.requests.filter(r=>r.member===m.id && scIn(r.date,P) && r.status==="accepted" && scExempt(r)).length}; }
+function scBonus(m,P){ let b=0; const L=S.slots.filter(s=>s.owner===m.id && s.cover && scIn(s.date,P) && isSlotDone(s.date,s.id)).map(s=>{
+    const orig=s.id.replace("cov_"+s.date+"_",""), emg=S.requests.some(r=>/^emg_/.test(r.id||"") && r.member===s.cover && r.slot===orig && r.status==="accepted" && reqDates(r).includes(s.date)), p=emg?3:2; b+=p; return {d:s.date,l:s.label,who:nameOf(s.cover),emg,p}; });
+  return {L, tot:Math.min(10,b)}; }
+function scoreOf(m,P){ const kind=scKind(m), v=scVals(m,P,kind), W=SC_W[kind];
+  const have=W.filter(x=>v[x[0]]!=null), wsum=have.reduce((s,x)=>s+x[3],0), base=kind==="org"?85:100;
+  const ind=W.map(([k,l,g,w])=>{ const val=v[k]; if(val==null) return {k,l,g,w,val:null,pt:0,ww:0,det:v._det[k]||"مالوش بيانات"}; const ww=w*base/wsum; return {k,l,g,w,ww,val,pt:ww*Math.max(0,Math.min(1,(val-50)/(g-50))),det:v._det[k]}; });
+  const ded=scDed(m,P), bon=scBonus(m,P), commit=kind==="org"?15-ded.tot:0, pen=kind==="org"?0:ded.tot;
+  const score=Math.max(0,Math.min(100,Math.round(ind.reduce((s,x)=>s+x.pt,0)+commit-pen+bon.tot)));
+  return {kind,ind,ded,bon,commit,pen,score,grade:scGrade(score),none:!have.length}; }
+const scGrade = n => n>=90?["ممتاز","ok"]:n>=80?["جيد جدًا","ok"]:n>=70?["جيد","gold"]:["محتاج تحسين","bad"];
+const scTrial = P => (P.from||"").slice(0,7) < SC_SINCE;
+function scDetail(s){ return `<div class="tsw-scroll"><table class="dt"><thead><tr><th>المؤشر</th><th>النتيجة</th><th>الهدف</th><th>الوزن</th><th>الدرجة</th></tr></thead><tbody>
+  ${s.ind.map(x=>`<tr${x.val==null?' style="opacity:.55"':""}><td>${esc(x.l)}</td><td>${x.val==null?esc(x.det):`<span class="pill ${tone(x.val,x.g)}">${x.val}%</span> <small class="sub">${esc(x.det||"")}</small>`}</td><td>${x.g}%</td><td>${x.val==null?"—":Math.round(x.ww*10)/10}</td><td><b>${x.val==null?"—":Math.round(x.pt*10)/10}</b></td></tr>`).join("")}
+  <tr><td>${s.kind==="org"?"الالتزام (الاعتذارات ومشاكل النت)":"خصم الاعتذارات فوق المسموح"}</td><td>${s.ded.L.filter(x=>x.n).map(x=>`${esc(x.l)}: ${x.n}${x.unit?" "+x.unit:""} <small class="sub">(المسموح ${x.ok})</small>${x.d?` <span class="pill bad">−${x.d}</span>`:""}`).join("<br>")||"مفيش"}${s.ded.ex?`<br><small class="sub">مستثنى: ${s.ded.ex}</small>`:""}</td><td>—</td><td>${s.kind==="org"?15:"حتى 15"}</td><td><b>${s.kind==="org"?s.commit:(s.pen?"−"+s.pen:"0")}</b></td></tr>
+  <tr><td>زيادة البديل</td><td>${s.bon.L.map(x=>`${esc(fmtDay(x.d))} «${esc(x.l)}» بدل ${esc(x.who)}${x.emg?" (طارئ)":""} +${x.p}`).join("<br>")||"مفيش"}</td><td>—</td><td>حتى 10</td><td><b>${s.bon.tot?"+"+s.bon.tot:"0"}</b></td></tr></tbody></table></div>`; }
+function scoreCard(P){ if(!isMgr() || VIEWER()) return ""; const rows=team().filter(m=>m.active!==false && m.role!=="committee").map(m=>({m,s:scoreOf(m,P)})).filter(x=>!x.s.none).sort((a,b)=>b.s.score-a.s.score);
+  if(!rows.length) return "";
+  return `<div class="card"><h2>🏅 درجة الشهر${scTrial(P)?` <span class="pill gold">للعلم · بتتحسب من ديسمبر</span>`:""}</h2>
+   <p class="sub" style="font-size:13px">من 100: المؤشر ياخد وزنه كامل لو وصل للهدف، وتحت الهدف بينزل لحد صفر عند 50%، والمؤشر اللي مالوش بيانات وزنه بيتوزّع على الباقي. ‏90 فأكتر ممتاز · 80–89 جيد جدًا · 70–79 جيد · أقل من 70 محتاج تحسين. الاعتذار اللي في رد قبوله «مستثنى» أو البديل الطارئ بسبب «ظرف خاص» ما بيتحسبش.</p>
+   <div class="tsw-scroll"><table class="dt"><thead><tr><th>العضو</th><th>الدور</th><th>الدرجة</th><th>التقدير</th><th>الالتزام / الخصم</th><th>البديل</th></tr></thead><tbody>
+   ${rows.map(({m,s})=>`<tr><td><b>${esc(m.name)}</b></td><td>${SC_KN[s.kind]}</td><td><b>${s.score}</b></td><td><span class="pill ${s.grade[1]}">${s.grade[0]}</span></td><td>${s.kind==="org"?s.commit+" / 15":(s.pen?"−"+s.pen:"0")}</td><td>${s.bon.tot?"+"+s.bon.tot:"—"}</td></tr>`).join("")}</tbody></table></div>
+   <h3 style="margin-top:12px">التفاصيل</h3>${rows.map(({m,s})=>`<details class="person"><summary><span class="grow"><b>${esc(m.name)}</b> <small class="sub">${SC_KN[s.kind]}</small></span><span class="pill ${s.grade[1]}">${s.score} / 100 · ${s.grade[0]}</span></summary>${scDetail(s)}</details>`).join("")}</div>`; }
+const scoreSnap = (mid,P) => { const m=memberOf(mid); if(!m.id || m.role==="committee") return null; const s=scoreOf(m,P); if(s.none) return null;
+  return {n:s.score, g:s.grade[0], k:s.kind, trial:scTrial(P), i:s.ind.map(x=>[x.l,x.val,x.g,x.val==null?null:Math.round(x.pt*10)/10,x.val==null?null:Math.round(x.ww*10)/10]), c:s.kind==="org"?s.commit:-s.pen, b:s.bon.tot, d:s.ded.L.filter(x=>x.n).map(x=>[x.l,x.n,x.ok,x.d])}; };
+function scoreSnapHtml(z){ if(!z) return ""; const gk=scGrade(z.n)[1];
+  return `<div style="margin-top:10px"><h3 style="margin:6px 0">🏅 درجة الشهر: <span class="pill ${gk}">${z.n} / 100 · ${esc(z.g)}</span>${z.trial?` <small class="sub">(للعلم)</small>`:""}</h3>
+  <div class="tsw-scroll"><table class="dt"><tbody>${(z.i||[]).map(([l,v,g,p,w])=>`<tr><td>${esc(l)}</td><td>${v==null?"—":`<span class="pill ${tone(v,g)}">${v}%</span>`} <small class="sub">الهدف ${g}%</small></td><td>${p==null?"—":p+" من "+w}</td></tr>`).join("")}
+  <tr><td>${z.k==="org"?"الالتزام":"خصم الاعتذارات"}</td><td>${(z.d||[]).map(([l,n,ok,d])=>`${esc(l)}: ${n} (المسموح ${ok})${d?" −"+d:""}`).join("<br>")||"مفيش"}</td><td>${z.k==="org"?z.c+" من 15":(z.c?z.c:"0")}</td></tr>
+  ${z.b?`<tr><td>زيادة البديل</td><td>شكرًا على تغطية زملائك</td><td>+${z.b}</td></tr>`:""}</tbody></table></div></div>`; }
 function viewReport(){
   const P=repPeriod(), ppl=team().filter(m=>m.active!==false);
   const seg=`<div class="seg noprint">${[["day","يومي"],["week","أسبوعي"],["month","شهري"]].map(([k,l])=>`<button class="${P.per===k?"on":""}" data-a="rper" data-v="${k}">${l}</button>`).join("")}</div>`;
@@ -1749,7 +1813,7 @@ function viewReport(){
     : `<input type="month" data-a="month" value="${esc(P.month)}" style="width:auto">`;
   const head = `${ptitle("التقرير "+({day:"اليومي",week:"الأسبوعي",month:"الشهري"}[P.per])+" — "+P.label)}<div class="row noprint"><div class="grow"><h1>التقارير</h1><p class="sub">${esc(P.label)}</p></div>${ctl}<button class="btn ghost" data-a="print">🖨️ طباعة / PDF</button></div>${seg}`;
   if(P.per==="day") return head + viewDayReport(P.from, ppl.concat(lecOrgPpl())) + absReportCard(P, ppl.concat(lecOrgPpl())) + hdCard(P);
-  return head + periodTable(P, ppl.map(m=>({m,...periodStats(m.id,P.from,P.to)})).concat(lecOrgPpl().map(m=>({m, lo:true, ...periodStats(m.id,P.from,P.to,true)})))) + hoursReportCard(P, ppl) + absReportCard(P, ppl.concat(lecOrgPpl())) + ckReportCard(P, ppl) + hdCard(P);
+  return head + (P.per==="month"?scoreCard(P):"") + periodTable(P, ppl.map(m=>({m,...periodStats(m.id,P.from,P.to)})).concat(lecOrgPpl().map(m=>({m, lo:true, ...periodStats(m.id,P.from,P.to,true)})))) + hoursReportCard(P, ppl) + absReportCard(P, ppl.concat(lecOrgPpl())) + ckReportCard(P, ppl) + hdCard(P);
 }
 // التقرير اليومي للفريق: سطر لكل شخص يُفتح بالضغط
 function viewDayReport(d, ppl){
@@ -1791,7 +1855,7 @@ function periodTable(P, rows){
   <p class="sub" style="font-size:13px;margin-top:10px">الأخضر = بلغ الهدف · الذهبي = قريب منه · الأحمر = بعيد عنه. «إرسال» يرسل للمشرف أرقامه في هذه الفترة في «يومي» عنده، ويضغط «اطّلعت».</p></div>
   ${rows.some(r=>r.repNeed||r.exc)?`<div class="card" style="overflow-x:auto"><h2>📝 تقارير المحاضرات</h2><table><thead><tr><th>المنظّم</th><th class="c">تقارير مرسلة</th><th class="c">متوسط الحضور على زووم</th><th class="c">اعتذار الشيخ</th><th class="c">مشاكل تقنية</th></tr></thead><tbody>${rows.filter(r=>r.repNeed||r.exc).map(r=>`<tr><td><b>${esc(r.m.name)}</b></td><td class="c">${r.repNeed?`<span class="pill ${tone(pc(r.repCnt,r.repNeed),GOAL.done)}">${r.repCnt}/${r.repNeed}</span>`:"—"}</td><td class="c">${r.repAvg!=null?r.repAvg:"—"}</td><td class="c">${r.exc||"—"}</td><td class="c">${r.tech||"—"}</td></tr>`).join("")}</tbody></table></div>`:""}`;
 }
-function snapPeriod(mid, P){ const r=periodStats(mid,P.from,P.to); return {kind:P.per, label:P.label, from:P.from, to:P.to, attend:pc(r.present,r.work), done:pc(r.dn,r.exp), weekly:r.weekly, hours:r.mins, onTime:pc(r.onTime,r.tk), lates:r.lates, steps:pc(r.stepOn,r.stepAll), reports:r.repNeed?r.repCnt+"/"+r.repNeed:null, att:(arStats(mid,P.from,P.to)||{}).acc??null, abs:absSnap(mid,P.from,P.to)}; }
+function snapPeriod(mid, P){ const r=periodStats(mid,P.from,P.to); return {kind:P.per, label:P.label, from:P.from, to:P.to, attend:pc(r.present,r.work), done:pc(r.dn,r.exp), weekly:r.weekly, hours:r.mins, onTime:pc(r.onTime,r.tk), lates:r.lates, steps:pc(r.stepOn,r.stepAll), reports:r.repNeed?r.repCnt+"/"+r.repNeed:null, att:(arStats(mid,P.from,P.to)||{}).acc??null, abs:absSnap(mid,P.from,P.to), score:P.per==="month"?scoreSnap(mid,P):null}; }
 function sendRepForm(mid){ const P=repPeriod(), x=snapPeriod(mid,P), e=S.evals.find(z=>z.id===repId(mid,P.key))||{};
   return `<h2>📤 إرسال التقرير ${P.per==="week"?"الأسبوعي":"الشهري"} لـ ${esc(nameOf(mid))}</h2><p class="sub">${esc(P.label)}</p>${metricsHtml(x)}
   <label style="margin-top:10px">ملاحظتك له (اختياري)<textarea id="rp_note">${esc(e.headNote||"")}</textarea></label>
@@ -1858,7 +1922,7 @@ function viewTeamHead(){
   return `<div class="row"><div class="grow"><h1>الفريق والجداول</h1><p class="sub">${esc(DEPTS[S.me.dept]||"")} · ${list.length} عضو · تقدري تعدّلي الجدول الأسبوعي لكل واحد</p></div></div>
   <div class="card" style="overflow-x:auto"><table><thead><tr><th>الاسم</th><th>الدور</th><th class="c">جدوله</th><th></th></tr></thead><tbody>${list.map(m=>`<tr><td><b>${esc(m.name)}</b></td><td>${esc(ROLES[m.role]||"")}</td><td class="c">${S.slots.filter(s=>s.owner===m.id&&s.kind!=="flex"&&!s.date).length}</td><td><div class="row" style="flex-wrap:nowrap">${m.id===S.me.id?"":`<button class="btn sm ghost" data-a="sched" data-id="${esc(m.id)}">جدوله</button>`}${asBtn(m.id)}</div></td></tr>`).join("")}</tbody></table></div>`; }
 // مهلة تصحيح المنظّم: 4 ساعات من إرسال المراجعة؛ بعدها «تصحيح متأخر» (للعلم أسبوعين ثم يُحسب)
-const AR_FIX_H = 4, AR_LATE_COUNTS = "2026-12-01";
+const AR_FIX_H = 4, AR_LATE_COUNTS = "2026-11-28";
 const arFixDue = e => { const at=Number(((e||{}).metrics||{}).sentAt||0); return at ? at + AR_FIX_H*3600000 : 0; };
 const hmCairo = ms => new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Cairo",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date(ms));
 function arDueLine(e){ const due=arFixDue(e); if(!due) return ""; const left=due-NOW();
@@ -1974,8 +2038,8 @@ function metricsHtml(x){ if(!x) return "";
   const cell=(l,v,g)=>`<div class="card" style="padding:10px;text-align:center"><small class="sub">${l}</small><div style="font-weight:700;font-size:18px">${esc(String(v))}</div>${g?`<small class="sub">${g}</small>`:""}</div>`;
   return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px">${[
     x.attend!=null?cell("حضور الدوام",x.attend+"%","الهدف "+GOAL.attend+"%"):"", x.done!=null?cell("إنجاز الجدول",x.done+"%","الهدف "+GOAL.done+"%"):"",
-    x.weekly!=null?cell("محاضرات أسبوعيًا",x.weekly,"الهدف "+GOAL.weekly):"", x.steps!=null?cell("الخطوات في موعدها",x.steps+"%","الهدف "+GOAL.done+"%"):"", x.hours?cell("ساعات الدوام",dur(x.hours)):"", x.onTime!=null?cell("المهام في موعدها",x.onTime+"%"):"", x.reports?cell("تقارير المحاضرات",x.reports):"", x.lates?cell("مرات التأخير",x.lates):"", x.att!=null?cell("دقة تسجيل الحضور",x.att+"%","الهدف "+GOAL.att+"%"):""].join("")}</div>${absAny(x.abs)?`<div style="margin-top:10px"><h3 style="margin:6px 0">🧾 الاعتذارات ومشاكل الإنترنت</h3>${absDetailHtml(x.abs)}${ABS_NOTE}</div>`:""}`; }
-function snapMetrics(mid, month){ const r=monthStats(mid,month); return {attend:pc(r.present,r.work), done:pc(r.dn,r.exp), weekly:r.weekly, hours:r.mins, onTime:pc(r.onTime,r.tk), lates:r.lates, steps:pc(r.stepOn,r.stepAll), att:(arStats(mid, month+"-01", month+"-31")||{}).acc??null}; }
+    x.weekly!=null?cell("محاضرات أسبوعيًا",x.weekly,"الهدف "+GOAL.weekly):"", x.steps!=null?cell("الخطوات في موعدها",x.steps+"%","الهدف "+GOAL.done+"%"):"", x.hours?cell("ساعات الدوام",dur(x.hours)):"", x.onTime!=null?cell("المهام في موعدها",x.onTime+"%"):"", x.reports?cell("تقارير المحاضرات",x.reports):"", x.lates?cell("مرات التأخير",x.lates):"", x.att!=null?cell("دقة تسجيل الحضور",x.att+"%","الهدف "+GOAL.att+"%"):""].join("")}</div>${scoreSnapHtml(x.score)}${absAny(x.abs)?`<div style="margin-top:10px"><h3 style="margin:6px 0">🧾 الاعتذارات ومشاكل الإنترنت</h3>${absDetailHtml(x.abs)}${ABS_NOTE}</div>`:""}`; }
+function snapMetrics(mid, month){ const r=monthStats(mid,month); return {attend:pc(r.present,r.work), done:pc(r.dn,r.exp), weekly:r.weekly, hours:r.mins, onTime:pc(r.onTime,r.tk), lates:r.lates, steps:pc(r.stepOn,r.stepAll), att:(arStats(mid, month+"-01", month+"-31")||{}).acc??null, score:scoreSnap(mid,{per:"month", from:month+"-01", to:month+"-31"})}; }
 function evalForm(mid, month){
   const e=evalOf(mid,month)||{}, prev=evalOf(mid,prevMonth(month)), m=snapMetrics(mid,month);
   const sel=(id,v)=>`<select id="${id}">${SCORE.map((l,i)=>`<option value="${i||""}" ${Number(v)===i&&i?"selected":""}>${i?i+" — "+l:"اختر…"}</option>`).join("")}</select>`;
