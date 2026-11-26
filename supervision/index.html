@@ -268,7 +268,7 @@ details.dr summary{flex-wrap:wrap;gap:6px}
 .stugrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin:10px 0}.stuitem{border:1px solid #E3E9F1;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}.stuitem small{color:var(--muted)}.goldtx{color:var(--gold-ink);font-weight:700}.stuitem .bad{color:var(--bad);font-weight:700}
 .stufl{gap:10px;align-items:flex-end}.stufl label{display:flex;flex-direction:column;gap:4px;font-size:13px;flex:1 1 180px}.stufl label:first-child{flex:2 1 240px}.stutb td,.stutb th{white-space:nowrap}.stupii{background:#F6F8FB;border-radius:10px;padding:10px 12px;line-height:1.9;margin-bottom:8px;font-size:14px}
 button.lnk{background:none;border:0;padding:0;color:var(--brand);cursor:pointer;font:inherit;text-align:start}button.lnk:hover{text-decoration:underline}
-.stustack{display:flex;flex-direction:column;gap:14px}.stur{display:inline-flex;align-items:center;gap:6px;font-size:15px;min-height:44px;margin-inline-end:14px}
+.stustack{display:flex;flex-direction:column;gap:14px}.stusearch{flex:1 1 260px;max-width:420px}.stusearch input{width:100%}.stuccs{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:10px}.stucc{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:start;background:#fff;border:1px solid #E3E9F1;border-radius:12px;padding:10px 12px;cursor:pointer;font:inherit;color:inherit}.stucc:hover{border-color:var(--brand)}.stucc.sel{border:2px solid var(--brand);background:#F6F8FB}.stuccp{font-size:20px;font-weight:700}.studots{display:inline-flex;gap:3px;margin-top:4px}.studots i,.studot{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:middle}.stutr{font-size:12px;font-weight:700;color:var(--muted)}.stutr.up{color:var(--ok)}.stutr.dn{color:var(--bad)}.stur2{display:flex;flex-direction:column;align-items:flex-end;gap:4px;white-space:nowrap}.stur{display:inline-flex;align-items:center;gap:6px;font-size:15px;min-height:44px;margin-inline-end:14px}
 .pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.gold{background:var(--gold-soft);color:var(--gold-ink)}
 .btn{border:1px solid var(--brand);background:var(--brand);color:#fff;border-radius:10px;padding:9px 16px;font-weight:600;cursor:pointer}
 .btn.ghost{background:var(--paper);color:var(--brand)}
@@ -675,7 +675,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="018ef589a8e8"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="d166ee18ccbe"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -2074,7 +2074,7 @@ function stuIdx(){ const D=S.stu; if(D._ix) return D._ix;
   const byC={}; D.students.forEach(s=>byC[s.c]=s); const sum={}; D.sums.forEach(x=>sum[x.c+"|"+x.k]=x);
   const fuBy={}; (D.fu||[]).forEach(f=>(fuBy[f.c]=fuBy[f.c]||[]).push(f)); Object.values(fuBy).forEach(a=>a.sort((x,y)=>y.at.localeCompare(x.at)));
   const rows=D.regs.map(r=>{ const s=byC[r.c]; if(!s) return null; const m=sum[r.c+"|"+r.k]||{}, co=D.courses[r.k]||{};
-    const row={c:r.c, name:s.n, k:r.k, kn:co.n||r.k, prog:co.t==="برنامج", sub:r.sub||"", n:m.n||0, h:m.h||0, pct:m.n?Math.round(100*((m.h||0)+(m.x||0)+(m.t||0))/m.n):null, last:m.last||"", gap:(m.gap===""||m.gap==null)?null:Number(m.gap)};
+    const row={c:r.c, name:s.n, k:r.k, kn:co.n||r.k, prog:co.t==="برنامج", sub:r.sub||"", n:m.n||0, h:m.h||0, pct:m.n?Math.round(100*((m.h||0)+(m.x||0)+(m.t||0))/m.n):null, last:m.last||"", gap:(m.gap===""||m.gap==null)?null:Number(m.gap), x:m.x||0, dots:m.dots||"", tr:(m.tr===""||m.tr==null)?null:Number(m.tr), rd:r.d||""};
     row.st=stuSt(row); return row; }).filter(Boolean);
   return D._ix={byC, rows, fuBy}; }
 const stuGrant = r => r.sub==="منحة جزئية";
@@ -2088,49 +2088,75 @@ function stuNeed(){ return stuIdx().rows.filter(r=>r.n && (r.st.k==="gold" || r.
   .sort((a,b)=>(stuGrant(b)-stuGrant(a)) || ((b.gap||0)-(a.gap||0)) || ((a.pct||0)-(b.pct||0))); }
 const stuSubPill = r => r.prog ? "" : r.sub==="منحة جزئية" ? `<span class="pill gold">منحة جزئية</span>` : r.sub==="كامل" ? `<span class="pill gray">كامل</span>` : `<span class="pill gray">غير معروف</span>`;
 const stuBar = p => p===null ? "—" : `<div class="row" style="gap:8px;flex-wrap:nowrap"><div class="bar" style="width:90px"><i style="width:${Math.max(0,Math.min(100,p))}%;background:${p>=75?"var(--ok)":p>=50?"var(--gold)":"var(--bad)"}"></i></div><span style="font-variant-numeric:tabular-nums">${p}%</span></div>`;
+// ===== تبويب «الطلاب» — التصميم الجديد (26 نوفمبر، بطلب المستخدم): بحث في كل الطلاب، وكروت الدورات، وإنذار مبكر، وملف الطالب. المتابعة نفسها في «التفقدات» =====
+const stuN = s => String(s||"").replace(/[ً-ْـ]/g,"").replace(/[إأآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/[\s.،,:\-–()]+/g,"").trim();
+const STU_DOT = {g:["var(--ok)","حضر"], a:["var(--bad)","غاب"], e:["var(--gold)","اعتذر"], r:["#7C9CC0","تسجيل"]};
+const stuDots = s => s ? `<span class="studots" aria-label="آخر المحاضرات (الأحدث يمين)">${[...String(s)].map(x=>{ const o=STU_DOT[x]||["#ccc","?"]; return `<i style="background:${o[0]}" title="${o[1]}"></i>`; }).join("")}</span>` : `<small class="sub">لا حضور بعد</small>`;
+const stuTr = t => (t===null||t===undefined||t==="") ? "" : Number(t)>=5 ? `<span class="stutr up" title="أحسن من الـ3 أسابيع اللي قبلها">▲${Number(t)}</span>` : Number(t)<=-5 ? `<span class="stutr dn" title="أسوأ من الـ3 أسابيع اللي قبلها">▼${-Number(t)}</span>` : `<span class="stutr" title="ثابت">●</span>`;
+const stuMid = () => VIEWER()||(S.me&&S.me.id);
+const stuIsSup = () => (memberOf(stuMid()).role||(S.me&&S.me.role))==="sa";
+function stuMyToday(){ // دورات خانات المشرفة النهارده (ومعاها أي خانة بتغطّيها)
+  const D=S.stu, sl=allSlotsOf(stuMid(), today()), txt=sl.map(s=>stuN((s.label||"")+" "+((lecOf(s)||{}).name||""))).join("|"), out={};
+  Object.keys(D.courses).forEach(k=>{ const n=stuN(D.courses[k].n); if(n.length>=3 && txt.indexOf(n)>=0) out[k]=1; });
+  return out; }
+function stuLecToday(k){ const D=S.stu, n=stuN((D.courses[k]||{}).n), di=dayIdx(parse(today()));
+  if(n.length<3) return null; const ls=S.lectures.filter(l=>l.active!==false && Number(l.day)===di && !lecPaused(l,today()) && l.start && (stuN(l.name).indexOf(n)>=0 || n.indexOf(stuN(l.name))>=0));
+  return ls.length ? ls.map(l=>l.start).sort()[0] : null; }
+function stuWarn(rows){ const out=[];
+  rows.forEach(r=>{
+    if(stuGrant(r) && r.n && r.gap>=1) out.push({r, w:r.gap>=2?"منحة جزئية وغاب آخر "+r.gap+" محاضرات — اتجاوز شرط المنحة":"منحة جزئية وغاب آخر محاضرة — مرة كمان ويفقد الشرط", c:"bad", l:"عاجل", o:0});
+    else if(r.n && r.tr!==null && r.tr<=-15) out.push({r, w:"الالتزام نازل "+(-r.tr)+"% في آخر 3 أسابيع عن اللي قبلها", c:"gold", l:"راقب", o:1});
+    else if(!r.n && r.rd && stuDays(r.rd)!==null && stuDays(r.rd)>=7) out.push({r, w:"مسجّل من "+stuDays(r.rd)+" يوم وما حضرش ولا محاضرة", c:"gray", l:"اتأكد", o:2}); });
+  return out.sort((a,b)=>a.o-b.o || a.r.name.localeCompare(b.r.name,"ar")); }
 function viewStudents(){
   if(!canSTU()) return `<div class="card empty">ليست لديك صلاحية لهذه الصفحة.</div>`;
   if(!S.stu){ if(!S.stuLoading && !S.stuErr) loadStu();
     return S.stuErr ? `<div class="card empty">تعذّر تحميل بيانات الطلاب.<div class="row" style="justify-content:center;margin-top:12px"><button class="btn" data-a="stuReload">⟳ إعادة المحاولة</button></div></div>` : `<div class="card empty">جارٍ تحميل بيانات الطلاب…</div>`; }
-  const D=S.stu, ix=stuIdx(), F=S.stuF=S.stuF||{q:"",k:"",sub:"",st:""}, mgr=isMgr();
+  const D=S.stu, ix=stuIdx(), F=S.stuF=S.stuF||{q:"",k:"",all:false}, sup=stuIsSup();
+  const mine=sup?stuMyToday():null, showAll=!sup||F.all||!Object.keys(mine).length;
+  const by={}; ix.rows.forEach(r=>{ const o=by[r.k]=by[r.k]||{k:r.k,n:r.kn,cnt:0,p:[],t:[],bad:0,gr:0,prog:r.prog}; o.cnt++; if(r.pct!==null) o.p.push(r.pct); if(r.tr!==null) o.t.push(r.tr); if(r.st.k==="bad") o.bad++; if(stuGrant(r)) o.gr++; });
+  let cs=Object.values(by).filter(o=>showAll||mine[o.k]); cs.forEach(o=>{ o.at=stuLecToday(o.k); o.avg=o.p.length?Math.round(o.p.reduce((a,b)=>a+b,0)/o.p.length):null; o.tr=o.t.length?Math.round(o.t.reduce((a,b)=>a+b,0)/o.t.length):null; });
+  cs.sort((a,b)=>((a.at?0:1)-(b.at?0:1)) || (a.at||"").localeCompare(b.at||"") || (b.bad-a.bad) || (b.cnt-a.cnt));
+  if(!F.k || !by[F.k]) F.k=cs.length?cs[0].k:"";
+  // البحث في كل الطلاب
+  const q=stuN(F.q); let srch="";
+  if(q){ const hit=D.students.filter(s=>stuN(s.n).indexOf(q)>=0 || (D.pii&&D.pii[s.c]&&(D.pii[s.c].e||"").toLowerCase().indexOf(String(F.q).trim().toLowerCase())>=0)).slice(0,30);
+    srch=`<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">نتايج البحث في كل الطلاب</h2><button class="lnk" data-a="stuClrQ">✕ مسح البحث</button></div>${hit.length?hit.map(s=>{ const ks=ix.rows.filter(r=>r.c===s.c), k=stuAllSt(s.st);
+      return `<div class="item"><div class="what"><button class="lnk" data-a="stuOpen" data-id="${esc(s.c)}"><b>${esc(s.n)}</b></button><small>${ks.map(r=>esc(r.kn)).join(" · ")||"مش مشترك في دورة حالية"}</small></div><span class="pill ${k==="none"?"gray":k}">${esc((s.st||"").replace(/^\S+\s/,"")||"—")}</span></div>`; }).join(""):`<p class="sub">مفيش طالب بالاسم ده.</p>`}</div>`; }
+  const cards=`<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">${showAll?"الدورات":"دوراتك النهارده"}</h2>${sup&&Object.keys(mine).length?`<button class="lnk" data-a="stuAll">${F.all?"دوراتي النهارده بس":"كل الدورات"}</button>`:""}</div>
+    ${sup&&!showAll?`<small class="sub">من خاناتك النهارده (ومعاها أي خانة بتغطّيها). أي طالب تاني تلاقيه بالبحث.</small>`:""}
+    <div class="stuccs">${cs.map(o=>`<button class="stucc${o.k===F.k?" sel":""}" data-a="stuPickK" data-id="${esc(o.k)}"><b>${esc(o.n)}</b>${o.at?`<small class="goldtx">محاضرة النهارده ${esc(t12(o.at))}</small>`:""}<small class="sub">${o.cnt} طالب</small><span class="stuccp">${o.avg===null?"—":o.avg+"%"} ${stuTr(o.tr)}</span><span>${o.bad?`<span class="pill bad">${o.bad} منقطع</span>`:""}${o.gr?` <span class="pill gold">${o.gr} منحة</span>`:""}</span></button>`).join("")||`<p class="sub">مفيش دورات.</p>`}</div></div>`;
+  const wl=stuWarn(ix.rows.filter(r=>cs.some(o=>o.k===r.k))), wn=S.stuWarnAll?wl.length:Math.min(10,wl.length);
+  const warn=`<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">إنذار مبكر</h2><small class="sub" style="margin:0">حاجات التفقد اليومي ما بيمسكهاش — للعلم، والمتابعة نفسها من «التفقدات»</small></div>
+    ${wl.length?wl.slice(0,wn).map(x=>`<div class="item"><div class="what"><button class="lnk" data-a="stuOpen" data-id="${esc(x.r.c)}"><b>${esc(x.r.name)}</b></button><small>${esc(x.r.kn)} · ${esc(x.w)}</small></div><span class="pill ${x.c}">${x.l}</span></div>`).join("")+(wl.length>wn?`<button class="btn sm ghost" data-a="stuWarnAll">عرض الكل (${wl.length})</button>`:""):`<p class="sub">✓ مفيش إنذارات دلوقتي.</p>`}</div>`;
+  const co=by[F.k], lim=S.stuMore||60, stOrd={bad:0,gold:1,none:2,ok:3};
+  const rs=ix.rows.filter(r=>r.k===F.k).sort((a,b)=>(stOrd[a.st.k]-stOrd[b.st.k]) || ((a.pct===null?101:a.pct)-(b.pct===null?101:b.pct)) || a.name.localeCompare(b.name,"ar"));
+  const roster=co?`<div class="card stuprof"><div class="row" style="justify-content:space-between"><h2 style="margin:0">طلاب ${esc(co.n)}</h2><small class="sub" style="margin:0">${rs.length} طالب · من الأضعف للأحسن · اللي خرج من الدورة مش ظاهر</small></div>
+    ${rs.slice(0,lim).map(r=>`<div class="item sturow"><div class="what"><button class="lnk" data-a="stuOpen" data-id="${esc(r.c)}"><b>${esc(r.name)}</b></button> ${stuGrant(r)?`<span class="pill gold">منحة</span>`:""}<div>${stuDots(r.dots)}</div></div><div class="stur2"><span>${r.pct===null?"—":r.pct+"%"} ${stuTr(r.tr)}</span><span class="pill ${r.st.c}">${esc(r.st.l)}</span></div></div>`).join("")}
+    ${rs.length>lim?`<button class="btn sm ghost" data-a="stuMore">عرض 60 كمان</button>`:""}</div>`:"";
   const cnt={ok:0,gold:0,bad:0,none:0}; D.students.forEach(s=>cnt[stuAllSt(s.st)]++);
-  const need=stuNeed(), needOpen=need.filter(r=>!stuRecentFu(r.c,r.k)), needDone=need.length-needOpen.length, showN=S.stuNeedAll?needOpen.length:Math.min(12,needOpen.length);
-  const needCard=`<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">بحاجة إلى متابعة</h2><small class="sub" style="margin:0">طلاب المنح أولًا، لأن شرط المنحة ألا يتكرر الغياب مرتين</small></div>
-    ${needOpen.length?`<div class="stugrid">${needOpen.slice(0,showN).map(r=>`<div class="stuitem"><button class="lnk" data-a="stuOpen" data-id="${esc(r.c)}"><b>${esc(r.name)}</b></button><small>${esc(r.kn)}</small><span class="${r.st.k==="bad"?"bad":"goldtx"}">${esc(stuWhy(r))}</span>${stuGrant(r)?`<span class="pill gold">منحة جزئية</span>`:""}<button class="btn sm ghost" data-a="stuFu" data-id="${esc(r.c)}" data-k="${esc(r.k)}">تواصلت</button></div>`).join("")}</div>
-      ${needOpen.length>showN?`<button class="btn sm ghost" data-a="stuNeedAll">عرض الكل (${needOpen.length})</button>`:""}`:`<p class="sub">✓ لا أحد بحاجة إلى متابعة الآن.</p>`}
-    ${needDone?`<small class="sub">تمت متابعة ${needDone} خلال آخر 3 أيام.</small>`:""}</div>`;
-  let sumCard="";
-  if(mgr){ const by={}; ix.rows.forEach(r=>{ const o=by[r.k]=by[r.k]||{k:r.k,n:r.kn,cnt:0,p:[],bad:0,gr:0,prog:r.prog}; o.cnt++; if(r.pct!==null) o.p.push(r.pct); if(r.st.k==="bad") o.bad++; if(stuGrant(r)) o.gr++; });
-    const ls=Object.values(by).sort((a,b)=>(b.bad-a.bad)||(b.cnt-a.cnt));
-    sumCard=`<details class="card teamd"${S.stuSumOpen?" open":""}><summary data-a="stuSum"><h2 style="display:inline;margin:0">ملخص الدورات</h2></summary><div style="overflow-x:auto;margin-top:10px"><table><thead><tr><th>الدورة</th><th class="c">الطلاب</th><th class="c">متوسط الالتزام</th><th class="c">منقطعون</th><th class="c">منح</th></tr></thead><tbody>${ls.map(o=>`<tr><td><button class="lnk" data-a="stuPickK" data-id="${esc(o.k)}">${esc(o.n)}</button></td><td class="c">${o.cnt}</td><td class="c">${o.p.length?Math.round(o.p.reduce((a,b)=>a+b,0)/o.p.length)+"%":"—"}</td><td class="c">${o.bad?`<span class="pill bad">${o.bad}</span>`:"0"}</td><td class="c">${o.prog?"—":o.gr}</td></tr>`).join("")}</tbody></table></div></details>`; }
-  const q=(F.q||"").trim(), stOrd={bad:0,gold:1,none:2,ok:3};
-  let rows=ix.rows.filter(r=>(!F.k||r.k===F.k) && (!F.st||r.st.k===F.st) && (!F.sub||(!r.prog && r.sub===F.sub)) && (!q||r.name.indexOf(q)>=0||(D.pii&&D.pii[r.c]&&(D.pii[r.c].e||"").toLowerCase().indexOf(q.toLowerCase())>=0)));
-  rows.sort((a,b)=>(stOrd[a.st.k]-stOrd[b.st.k])||a.name.localeCompare(b.name,"ar"));
-  const lim=S.stuMore||100, cs=Object.keys(D.courses).filter(k=>ix.rows.some(r=>r.k===k)).sort();
-  const table=`<div class="card"><div class="row stufl"><label>بحث بالاسم${D.pii?" أو الإيميل":""}<input id="stuq_" type="search" data-a="stuQ" value="${esc(F.q)}" placeholder="اكتب جزءًا من الاسم ثم Enter"></label>
-    <label>الدورة<select data-a="stuK"><option value="">كل الدورات</option>${cs.map(k=>`<option value="${esc(k)}" ${F.k===k?"selected":""}>${esc(D.courses[k].n)}</option>`).join("")}</select></label>
-    <label>الاشتراك<select data-a="stuSub"><option value="">الكل</option><option value="كامل" ${F.sub==="كامل"?"selected":""}>اشتراك كامل</option><option value="منحة جزئية" ${F.sub==="منحة جزئية"?"selected":""}>منحة جزئية</option></select></label>
-    <label>الحالة<select data-a="stuSt"><option value="">كل الحالات</option>${[["ok","ملتزم"],["gold","بحاجة إلى متابعة"],["bad","منقطع"],["none","لم يبدأ الحضور"]].map(([k,l])=>`<option value="${k}" ${F.st===k?"selected":""}>${l}</option>`).join("")}</select></label></div>
-    <small class="sub">${rows.length} صفًّا (كل صف طالب في دورة)</small>
-    <div style="overflow-x:auto"><table class="stutb"><thead><tr><th>الطالب</th><th>الدورة</th><th>الاشتراك</th><th>الالتزام</th><th>آخر حضور</th><th class="c">غياب متتالٍ</th><th>الحالة</th></tr></thead><tbody>
-    ${rows.slice(0,lim).map(r=>`<tr><td><button class="lnk" data-a="stuOpen" data-id="${esc(r.c)}"><b>${esc(r.name)}</b></button></td><td>${esc(r.kn)}</td><td>${stuSubPill(r)}</td><td>${stuBar(r.pct)}</td><td>${esc(r.last||"—")}</td><td class="c">${r.gap===null?"—":r.gap}</td><td><span class="pill ${r.st.c}">${esc(r.st.l)}</span></td></tr>`).join("")}</tbody></table></div>
-    ${rows.length>lim?`<button class="btn sm ghost" data-a="stuMore">عرض 100 أخرى</button>`:""}
-    <small class="sub">${D.pii?"أرقام الهواتف والبريد الإلكتروني في بطاقة الطالب.":"لا تظهر أرقام الهواتف ولا البريد الإلكتروني ولا السن هنا؛ فهي متاحة لمسئولي الأقسام ومسئول اللجنة فقط."}</small></div>`;
-  return `<div class="row" style="justify-content:space-between;align-items:flex-end;margin-bottom:12px"><div><h1 style="margin:0">الطلاب</h1><small class="sub">كل الطلاب المشتركين حاليًا · آخر تحديث للبيانات ${esc(D.at||"")} <button class="lnk" data-a="stuReload">⟳ تحديث</button></small></div>
-    <div class="row" style="gap:8px">${[["ok","ملتزم"],["gold","بحاجة إلى متابعة"],["bad","منقطع"],["none","لم يبدأ الحضور"]].map(([k,l])=>`<span class="pill ${k==="none"?"gray":k}">${l} ${cnt[k]}</span>`).join("")}</div></div>
-    <div class="stustack">${needCard}${sumCard}${table}</div>`;
+  return `<div class="row" style="justify-content:space-between;align-items:flex-end;margin-bottom:12px"><div><h1 style="margin:0">الطلاب</h1><small class="sub">آخر تحديث للبيانات ${esc(D.at||"")} <button class="lnk" data-a="stuReload">⟳ تحديث</button></small></div>
+    <label class="stusearch"><input id="stuq_" type="search" data-a="stuQ" value="${esc(F.q)}" placeholder="ابحث عن أي طالب بالاسم${D.pii?" أو الإيميل":""} ثم Enter"></label></div>
+    <div class="stustack">${srch}${cards}${warn}${roster}
+    <small class="sub">الكل: ${[["ok","ملتزم"],["gold","بحاجة إلى متابعة"],["bad","منقطع"],["none","لم يبدأ الحضور"]].map(([k,l])=>`${l} ${cnt[k]}`).join(" · ")}. ${D.pii?"الهاتف والبريد في ملف الطالب.":"الهاتف والبريد والسن والدرجات لمسئولي الأقسام بس."}</small></div>`;
 }
 function stuCardHtml(code){ const D=S.stu, ix=stuIdx(), s=ix.byC[code]; if(!s) return `<h2>الطالب غير موجود</h2><div class="row"><button class="btn" data-a="close">إغلاق</button></div>`;
   const mine=ix.rows.filter(r=>r.c===code), p=D.pii&&D.pii[code], cd=(S.stuCards||{})[code], fus=ix.fuBy[code]||[], k=stuAllSt(s.st);
-  const kpi=(v,t)=>`<div class="kpi"><b style="font-size:20px">${esc(v||"—")}</b><small>${t}</small></div>`;
-  return `<h2 style="margin-bottom:6px">${esc(s.n)}</h2><span class="pill ${k==="none"?"gray":k}">${esc((s.st||"").replace(/^\S+\s/,""))}</span>
-    <div class="stugrid" style="margin:12px 0">${kpi(s.pct,"الالتزام العام")}${kpi(s.last,"آخر حضور")}${kpi(s.gC,"متوسط اختبارات المقرر")}</div>
-    ${p?`<div class="stupii"><div>الهاتف: <b dir="ltr">${esc(p.ph||"—")}</b></div><div>البريد: <b dir="ltr">${esc(p.e||"—")}</b></div><div>السن: ${esc(p.age||"—")} · الإقامة: ${esc(p.res||"—")}</div></div>`:""}
-    <h3>الدورات الحالية</h3>${mine.map(r=>`<div class="item"><div class="what"><b>${esc(r.kn)}</b><small>${r.n?`حضر ${r.h} من ${r.n} محاضرة`:"لم يبدأ الحضور"}${r.gap?` · غياب متتالٍ ${r.gap}`:""}</small></div>${stuSubPill(r)}<span class="pill ${r.st.c}">${r.pct===null?"—":r.pct+"%"}</span></div>`).join("")||`<p class="sub">لا توجد دورات حالية.</p>`}
-    <h3>آخر 8 محاضرات</h3>${!cd?`<p class="sub">جارٍ التحميل…</p>`:cd.err?`<p class="sub">تعذّر التحميل.</p>`:(cd.lec||[]).length?(cd.lec||[]).map(l=>`<div class="item"><div class="what">${esc(l.d)} · ${esc((D.courses[l.k]||{}).n||l.k)}</div><span class="pill ${/حضور/.test(l.v)?"ok":/غياب/.test(l.v)?"bad":"gold"}">${esc(l.v)}</span></div>`).join(""):`<p class="sub">لا يوجد حضور مسجّل.</p>`}
+  const tfq=(cd&&cd.tfq)||[], openT=tfq.filter(t=>/^مستني/.test(t.verdict||""));
+  const sumX=mine.reduce((a,r)=>a+(r.x||0),0);
+  return `<h2 style="margin-bottom:6px">${esc(s.n)}</h2><span class="pill ${k==="none"?"gray":k}">${esc((s.st||"").replace(/^\S+\s/,""))}</span>${cd&&cd.tg?` <span class="pill ${/مؤكد/.test(cd.tg)?"ok":"gray"}">تيليجرام: ${esc(/مؤكد/.test(cd.tg)?"مربوط":cd.tg)}</span>`:cd&&!cd.err?` <span class="pill gray">تيليجرام: مش مربوط</span>`:""}
+    ${p?`<div class="stupii" style="margin-top:10px"><div>الهاتف: <b dir="ltr">${esc(p.ph||"—")}</b></div><div>البريد: <b dir="ltr">${esc(p.e||"—")}</b></div><div>السن: ${esc(p.age||"—")} · الإقامة: ${esc(p.res||"—")}</div></div>`:""}
+    <h3>الدورات الحالية</h3>${mine.map(r=>`<div class="item"><div class="what"><b>${esc(r.kn)}</b> ${stuSubPill(r)}<small>${r.n?`حضر ${r.h} من ${r.n} محاضرة${r.x?` · اعتذر ${r.x}`:""}`:"لم يبدأ الحضور"}${r.gap?` · غياب متتالٍ ${r.gap}`:""}</small><div>${stuDots(r.dots)}</div></div><div class="stur2"><span>${r.pct===null?"—":r.pct+"%"} ${stuTr(r.tr)}</span><span class="pill ${r.st.c}">${esc(r.st.l)}</span></div></div>`).join("")||`<p class="sub">لا توجد دورات حالية.</p>`}
+    <small class="sub">النقط: آخر المحاضرات، الأحدث يمين — <i class="studot" style="background:var(--ok)"></i> حضر <i class="studot" style="background:var(--bad)"></i> غاب <i class="studot" style="background:var(--gold)"></i> اعتذر <i class="studot" style="background:#7C9CC0"></i> تسجيل. السهم: آخر 3 أسابيع مقارنة باللي قبلها.</small>
+    <h3>التفقدات</h3>${!cd?`<p class="sub">جارٍ التحميل…</p>`:cd.err?`<p class="sub">تعذّر التحميل.</p>`:tfq.length?tfq.slice(0,12).map(t=>`<div class="item"><div class="what"><b>${esc(t.id)} · ${esc(t.kind||"")}${t.course?" · "+esc(t.course):""}</b><small>${esc(t.slot||t.due||"")} · الحكم: ${esc(t.verdict||"—")}${t.reply?" · رد الطالب: "+esc(t.reply):""}</small>${t.opNote?`<small style="display:block">سبب المسئولة: ${esc(t.opNote)}</small>`:""}</div>${t.op?`<span class="pill ${t.op==="متفق"?"ok":"bad"}">${esc(t.op)}</span>`:""}</div>`).join(""):`<p class="sub">مفيش تفقدات اتعملت عليه.</p>`}
     ${cd&&(cd.grades||[]).length?`<h3>الدرجات</h3>${cd.grades.map(g=>`<div class="item"><div class="what">${esc(g.s)} · ${esc(g.t)}</div><b>${esc(g.g)} / ${esc(g.m)}</b></div>`).join("")}`:""}
-    <h3>المتابعة</h3>${fus.length?fus.slice(0,10).map(f=>`<div class="item"><div class="what"><b>${esc(STU_RES_LBL[f.r]||f.r)}</b><small>${esc(f.at)} · ${esc(nameOf(f.by))}${f.k?" · "+esc((D.courses[f.k]||{}).n||f.k):""}</small>${f.note?`<small style="display:block">${esc(f.note)}</small>`:""}</div></div>`).join(""):`<p class="sub">لم تُسجَّل متابعة بعد.</p>`}
-    <div class="row" style="margin-top:14px"><button class="btn" data-a="stuFu" data-id="${esc(code)}" data-k="${esc(mine.length===1?mine[0].k:"")}">تواصلت</button><button class="btn ghost" data-a="close">إغلاق</button></div>`; }
+    ${fus.length?`<h3>متابعات قديمة («تواصلت»)</h3>${fus.slice(0,6).map(f=>`<div class="item"><div class="what"><b>${esc(STU_RES_LBL[f.r]||f.r)}</b><small>${esc(f.at)} · ${esc(nameOf(f.by))}${f.k?" · "+esc((D.courses[f.k]||{}).n||f.k):""}</small>${f.note?`<small style="display:block">${esc(f.note)}</small>`:""}</div></div>`).join("")}`:""}
+    <div class="row" style="margin-top:14px">${cd&&!cd.err&&mine.length?(openT.length?`<span class="pill gold">عليه تفقد مفتوح: ${esc(openT.map(t=>t.id).join("، "))}</span>`:`<button class="btn" data-a="stuTfq" data-id="${esc(code)}">📞 افتح تفقد</button>`):""}<button class="btn ghost" data-a="close">إغلاق</button></div>`; }
+function stuTfqForm(code){ const ix=stuIdx(), s=ix.byC[code]; if(!s) return ""; const mine=ix.rows.filter(r=>r.c===code);
+  return `<h2>📞 افتح تفقد: ${esc(s.n)}</h2><p class="sub">التفقد هيروح لـ«التفقدات» زي أي تفقد، والمراجعة اليومية هتحطّه في أقرب خانة. ده للحاجة اللي شفتيها على تيليجرام قبل المراجعة.</p>
+    <label>الدورة<select id="stutk">${mine.map(r=>`<option value="${esc(r.k)}">${esc(r.kn)}</option>`).join("")}</select></label>
+    <label>السبب<textarea id="stutn" maxlength="300" rows="3" placeholder="مثال: بعت يقول هيوقف الدورة"></textarea></label>
+    <div class="row"><button class="btn" data-a="stuTfqSave" data-id="${esc(code)}">افتح التفقد</button><button class="btn ghost" data-a="stuOpen" data-id="${esc(code)}">رجوع</button></div>`; }
 function stuFuForm(code, k){ const ix=stuIdx(), s=ix.byC[code]; if(!s) return ""; const mine=ix.rows.filter(r=>r.c===code);
   return `<h2>تسجيل متابعة: ${esc(s.n)}</h2>
     <label>الدورة<select id="stufk">${mine.map(r=>`<option value="${esc(r.k)}" ${r.k===k?"selected":""}>${esc(r.kn)}</option>`).join("")}<option value="" ${!k&&mine.length!==1?"selected":""}>عامة (أكثر من دورة)</option></select></label>
@@ -2142,7 +2168,17 @@ async function stuAct(a, el, id){
   if(a==="stuNeedAll"){ S.stuNeedAll=true; render(); return true; }
   if(a==="stuMore"){ S.stuMore=(S.stuMore||100)+100; render(); return true; }
   if(a==="stuSum"){ S.stuSumOpen=!S.stuSumOpen; return false; }
-  if(a==="stuPickK"){ S.stuF=Object.assign(S.stuF||{}, {k:id}); S.stuMore=100; render(); const t=document.querySelector(".stutb"); if(t) t.scrollIntoView({block:"start"}); return true; }
+  if(a==="stuPickK"){ S.stuF=Object.assign(S.stuF||{}, {k:id}); S.stuMore=60; render(); const t=document.querySelector(".stuprof"); if(t) t.scrollIntoView({block:"start",behavior:"smooth"}); return true; }
+  if(a==="stuAll"){ S.stuF=Object.assign(S.stuF||{}, {all:!(S.stuF||{}).all, k:""}); render(); return true; }
+  if(a==="stuClrQ"){ S.stuF=Object.assign(S.stuF||{}, {q:""}); render(); return true; }
+  if(a==="stuWarnAll"){ S.stuWarnAll=true; render(); return true; }
+  if(a==="stuTfq"){ S.stuOpenC=null; open(stuTfqForm(id)); return true; }
+  if(a==="stuTfqSave"){ const k=($("#stutk")||{}).value||"", note=(($("#stutn")||{}).value||"").trim();
+    if(!note){ toast("اكتبي السبب الأول."); return true; } el.disabled=true;
+    try { const d=await api("stuTfqOpen",{code:id, course:k, note}); if(!d.ok) throw d;
+      if(S.stuCards) delete S.stuCards[id]; S.tfq=null; close(); toast("اتفتح التفقد "+d.id+"، وهيظهر في «التفقدات»."); render(); }
+    catch(e){ el.disabled=false; toast(e.reason==="exists"?"عليه تفقد مفتوح بالفعل: "+(e.id||""):e.reason==="forbidden"?"ليست لديك صلاحية لهذا.":"ما اتفتحش التفقد، حاول تاني."); }
+    return true; }
   if(a==="stuOpen"){ S.stuCards=S.stuCards||{}; S.stuOpenC=id; open(stuCardHtml(id));
     if(!S.stuCards[id]) api("stuCard",{code:id},45000).then(d=>{ S.stuCards[id]=d.ok?d:{err:1}; if(S.stuOpenC===id && $("#modal").innerHTML) open(stuCardHtml(id)); }).catch(()=>{ S.stuCards[id]={err:1}; if(S.stuOpenC===id && $("#modal").innerHTML) open(stuCardHtml(id)); delete S.stuCards[id]; });
     return true; }
