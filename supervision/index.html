@@ -675,7 +675,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="024278a0e717"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="018ef589a8e8"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -1531,7 +1531,8 @@ function tfqModal(id){ const r=(S.tfq||[]).find(x=>x.id===id); if(!r) return `<h
    ${r.stop?li(/✗/.test(r.stop)?"❌":"✅","إجراءات التوقف",esc(r.stop)):""}
   </ul>${r.note?`<div class="banner">${esc(r.note)}</div>`:""}
   <p class="sub" style="font-size:12.5px">مش بيتخزّن نص الرسائل. بيتخزّن بس النوع والوقت ومين بعت.</p>
-  ${r.op?`<p><b>رأيك:</b> ${esc(r.op)} <small class="sub">${esc(r.opBy||"")} · ${esc(r.opAt||"")}</small></p>`:""}
+  ${r.op?`<p><b>رأيك:</b> ${esc(r.op)} <small class="sub">${esc(r.opBy||"")} · ${esc(r.opAt||"")}</small>${r.opNote?`<br><b>السبب:</b> ${esc(r.opNote)}`:""}</p>`:""}
+  <label style="display:block;margin:6px 0">السبب أو التوضيح (اختياري — مهم مع «مش متفق»)<textarea id="tfqn_${esc(r.id)}" maxlength="300" rows="2" placeholder="مثال: الطالب منقطع، أو اتبعتله على الخاص، أو كان معتذر">${esc(r.opNote||"")}</textarea></label>
   <div class="row"><button class="btn" data-a="tfqOp" data-id="${esc(r.id)}" data-v="متفق">✓ متفق مع الحكم</button><button class="btn ghost" data-a="tfqOp" data-id="${esc(r.id)}" data-v="مش متفق">✗ مش متفق</button>${r.op?`<button class="btn ghost" data-a="tfqOp" data-id="${esc(r.id)}" data-v="">مسح رأيي</button>`:""}${fwdBtn("tfq",r.id,"تفقد "+(r.student||"")+" — "+(r.course||""))}<button class="btn ghost" data-a="close">إغلاق</button></div>`; }
 // «تصحيح يوم سابق» لمحاضرة (18 نوفمبر): الخطوات الناقصة في اليوم ده، والمسئول يختار منها اللي اتطلب وهو بيقبل
 function fixSteps(r){ if(r.kind!=="fix" || !r.slot || !r.date || r.date<STEPS_SINCE || r.date>=today()) return null;
@@ -2353,7 +2354,7 @@ document.addEventListener("click", async e=>{
     el.disabled=true; try { const d=await api("tgLinkSet",{r, n:x.n, v:vv, note}); if(d.ok){ S.tg=S.tg.filter(y=>y.r!==r); S.tgNo=null; toast(vv==="هو"?"✓ اتأكد الحساب.":"اتسجّل إنه مش هو — Claude هيدوّر على الحساب الصح."); render(); }
       else { el.disabled=false; toast(d.reason==="changed"?"الصف اتغيّر — حدّث الصفحة.":"ما اتسجّلش، حاول تاني."); if(d.reason==="changed") loadTG(); } } catch(_){ el.disabled=false; toast("ما اتسجّلش، حاول تاني."); } return; }
   if(a==="tfqWk"){ S.tfqWk = el.dataset.v==="0" ? 0 : (S.tfqWk||0)+Number(el.dataset.v); render(); return; }
-  if(a==="tfqOp"){ const vv=el.dataset.v; el.disabled=true; try { const d=await api("tfqOpinion",{id, v:vv}); if(d.ok){ const r=(S.tfq||[]).find(x=>x.id===id); if(r){ r.op=vv; r.opBy=vv?S.me.name:""; r.opAt=vv?today()+" "+cairoNow().hm:""; } toast(vv?"اتسجّل رأيك.":"اتمسح رأيك."); render(); open(tfqModal(id)); } else { el.disabled=false; toast("ما اتسجّلش، حاول تاني."); } } catch(e){ el.disabled=false; toast("لا يوجد اتصال."); } return; }
+  if(a==="tfqOp"){ const vv=el.dataset.v, nn=vv?(v("tfqn_"+id)||"").slice(0,300):""; el.disabled=true; try { const d=await api("tfqOpinion",{id, v:vv, note:nn}); if(d.ok){ const r=(S.tfq||[]).find(x=>x.id===id); if(r){ r.op=vv; r.opBy=vv?S.me.name:""; r.opAt=vv?today()+" "+cairoNow().hm:""; r.opNote=nn; } toast(vv?"اتسجّل رأيك.":"اتمسح رأيك."); render(); open(tfqModal(id)); } else { el.disabled=false; toast("ما اتسجّلش، حاول تاني."); } } catch(e){ el.disabled=false; toast("لا يوجد اتصال."); } return; }
   if(a==="ckCloseAsk") return open(ckCloseForm(id));
   if(a==="ckf"){ S.ckf=el.dataset.v; render(); return; }
   if(a==="ckSay"){ const t=v("ck_say"); if(!t) return toast("اكتب الرد."); el.disabled=true; if(await save("checkins", id, {say:t})){ toast("اتبعت."); open(ckModal(id)); } else el.disabled=false; return; }
