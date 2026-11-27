@@ -671,7 +671,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="324c9fb9586c"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="2c779eb73b8b"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -2329,7 +2329,7 @@ function stuShow(code){ S.stuCards=S.stuCards||{};
   if(!S.stuCards[code]) stuCardLoad(code); }
 function stuCardLoad(code){ api("stuCard",{code},45000).then(d=>{ S.stuCards[code]=d.ok?d:{err:1}; if(S.stuPage===code && S.view==="stu") render(); })
   .catch(()=>{ S.stuCards[code]={err:1}; if(S.stuPage===code && S.view==="stu") render(); delete S.stuCards[code]; }); }
-function stuFormHtml(code, mine, emails){ const F=S.stuForm; if(!F) return ""; const act=isMgr(), tl=((((S.stuCards||{})[code])||{}).tfq||[]).slice(0,6);
+function stuFormHtml(code, mine, emails){ const F=S.stuForm; if(!F) return ""; const act=isMgr(), actRn=!!S.me&&(S.me.role==="committee"||(S.me.role==="head"&&S.me.dept==="sa")), tl=((((S.stuCards||{})[code])||{}).tfq||[]).slice(0,6);
   const opts=mine.map(r=>`<option value="${esc(r.k)}">${esc(r.kn)}</option>`).join("");
   const foot=l=>`<div class="row" style="margin-top:10px"><button class="btn" data-a="stuDo" data-id="${esc(code)}">${l}</button><button class="btn ghost" data-a="stuForm" data-k="">إلغاء</button></div>`;
   const why=`<label>السبب (اختياري)<input id="sf_why" maxlength="150" placeholder="الظروف الصحية أو المالية أو الأسرية تُكتب «ظرف خاص» فقط"></label>`;
@@ -2340,6 +2340,7 @@ function stuFormHtml(code, mine, emails){ const F=S.stuForm; if(!F) return ""; c
     left:`<h3>خرج من جروب تيليجرام الدورة</h3><label>الدورة أو المجلس<select id="sf_k">${opts}</select></label><label class="sfchk"><input type="checkbox" id="sf_sent"> أُرسل له تفقد</label><p class="sub">لا يُكتب شيء في شيت الحضور. يبقى ظاهرًا لمسئولة شئون الطلاب حتى يُكتب السبب بعد ردّ الطالب.</p>${foot("تسجيل")}`,
     wd:`<h3>أبلغ بانسحابه من الدورة أو المجلس</h3><label>الدورة أو المجلس<select id="sf_k">${opts}</select></label><label>كيف أبلغ؟<select id="sf_how"><option value="private">على الخاص</option><option value="group">في الجروب</option></select></label><label>ملاحظة (اختيارية)<input id="sf_note" maxlength="150"></label><div class="banner">${act?"يُنفَّذ فورًا دون انتظار موافقة: تُسجَّل حالته «خرج من الدورة»، ويُنقل صفّه تحت «ملاحظات» في شيت الحضور، ويصل مسئولة لجنة التنظيم إشعار به. يمكن التراجع في اليوم نفسه من «السجل».":"يُرفع إلى المسئولة للموافقة، وبعد الموافقة يُنفَّذ تلقائيًا."}</div>${foot(act?"تسجيل الانسحاب":"رفع إلى المسئولة")}`,
     upd:`<h3>تحديث بيانات</h3><label>ما المطلوب تحديثه؟<select id="sf_f"><option value="email">البريد الإلكتروني</option><option value="phone">رقم الهاتف</option><option value="tg">حساب تيليجرام (المعرّف الرقمي أو اسم المستخدم)</option></select></label><label>القيمة الجديدة<input id="sf_val" dir="ltr" maxlength="120" autocomplete="off"></label><p class="sub">${act?"يُطبَّق فورًا في قاعدة بيانات الطلاب دون انتظار موافقة.":"يُرفع إلى المسئولة للموافقة ثم يُطبَّق تلقائيًا."} البريد الجديد يُضاف إلى بريده الحالي ولا يحذفه. رقم الهاتف لا يظهر بعد حفظه. يمكن التراجع في اليوم نفسه من «السجل».</p>${foot(act?"حفظ التحديث":"رفع إلى المسئولة")}`,
+    ren:`<h3>تعديل الاسم</h3><p class="sub">الاسم الحالي: <b>${esc(((stuIdx().byC[code])||{}).n||"")}</b></p><label>الاسم الجديد كاملًا<input id="sf_rn" maxlength="80" autocomplete="off" value="${esc(((stuIdx().byC[code])||{}).n||"")}"></label><label>السبب<input id="sf_rnwhy" maxlength="150" placeholder="مثل: خطأ في الاستمارة، أو طلب إكمال الاسم"></label><div class="banner">${actRn?"يُنفَّذ فورًا دون انتظار موافقة":"يُرفع إلى المسئولة للموافقة ثم يُنفَّذ تلقائيًا"}: يُكتب الاسم الجديد في قاعدة بيانات الطلاب، وفي خانة الاسم في شيتات حضور دوراته، وفي شيتي ربط زووم وتيليجرام، وفي سجل التفقدات. وإن تعذّر ذلك في شيت حضور أُحيل الأمر إلى مسئولة لجنة التنظيم. يمكن التراجع في اليوم نفسه من «السجل».</div>${foot(actRn?"حفظ الاسم":"رفع إلى المسئولة")}`,
     note:`<h3>ملاحظة متابعة</h3><label>نوع الملاحظة<select id="sf_nk"><option value="tfq">رد على تفقد</option><option value="zoom">حضر باسم آخر على زووم</option><option value="gen">ملاحظة عامة</option></select></label>
       ${tl.length?`<div class="sfbox"><b>تخص تفقد</b> <small class="sub">(لازم مع «رد على تفقد»، واختياري مع غيره)</small>${tl.map(t=>`<label class="sfchk"><input type="checkbox" class="sftf" value="${esc(t.id)}"> ${esc(t.kind||"تفقد")}${t.course?" · "+esc(t.course):""} <small class="sub">${t.open?"مفتوح":"سابق"}${t.n?" · العدد "+esc(t.n):""}</small></label>`).join("")}</div>`:`<p class="sub">لا توجد تفقدات مسجّلة لهذا الطالب.</p>`}
       <label>الملاحظة أو نص رسالة الطالب<textarea id="sf_ntext" rows="4" maxlength="1500"></textarea></label>
@@ -2354,7 +2355,7 @@ function stuPageHtml(code){ const D=S.stu, ix=stuIdx(), s=ix.byC[code];
   const tfq=(cd&&cd.tfq)||[], openT=stuOpenT(cd), ready=cd&&!cd.err, emails=stuEmails(p.e);
   const gone=(D.left||[]).filter(x=>x.c===code).map(x=>(D.courses[x.k]||{}).n||x.k);
   const courses=mine.map(r=>`<div class="item"><div class="what"><b>${esc(r.kn)}</b> ${stuSubPill(r)}</div><span class="pill ${r.rec?"gray":"ok"}">${r.rec?"متابعة بالتسجيلات":"مشترك"}</span></div>`).join("")+gone.map(n=>`<div class="item"><div class="what"><b>${esc(n)}</b></div><span class="pill bad">خرج من الدورة</span></div>`).join("");
-  const acts=[["exc1","📝","اعتذار عن محاضرة أو أكثر"],["exc2","🗓","اعتذار عن مدة"],["left","🚪","خرج من جروب تيليجرام الدورة"],["wd","⛔","أبلغ بانسحابه من الدورة"],["upd","✏️","تحديث بيانات"],["note","🗒","ملاحظة متابعة"]];
+  const acts=[["exc1","📝","اعتذار عن محاضرة أو أكثر"],["exc2","🗓","اعتذار عن مدة"],["left","🚪","خرج من جروب تيليجرام الدورة"],["wd","⛔","أبلغ بانسحابه من الدورة"],["upd","✏️","تحديث بيانات"],["ren","✏️","تعديل الاسم"],["note","🗒","ملاحظة متابعة"]];
   const notes=(cd&&cd.notes)||[];
   const pendL=((cd&&cd.log)||[]).filter(x=>x.kind==="خرج من الجروب" && x.status==="بانتظار السبب");
   const mylog=(cd&&cd.log)||[], canU=x=>x.can && String(x.at).slice(0,10)===today() && !/^اتلغى/.test(x.status||"") && (x.by===S.me.id || isMgr());
@@ -2373,14 +2374,14 @@ function stuPageHtml(code){ const D=S.stu, ix=stuIdx(), s=ix.byC[code];
         <div class="row" style="gap:8px;margin-top:6px">${emails.length?`<button class="btn sm" data-a="stuForm" data-k="mail">✉ إرسال بريد</button>`:""}</div>
         <small class="sub" style="display:block;margin-top:4px">رقم الهاتف لا يُعرض في المنظومة، ويمكن تحديثه من «تحديث بيانات».</small></div>
       ${stuSummary(code, mine, cd)}</div>
-    <div class="stuacts">${acts.map(([key,ic,l])=>`<button class="stuact${F&&F.k===key?" on":""}" data-a="stuForm" data-k="${key}"${key!=="upd"&&key!=="note"&&!mine.length?" disabled":""}><span aria-hidden="true">${ic}</span>${l}</button>`).join("")}</div>
+    <div class="stuacts">${acts.map(([key,ic,l])=>`<button class="stuact${F&&F.k===key?" on":""}" data-a="stuForm" data-k="${key}"${key!=="upd"&&key!=="ren"&&key!=="note"&&!mine.length?" disabled":""}><span aria-hidden="true">${ic}</span>${l}</button>`).join("")}</div>
     ${stuFormHtml(code, mine, emails)}
     ${notes.length?`<div class="card stuform"><h3>🗒 ملاحظات المتابعة (${notes.length})</h3>${notes.slice(0,S.stuNotesAll?30:4).map(n=>`<div class="item"><div class="what"><b>${esc(NT_LBL[n.type]||"ملاحظة")}${n.cname?" · "+esc(n.cname):""}</b><small>${esc(n.at)} · ${esc(nameOf(n.by))}${n.tfq?" · تخص "+String(n.tfq).split(",").length+" تفقد":""}</small><div class="prob" style="white-space:pre-line">${esc(n.text)}</div></div></div>`).join("")}${notes.length>4&&!S.stuNotesAll?`<button class="btn sm ghost" data-a="stuNotesAll">عرض الكل (${notes.length})</button>`:""}</div>`:""}
     ${openT.length?stuNowHtml(code, cd, mine):""}
     ${pendL.map(x=>`<div class="card stuform"><b>🚪 خرج من جروب «${esc(x.cname||"")}» — بانتظار السبب</b><small class="sub" style="display:block">${esc(x.at)} · ${esc(nameOf(x.by))} · ${esc(x.detail||"")}</small><div class="row" style="margin-top:8px"><input id="sf_lw_${esc(x.id)}" class="grow" style="width:auto" maxlength="150" placeholder="السبب بعد ردّ الطالب (الظروف الخاصة تُكتب «ظرف خاص»)"><button class="btn sm" data-a="stuLeftWhy" data-id="${esc(x.id)}" data-c="${esc(code)}">حفظ السبب</button></div></div>`).join("")}
     <details class="card stufoldc" data-fold="stu_log"${tdFold("stu_log")?" open":""}><summary><b>السجل</b><small class="sub">الحضور، والتفقدات، وما سُجّل من قبل، والرسائل المرسلة</small></summary>${log}</details>
     <details class="card stufoldc" data-fold="stu_more"${tdFold("stu_more")?" open":""}><summary><b>خيارات أخرى</b><small class="sub">اقتراح قرار، أو تصحيح بيانات أخرى</small></summary><div class="row" style="margin-top:8px">${mine.length?`<button class="btn ghost" data-a="stuProp" data-id="${esc(code)}" data-k="قرار">⚖️ اقتراح قرار</button>`:""}<button class="btn ghost" data-a="stuProp" data-id="${esc(code)}" data-k="تصحيح">✏️ تصحيح خطأ في بياناته</button></div></details>`; }
-const STU_ERR = {forbidden:"ليست لديك صلاحية لهذا.", quota:"لم يُرسل البريد: انتهت حصة الإرسال اليوم. حاول غدًا.", noemail:"لا يوجد بريد مسجَّل لهذا الطالب.", bad_dates:"التواريخ غير صحيحة، أو المدة أطول من المسموح.", bad_value:"القيمة غير صحيحة. راجع الصيغة.", exists:"يوجد طلب مماثل بانتظار القرار.", late:"التراجع متاح في اليوم نفسه فقط.", done:"أُلغي من قبل.", no_course:"لا توجد دورات حالية له."};
+const STU_ERR = {forbidden:"ليست لديك صلاحية لهذا.", quota:"لم يُرسل البريد: انتهت حصة الإرسال اليوم. حاول غدًا.", noemail:"لا يوجد بريد مسجَّل لهذا الطالب.", bad_dates:"التواريخ غير صحيحة، أو المدة أطول من المسموح.", bad_value:"القيمة غير صحيحة. راجع الصيغة.", exists:"يوجد طلب مماثل بانتظار القرار.", late:"التراجع متاح في اليوم نفسه فقط.", done:"أُلغي من قبل.", no_course:"لا توجد دورات حالية له.", bad_name:"الاسم غير صحيح: يُكتب بالحروف العربية، ومن كلمتين على الأقل.", no_reason:"اكتب السبب.", same_name:"الاسم الجديد هو الاسم الحالي نفسه.", name_taken:"هذا الاسم مسجّل لطالب آخر. أضف ما يميّزه، مثل اسم العائلة."};
 function stuAfter(code, reloadBase){ S.stuForm=null; if(S.stuCards) delete S.stuCards[code]; if(reloadBase){ S.stu=null; S.stuErr=""; } render(); stuCardLoad(code); }
 // بعد قرار وُوفق عليه: مهمة التنفيذ لصاحبة الاقتراح (كما في «قرارات وتصحيحات على طلاب»)
 async function stuSqTask(q, note){ const by=memberOf(q.by); if(q.kind!=="قرار" || !by.id || by.role==="committee") return false;
@@ -2402,6 +2403,7 @@ async function stuPageAct(a, el, id){
     else if(F.k==="left") p={op:"left", course:sel("sf_k"), sent:!!(document.getElementById("sf_sent")||{}).checked};
     else if(F.k==="wd") p={op:"withdraw", course:sel("sf_k"), how:sel("sf_how"), note:v("sf_note")};
     else if(F.k==="upd"){ if(!v("sf_val")){ toast("اكتب القيمة الجديدة."); return true; } p={op:"update", field:sel("sf_f"), value:v("sf_val")}; }
+    else if(F.k==="ren"){ if(!v("sf_rn")){ toast("اكتب الاسم الجديد."); return true; } if(!v("sf_rnwhy")){ toast("اكتب السبب."); return true; } p={op:"rename", name:v("sf_rn"), reason:v("sf_rnwhy")}; }
     else if(F.k==="note"){ const kind=sel("sf_nk"), tf=[...document.querySelectorAll(".sftf:checked")].map(x=>x.value), tx=((document.getElementById("sf_ntext")||{}).value||"").trim();
       if(kind==="tfq" && !tf.length){ toast("اختر التفقد الذي تخصه الملاحظة."); return true; } if(kind==="zoom" && !v("sf_zoom")){ toast("اكتب اسمه على زووم."); return true; } if(kind!=="zoom" && tx.length<3){ toast("اكتب الملاحظة."); return true; }
       p={op:"note", kind, tfq:tf, text:tx, course:kind==="zoom"?sel("sf_k"):"", zoom:v("sf_zoom")}; }
@@ -2415,6 +2417,7 @@ async function stuPageAct(a, el, id){
       else if(d.q){ if(S.sq) S.sq.rows=sqRows().concat([d.q]); const ap=d.applied, done=d.q.status==="اتوافق";
         if(!done) msg="رُفع إلى المسئولة ("+d.q.id+").";
         else { base=true; if(p.op==="withdraw"){ await stuSqTask(d.q,""); msg="سُجّل «خرج من الدورة»."+(ap&&ap.moved?" نُقل صفّه في شيت الحضور.":"")+(ap&&ap.why?" لم يكتمل التنفيذ التلقائي، وأُحيل إلى مسئولة لجنة التنظيم.":""); }
+          else if(p.op==="rename") msg=ap&&ap.why?"تعدّل الاسم، ولم يكتمل في: "+ap.why+". أُحيل الباقي إلى مسئولة لجنة التنظيم.":"تعدّل الاسم في كل الأماكن.";
           else msg=ap&&ap.why?"لم يُطبَّق التحديث: "+ap.why:"طُبِّق التحديث."; } }
       toast(msg); stuAfter(c, base); }
     catch(e){ el.disabled=false; toast(STU_ERR[e.reason]||"تعذّر التنفيذ. حاول مرة أخرى."); } return true; }
