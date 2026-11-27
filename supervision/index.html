@@ -192,7 +192,6 @@ span.stp{cursor:default}
 .rep .rn b{color:var(--brand)}
 .mini .rep{font-size:12.5px}
 @media(max-width:760px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.lh{flex-wrap:wrap}.lact{width:100%;justify-content:stretch}.lact .btn{flex:1}}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 /* ملخص اليوم */
 .otpq{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);text-align:start}
 .otpq .btn.ghost{width:100%}
@@ -241,8 +240,7 @@ details.dr summary{flex-wrap:wrap;gap:6px}
  body{background:#fff;font-size:12.5px}main{padding:0}.card{box-shadow:none;border:1px solid #D5DEEA;border-top:3px solid var(--gold);break-inside:avoid;page-break-inside:avoid}
  .ponly{display:block}.ptitle{border-bottom:2px solid var(--brand);padding-bottom:8px;margin-bottom:10px}.ptitle b{display:block;font-family:Amiri,serif;font-size:20px;color:var(--brand-deep)}.ptitle span{font-size:14px;color:var(--muted)}
  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4;margin:12mm}}
-.stat{background:var(--fog);border-radius:10px;padding:12px;text-align:center}.stat b{font-size:22px;color:var(--brand);display:block}.stat small{color:var(--muted);font-size:12.5px}
-@media(max-width:760px){.week{grid-template-columns:1fr}.wday{min-height:0}.wday.empty:not(.today){display:none}.stats{grid-template-columns:repeat(2,1fr)}header img{height:44px}header .t b{font-size:22px}.hday .hd-date b{font-size:28px}.hclk .hm{font-size:30px}.hclk{padding:6px 14px}nav .wrap{flex-wrap:wrap;overflow:visible}nav a{flex:1 1 40%;padding:7px 8px;font-size:14.5px}
+@media(max-width:760px){.week{grid-template-columns:1fr}.wday{min-height:0}.wday.empty:not(.today){display:none}header img{height:44px}header .t b{font-size:22px}.hday .hd-date b{font-size:28px}.hclk .hm{font-size:30px}.hclk{padding:6px 14px}nav .wrap{flex-wrap:wrap;overflow:visible}nav a{flex:1 1 40%;padding:7px 8px;font-size:14.5px}
  .hday{flex-wrap:nowrap;padding-bottom:14px}.hday .hd-date b{font-size:24px}.hday .hd-date span{font-size:12px}.hday .hd-date span i{margin:0 3px}.hclk{padding:5px 10px;gap:6px}.hclk .hm{font-size:24px}.hclk .ic{display:none}.hclk .sx .ss{font-size:12px}.hclk .sx .ap{font-size:11px}
  .kpis{grid-template-columns:repeat(2,1fr)}.kpi b{font-size:24px}.duty .st b .live{font-size:24px}}
 .item{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
@@ -264,11 +262,9 @@ details.dr summary{flex-wrap:wrap;gap:6px}
 .ckm small{display:block;color:var(--muted);font-size:12px;white-space:normal}
 .ckev{text-align:center;color:var(--muted);font-size:12.5px}
 .late{color:var(--bad);font-weight:600}
-.pill{display:inline-block;font-size:12.5px;border-radius:999px;padding:1px 10px;background:var(--soft);color:var(--brand);font-weight:600}
-.stugrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin:10px 0}.stuitem{border:1px solid #E3E9F1;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}.stuitem small{color:var(--muted)}.goldtx{color:var(--gold-ink);font-weight:700}.stuitem .bad{color:var(--bad);font-weight:700}
-.stufl{gap:10px;align-items:flex-end}.stufl label{display:flex;flex-direction:column;gap:4px;font-size:13px;flex:1 1 180px}.stufl label:first-child{flex:2 1 240px}.stutb td,.stutb th{white-space:nowrap}.stupii{background:#F6F8FB;border-radius:10px;padding:10px 12px;line-height:1.9;margin-bottom:8px;font-size:14px}
+.pill{display:inline-block;font-size:12.5px;border-radius:999px;padding:1px 10px;background:var(--soft);color:var(--brand);font-weight:600}.goldtx{color:var(--gold-ink);font-weight:700}.stupii{background:#F6F8FB;border-radius:10px;padding:10px 12px;line-height:1.9;margin-bottom:8px;font-size:14px}
 button.lnk{background:none;border:0;padding:0;color:var(--brand);cursor:pointer;font:inherit;text-align:start}button.lnk:hover{text-decoration:underline}
-.stustack{display:flex;flex-direction:column;gap:14px}.stuhero{background:linear-gradient(135deg,#003262,#0F588C);border-radius:16px;padding:16px 18px;margin-bottom:14px}.stuhero h1{color:#fff;margin:0 0 10px}.stubig{display:flex;flex-direction:row!important;align-items:center;gap:8px;margin:0;background:#fff;border-radius:12px;padding:2px 14px;border:2px solid var(--gold)}.stubig>span{flex:0 0 auto;font-size:18px}.stubig input{flex:1 1 auto;width:auto!important;margin:0!important;min-width:0;border:0!important;outline:0;box-shadow:none!important;font:inherit;font-size:17px;padding:11px 0;background:transparent}.stures{background:#fff;border-radius:12px;margin-top:10px;padding:2px 14px}.stufoldc>summary{cursor:pointer;font-size:17px}.stufoldc>summary small{margin-inline-start:6px}.stufoldc[open]>summary{margin-bottom:8px}.stusum{background:#F6F8FB;border-radius:10px;padding:8px 12px;margin:8px 0;line-height:1.9;font-size:14px}.stunow{border:2px solid var(--gold);border-radius:12px;padding:12px 14px;margin:12px 0;background:#FFFDF6}.stunow.ok{border:1px solid #CFE8D6;background:#F3FAF5}.stunowh{font-weight:700;font-size:16px}.stunowh small{font-weight:400;color:#5B6B7F;margin-inline-start:6px}.stusteps{margin:10px 0 0;padding-inline-start:26px}.stusteps>li{margin:0 0 12px;padding-inline-start:4px}.stusteps>li::marker{font-weight:700;color:#0F588C}.stusteps>li.wait{opacity:.6}.studec{background:#EEF4FA;border-radius:8px;padding:6px 10px;margin:6px 0;font-size:14px}.sturec{margin:6px 0}.stuoth{background:#EEF4FA;border-radius:8px;padding:6px 10px;margin:8px 0 0;font-size:14px}.stufold{border:1px solid #E3E9F1;border-radius:10px;padding:8px 12px;margin:10px 0}.stufold>summary{cursor:pointer;font-weight:700}.stufold>summary small{font-weight:400;margin-inline-start:6px}.stutpl{background:#FFFBEF;border:1px solid #F3E2B3;border-radius:10px;padding:8px 10px;margin:6px 0}.stutpl pre{white-space:pre-wrap;font-family:inherit;margin:4px 0;font-size:14px;line-height:1.8}.stusearch{flex:1 1 260px;max-width:420px}.stusearch input{width:100%}.stuccs{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:10px}.stucc{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:start;background:#fff;border:1px solid #E3E9F1;border-radius:12px;padding:10px 12px;cursor:pointer;font:inherit;color:inherit}.stucc:hover{border-color:var(--brand)}.stucc.sel{border:2px solid var(--brand);background:#F6F8FB}.stuccp{font-size:20px;font-weight:700}.studots{display:inline-flex;gap:3px;margin-top:4px}.studots i,.studot{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:middle}.stutr{font-size:12px;font-weight:700;color:var(--muted)}.stutr.up{color:var(--ok)}.stutr.dn{color:var(--bad)}.stur2{display:flex;flex-direction:column;align-items:flex-end;gap:4px;white-space:nowrap}.stur{display:inline-flex;align-items:center;gap:6px;font-size:15px;min-height:44px;margin-inline-end:14px}
+.stustack{display:flex;flex-direction:column;gap:14px}.stuhero{background:linear-gradient(135deg,#003262,#0F588C);border-radius:16px;padding:16px 18px;margin-bottom:14px}.stuhero h1{color:#fff;margin:0 0 10px}.stubig{display:flex;flex-direction:row!important;align-items:center;gap:8px;margin:0;background:#fff;border-radius:12px;padding:2px 14px;border:2px solid var(--gold)}.stubig>span{flex:0 0 auto;font-size:18px}.stubig input{flex:1 1 auto;width:auto!important;margin:0!important;min-width:0;border:0!important;outline:0;box-shadow:none!important;font:inherit;font-size:17px;padding:11px 0;background:transparent}.stures{background:#fff;border-radius:12px;margin-top:10px;padding:2px 14px}.stufoldc>summary{cursor:pointer;font-size:17px}.stufoldc>summary small{margin-inline-start:6px}.stufoldc[open]>summary{margin-bottom:8px}.stusum{background:#F6F8FB;border-radius:10px;padding:8px 12px;margin:8px 0;line-height:1.9;font-size:14px}.kpis.tdk{grid-template-columns:repeat(3,1fr);margin-bottom:14px}@media (max-width:600px){.kpis.tdk{grid-template-columns:repeat(3,1fr);gap:6px}.kpis.tdk .kpi{padding:8px}.kpis.tdk .kpi b{font-size:22px}.kpis.tdk .kpi small{font-size:11.5px}}.tditem{border-top:1px solid var(--line);padding:10px 0}.tditem:first-of-type{border-top:0}.tditem>summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none}.tditem>summary::-webkit-details-marker{display:none}.tditem>summary .what{flex:1;min-width:0}.tditem>summary .what small{display:block;color:var(--muted);font-size:13px}.tdic{font-size:20px;flex:0 0 auto}.tditem[open]>summary .tdopen{background:var(--paper);color:var(--brand)}.tdbody{margin:6px 0 4px;padding:0 0 4px}.tdbody>.card:first-child{border-top:0;margin-top:0}.tdrow{border-top:1px solid var(--line)}.tdrow:first-of-type{border-top:0}.tdrow .item{border-top:0}.tdrow .what small{display:block}.tdsum{display:block;font-size:14.5px}.tdng{color:var(--ok)!important}.tdmore{margin:-4px 0 10px}.tdmore>summary{cursor:pointer;color:var(--brand);font-size:13.5px}.tdln{padding:5px 0;border-top:1px dashed #E3E9F1;font-size:14px;line-height:1.7}.tdngc{border-top-color:#D9483B}.tfqnote{background:var(--gold-soft);color:var(--gold-ink);border-radius:10px;padding:8px 14px;margin:8px 0;font-size:14.5px;line-height:1.8}.tfqnote p{margin:5px 0}.tfqmore{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}.tfqmore>summary{cursor:pointer;color:var(--brand);font-weight:600}.stuhead .item{padding:8px 0}.stuacts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0}.stuact{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;background:#fff;border:1.5px solid #D5DEE9;border-radius:12px;padding:14px 10px;font:inherit;font-weight:700;color:var(--brand-deep);cursor:pointer}.stuact span{font-size:24px}.stuact:hover,.stuact.on{border-color:var(--gold);background:#FFFDF6}.stuact:disabled{opacity:.5;cursor:default}.stuform{border-top-color:var(--brand);margin-bottom:14px}.stuform h3{margin:0 0 8px}.stuform label{display:block;margin:8px 0}.sfdates{display:flex;flex-wrap:wrap;gap:8px}.sfdates input{width:auto}.sfchk{display:flex!important;flex-direction:row!important;align-items:center;gap:8px}.sfchk input{width:auto;margin:0}.stunow{border:2px solid var(--gold);border-radius:12px;padding:12px 14px;margin:12px 0;background:#FFFDF6}.stunow.ok{border:1px solid #CFE8D6;background:#F3FAF5}.stunowh{font-weight:700;font-size:16px}.stunowh small{font-weight:400;color:#5B6B7F;margin-inline-start:6px}.stusteps{margin:10px 0 0;padding-inline-start:26px}.stusteps>li{margin:0 0 12px;padding-inline-start:4px}.stusteps>li::marker{font-weight:700;color:#0F588C}.stusteps>li.wait{opacity:.6}.studec{background:#EEF4FA;border-radius:8px;padding:6px 10px;margin:6px 0;font-size:14px}.sturec{margin:6px 0}.stuoth{background:#EEF4FA;border-radius:8px;padding:6px 10px;margin:8px 0 0;font-size:14px}.stufold{border:1px solid #E3E9F1;border-radius:10px;padding:8px 12px;margin:10px 0}.stufold>summary{cursor:pointer;font-weight:700}.stufold>summary small{font-weight:400;margin-inline-start:6px}.stutpl{background:#FFFBEF;border:1px solid #F3E2B3;border-radius:10px;padding:8px 10px;margin:6px 0}.stutpl pre{white-space:pre-wrap;font-family:inherit;margin:4px 0;font-size:14px;line-height:1.8}.stuccs{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:10px}.stucc{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:start;background:#fff;border:1px solid #E3E9F1;border-radius:12px;padding:10px 12px;cursor:pointer;font:inherit;color:inherit}.stucc:hover{border-color:var(--brand)}.stucc.sel{border:2px solid var(--brand);background:#F6F8FB}.stuccp{font-size:20px;font-weight:700}.studots{display:inline-flex;gap:3px;margin-top:4px}.studots i,.studot{display:inline-block;width:13px;height:13px;border-radius:3px;vertical-align:middle}.stutr{font-size:12px;font-weight:700;color:var(--muted)}.stutr.up{color:var(--ok)}.stutr.dn{color:var(--bad)}.stur2{display:flex;flex-direction:column;align-items:flex-end;gap:4px;white-space:nowrap}
 .pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.gold{background:var(--gold-soft);color:var(--gold-ink)}
 .btn{border:1px solid var(--brand);background:var(--brand);color:#fff;border-radius:10px;padding:9px 16px;font-weight:600;cursor:pointer}
 .btn.ghost{background:var(--paper);color:var(--brand)}
@@ -615,7 +611,7 @@ async function api(action, payload={}, ms=30000){
     return d;
   } catch(e){ if(e && e.reason) throw e; throw {reason:"network", timeout:ctl.signal.aborted}; } finally { clearTimeout(tm); }
 }
-function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals","fwds","lecreqs"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.nb=d.nb||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="org")) && !S.ar) setTimeout(()=>loadAR(false),0); if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="sa")) && !S.tfq) setTimeout(()=>loadTFQ(false),0); if(canSE() && !S.se) setTimeout(()=>loadSE(false),0); if(canTFQ() && !S.tg) setTimeout(()=>loadTG(),0); if(canSTU() && !S.sq) setTimeout(()=>loadSQ(),0); }
+function apply(d){ if(d.now){ const k=d.now-Date.now(); S.skew = Math.abs(k)>60000 ? k : 0; } if(!S.dayAt) S.dayAt=today(); S.me=d.me; ["members","tasks","slots","checkins","shifts","requests","lectures","evals","fwds","lecreqs"].forEach(k => S[k]=d[k]||[]); S.errs=d.errs||[]; S.nudges=d.nudges||[]; S.nb=d.nb||[]; S.mailLeft=d.mailLeft; S.phase="app"; if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="org")) && !S.ar) setTimeout(()=>loadAR(false),0); if(d.me && (d.me.role==="committee" || (d.me.role==="head" && d.me.dept==="sa")) && !S.tfq) setTimeout(()=>loadTFQ(false),0); if(canSE() && !S.se) setTimeout(()=>loadSE(false),0); if(canTFQ() && !S.tg) setTimeout(()=>loadTG(),0); if(canSTU() && !S.sq) setTimeout(()=>loadSQ(),0); }
 async function refresh(quiet){
   const f=document.activeElement; if(quiet && f && /INPUT|TEXTAREA|SELECT/.test(f.tagName) && f.value) return; // لا نمسح ما يكتبه
   if(quiet && PENDING) return; // حفظ جارٍ: لا نكتب فوقه ببيانات أقدم
@@ -675,7 +671,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="4163d1aa4679"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="e862e7a2b14c"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -713,7 +709,7 @@ function otpBox(){ const o=S.otp||{};
   return `<div class="otpq"><p class="sub" style="margin:0">أرسلنا كودًا من 6 أرقام إلى <b dir="ltr">${esc(o.email)}</b> (راجع الرسائل غير المرغوب فيها أيضًا).</p><label>الكود<input id="otp_c" inputmode="numeric" maxlength="6" dir="ltr" autocomplete="one-time-code" style="letter-spacing:6px;text-align:center;font-size:20px"></label><div class="row"><button class="btn" data-a="otpVerify">دخول</button><button class="btn ghost" data-a="otpSend" data-again="1">إرسال كود جديد</button></div></div>`; }
 // ---------- العرض ----------
 // ما يُكتب في خانات الرد/القرار/التعليق يبقى عند إعادة الرسم (لا يُرسل ولا يُخزَّن)
-const KEEP_RE = /^(r_|q_|cv_|rqr_|ack_|arr_|arn_|aru_|seack_|tr_)/;
+const KEEP_RE = /^(r_|q_|cv_|rqr_|ack_|arr_|arn_|aru_|seack_|tr_|sf_)/;
 function render(){ const keep={}; document.querySelectorAll("#app textarea[id], #app input[id], #app select[id]").forEach(x=>{ if(KEEP_RE.test(x.id) && x.value && x.type!=="hidden") keep[x.id]=x.value; });
   // «👁 شاشته» لمسئولة قسم (🐞 سجل المشاكل 2، 18 نوفمبر): تُرسم شاشة المسئولين بدورها وقسمها وقت الرسم فقط، للعرض فقط
   const hv=asHead();
@@ -825,7 +821,7 @@ function viewMine(){
   const me=meId(), d=today(), sl=slotsOf(me,d), tk=openTasks(me), pr=problemsOf(me,d);
   const exp=sl.filter(s=>!slotOff(me,d,s.id)), done=exp.filter(s=>isSlotDone(d,s.id)).length;
   return `<p class="sub">${exp.length ? `أنجزت ${done} من ${exp.length} من شغل اليوم` : sl.length ? "شغل اليوم معتذر عنه بموافقة المسئول" : "لا يوجد شغل مجدول لك اليوم"}</p>
-  ${newTasksCard(me)}
+  ${tdNudgeMine()}${newTasksCard(me)}
   ${seMine(me)}
   ${followCards(me)}
   ${reservedCard(me)}
@@ -1260,7 +1256,7 @@ function hdCard(P){ if(!isMgr() || VIEWER()) return ""; const H=hdHeads(); if(!H
   return `<div class="card"><h2>⏱ ${isAdmin()?"سرعة مسئولي الأقسام":"سرعتي في اللي بيوصلني"}</h2>
     <div class="tsw-scroll"><table class="dt"><thead><tr>${isAdmin()?"<th>المسئولة</th>":""}<th>وصلها</th><th>في المهلة</th><th>اتأخرت</th><th>مستنية الآن</th><th>متوسط وقت الرد</th><th>أطول تأخير</th></tr></thead><tbody>${sum.map(({h,st})=>`<tr>${isAdmin()?`<td><b>${esc(h.name)}</b></td>`:""}<td>${st.n}</td><td>${st.on}</td><td>${st.late?`<span class="pill bad">${st.late}</span>`:"0"}</td><td>${st.wait?`<span class="pill ${st.waitLate?"bad":"gold"}">${st.wait}${st.waitLate?` (${st.waitLate} متأخرة)`:""}</span>`:"0"}</td><td>${D(st.avg)}</td><td>${st.max?dur(st.max):"—"}</td></tr>`).join("")}</tbody></table></div>
     ${blocks.join("")}
-    <p class="sub" style="font-size:12.5px">المهلة: الطلبات 4 ساعات، والمشاكل ساعتين لأول رد (من 10 م لـ 8 ص ما بيتحسبش)، ومراجعة الحضور لحد 1 الضهر، و«مش استفسار؟» 24 ساعة. ورأي التفقد لسه مش بيتحسب لأن وقت وصوله مش متسجّل. ✋ = اتعملت بواسطة مسئول اللجنة وبتتحسب لصاحبتها.${P.from<HD_TRIAL_UNTIL?` <b>للعلم لحد ${esc(fmtDay(HD_TRIAL_UNTIL))}، ومش داخلة في التقييم.</b>`:""}</p></div>`; }
+    <p class="sub" style="font-size:12.5px">المهلة: الطلبات 4 ساعات، والمشاكل ساعتين لأول رد (من 10 م لـ 8 ص ما بيتحسبش)، ومراجعة الحضور لحد 1 الضهر، و«مش استفسار؟» 24 ساعة. ورأي التفقد 24 ساعة من وقت كتابة الحكم، وبيتحسب للتفقدات اللي وقتها متسجّل بس (من 27 نوفمبر). ✋ = اتعملت بواسطة مسئول اللجنة وبتتحسب لصاحبتها.${P.from<HD_TRIAL_UNTIL?` <b>للعلم لحد ${esc(fmtDay(HD_TRIAL_UNTIL))}، ومش داخلة في التقييم.</b>`:""}</p></div>`; }
 
 // صفحة المسئول: الفريق اليوم
 function dutyPill(mid, d){ if(d>=SLOT_DUTY_SINCE) return dutyPillSlots(mid,d);
@@ -1347,13 +1343,15 @@ function headsDay(d){ const H=S.members.filter(m=>m.role==="head" && m.active!==
       <div class="sub" style="margin:8px 0 2px;font-weight:700">📌 المهام المفتوحة (${tk.length})</div>${tk.length?tk.map(t=>{ const late=t.due && t.due<today();
         return `<div class="item"><div class="what"><b>${esc(t.title)}</b><small class="${late?"late":""}">${late?"متأخرة — ":""}التسليم: ${esc(taskWhen(t))}${t.assigner?" · من "+esc(nameOf(t.assigner)):""}</small></div>${t.seenAt?`<span class="pill ok">اطّلعت</span>`:`<span class="pill">لم تطّلع</span>`}</div>`; }).join(""):`<div class="sub" style="font-size:13px">مفيش مهام مفتوحة.</div>`}</div>`; }).join(""); }
 const slotShiftAny = (mid,d) => { const x=S.shifts.find(z=>z.member===mid && z.date===d && z.start && !z.end); return x?` <span class="pill acct">في الدوام</span>`:""; };
-function viewTeamToday(){
-  const d=S.day||today(); const ppl=team().concat(lecOrgPpl());
+function viewTeamToday(){ const d0=S.day||today(); return d0===today() ? tdView() : viewTeamDay(d0); }
+function viewTeamDay(d){
+  const ppl=team().concat(lecOrgPpl());
   const mineSl=slotsOf(S.me.id,d);
   const rows = ppl.map(m=>{ const sl=slotsOf(m.id,d).filter(s=>!isLecOrg(m.id) || isLecture(s)), exp=sl.filter(s=>!slotOff(m.id,d,s.id)), dn=exp.filter(s=>isSlotDone(d,s.id)).length, pr=problemsOf(m.id,d), late=openTasks(m.id).filter(t=>t.due<today()).length; return {m,sl,exp,dn,pr,late,sh:shiftOf(m.id,d)||S.shifts.find(x=>x.member===m.id&&x.date===d&&x.start)}; })
     .filter(r=>r.sl.length||r.pr.length||r.late||r.sh);
   const needReply = d===today() ? ckTeam().filter(ckWaitMe).sort((a,b)=>ckLast(a).at-ckLast(b).at).map(p=>({p,m:S.members.find(x=>x.id===p.member)||{name:"—"}})) : rows.flatMap(r=>r.pr.filter(p=>!p.reply).map(p=>({p,m:r.m})));
   const reqs = pendingReqs().sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+  if(S._tdParts) return {reqs, needReply, mineSl, rows};
   return `<div class="row"><div class="grow"><h1>${d===today()?"متابعة اليوم":DAYS[dayIdx(parse(d))]}</h1>${d===today()?"":datesHtml(d)}<p class="sub">من أنجز شغله، ومن يحتاج ردك</p></div><input type="date" data-a="day" value="${esc(d)}" style="width:auto"></div>
   ${d===today()?heldAdminCard()+headWorkCard()+seHeadCard():""}
   ${daySummary(d)}
@@ -1362,10 +1360,105 @@ function viewTeamToday(){
   ${dayTable(d)}
   <details class="card teamd"><summary><h2 style="display:inline">الفريق — تفاصيل كل شخص</h2></summary>${teamRows(d, rows)}</details>
   ${d===today()?ckAllCard():""}`; }
+function tdReqCard(reqs){ return reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b> ${atMem(r.member)}<small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}${fixPick(r)}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button>${fwdBtn("request",r.id,nameOf(r.member)+" · "+(REQ[r.kind]||"")+" — "+reqDesc(r),true)}</div></div></div>`).join("")}</div>`:""; }
+function tdReplyCard(needReply){ return needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>{ const n=ckMsgs(p).length; return `<div class="item"><div class="what"><b>${n>1?"💬 رد جديد — ":"⚠️ "}${esc(m.name)}</b> ${atMem(m.id)}<small>${esc(fmtDay(p.date))} · ${esc(ckAgo(ckLast(p).at))}</small><div class="prob">${esc(p.note)}${n>1?`<span class="rep"><b>${esc(m.name)}:</b> ${esc(ckLastText(p))}</span>`:""}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button><button class="btn sm ghost" data-a="ckOpen" data-id="${esc(p.id)}">💬 النقاش${n>1?" ("+n+")":""}</button></div></div></div>`; }).join("")}</div>`:""; }
+function tdCloseCard(d){ d=d||today(); return d===today()&&ckTeam().filter(ckWaitClose).length?`<div class="card"><h2>⏳ مستنية تأكيد القفل (${ckTeam().filter(ckWaitClose).length})</h2><p class="sub" style="font-size:13px">اتردّ عليها من أكتر من 3 أيام، وصاحبتها ما ردّتش ولا قفلتها.</p>${ckTeam().filter(ckWaitClose).map(ckRow).join("")}</div>`:""; }
+// ===== تبويب «اليوم» الجديد (قرار المستخدم 27 نوفمبر): ثلاثة أرقام، وقائمة مرتبة بالموعد، وما تأخر عند الفريق، والباقي مطوي =====
+const TD_CAT = {req:"طلبات", ck:"مشاكل بانتظار الرد", ar:"مراجعات حضور", se:"استفسارات بانتظار الرأي", tfq:"تفقدات بانتظار الرأي", steps:"خطوات حضور ناقصة", fix:"تصحيحات مراجعة الحضور", rq:"طلبات المشايخ", sq:"قرارات على طلاب", task:"مهام متأخرة"};
+const tdLong = min => { min=Math.max(1,Math.round(min)); return min<60 ? min+" دقيقة" : min<1440 ? Math.round(min/60)+" ساعة" : Math.round(min/1440)+" يوم"; };
+const tdDuePill = due => { if(!due) return ""; const m=(due-NOW())/60000; return m>=0 ? `<span class="pill gold">باقٍ ${tdLong(m)}</span>` : `<span class="pill bad">متأخر منذ ${tdLong(-m)}</span>`; };
+const tdMin = a => { a=a.filter(x=>x>0); return a.length ? Math.min(...a) : 0; };
+const tdFold = k => !!(S.stuFold||{})[k];
+// وقت كتابة الحكم (العمود at) تكتبه المراجعة اليومية من 27 نوفمبر. للتفقدات الأقدم يُقدَّر بأول 8 صباحًا بعد آخر وقت معروف (اعتماد الغياب، أو الإرسال، أو نهاية الخانة المفروضة)
+function tdTfqAt(r){ const a=hdStr(r.at); if(a) return a; const ap=tfqDay(r); if(!/^\d{4}-\d\d-\d\d$/.test(ap)) return 0;
+  let base=Math.max(hdStr(r.appr)||cairoEpoch(ap,"08:00"), hdStr(r.sentAt)||0);
+  const s=S.slots.find(x=>x.id===r.slot); if(s && s.day!=null && s.day!==""){ let dd=ap; for(let i=0;i<7 && dayIdx(parse(dd))!==Number(s.day);i++) dd=addDays(dd,1); base=Math.max(base, cairoEpoch(dd, s.end||s.start||"12:00")); }
+  const bd=cDate(base), e8=cairoEpoch(bd,"08:00"); return base<e8 ? e8 : cairoEpoch(addDays(bd,1),"08:00"); }
+const tdRqAt = t => Number((t.report||{}).at)||cairoEpoch(t.due||today(),"23:00");
+const tdRqOpen = () => S.tasks.filter(x=>/^sch_/.test(x.id||"") && x.report && x.report.v===2 && x.report.req==="y" && (x.due||"")>=addDays(today(),-14) && !S.tasks.some(y=>y.id==="rq_"+x.id));
+// ما تجاوز مهلته عند عضو: مراجعات الحضور بعد 1 ظهرًا في اليوم التالي، والتفقدات والقرارات وطلبات المشايخ بعد 24 ساعة، وخطوات الحضور من صباح اليوم التالي
+function tdLateOf(m){ const out=[], now=NOW(), t=today(), push=(k,due,txt)=>{ if(due && now>due) out.push({k,due,txt}); };
+  if(m.role==="head"){
+    hdItems(m, addDays(t,-21), t).filter(x=>x.wait && x.late && x.k!=="tfq").forEach(x=>out.push({k:x.k, due:x.due, txt:HD_K[x.k].l+": "+String(x.title||"").slice(0,80)}));
+    if(m.dept==="sa"){
+      (S.tfq||[]).filter(r=>TFQ_BAD.includes(r.verdict) && !r.op).forEach(r=>{ const a=tdTfqAt(r); push("tfq", a?a+864e5:0, "رأي في تفقد: "+(r.student||"")+" — "+(r.course||"")); });
+      sqRows().filter(q=>q.status==="مستني").forEach(q=>{ const a=hdStr(q.at); push("sq", a?a+864e5:0, "قرار على طالب: "+q.type+" — "+q.name); }); }
+    tdRqOpen().filter(x=>(memberOf(x.assignee).dept||"")===m.dept).forEach(x=>push("rq", tdRqAt(x)+864e5, "طلب من الشيخ: «"+(x.title||"")+"» — "+fmtDay(x.due))); }
+  openTasks(m.id).filter(x=>x.due && x.due<t).forEach(x=>push("task", cairoEpoch(addDays(x.due,1),"00:00"), "مهمة: "+(x.title||"")));
+  if(m.dept==="org" && m.role!=="head" && canAR()){
+    stepMiss().filter(x=>x.m.id===m.id).forEach(x=>push("steps", cairoEpoch(t,"07:00"), "«"+(x.s.label||"")+"» أمس: "+x.why));
+    arOpenFix().filter(e=>e.member===m.id && arIsLate(e)).forEach(e=>push("fix", arFixDue(e), "تصحيح مراجعة حضور «"+((e.metrics||{}).title||"")+"»")); }
+  return out.sort((a,b)=>a.due-b.due); }
+const tdLatePeople = () => team().map(m=>({m, L:tdLateOf(m)})).filter(x=>x.L.length).sort((a,b)=>a.L[0].due-b.L[0].due);
+const tdCats = L => { const by={}; L.forEach(x=>by[x.k]=(by[x.k]||0)+1); return by; };
+function tdLateRow({m,L}){ const by=tdCats(L), cats=Object.keys(by), sum=cats.map(k=>TD_CAT[k]+": "+by[k]).join("، ");
+  const ng=(S.nudges||[]).filter(n=>n.to===m.id && String(n.at).slice(0,10)===today()), sent=new Set(ng.flatMap(n=>String(n.key).split(","))), left=cats.filter(k=>!sent.has(k)), last=ng[ng.length-1];
+  return `<div class="tdrow"><div class="item"><div class="what"><b>${esc(m.name)}</b><span class="tdsum">${esc(sum)}</span><small>أقدمها منذ ${tdLong((NOW()-L[0].due)/60000)} (${esc(L[0].txt)})</small>${last?`<small class="tdng">🔔 أُرسل تذكير ${esc(t12(String(last.at).slice(11,16)))}${last.mailed==="لا"?" — داخل المنظومة فقط":""}</small>`:""}</div>${left.length?`<button class="btn sm" data-a="tdNudge" data-id="${esc(m.id)}">إرسال تذكير</button>`:""}</div>
+    <details class="tdmore"><summary>التفاصيل (${L.length})</summary>${L.map(x=>`<div class="tdln">${esc(x.txt)} <small class="sub">— متأخر منذ ${tdLong((NOW()-x.due)/60000)}</small></div>`).join("")}</details></div>`; }
+function tdNudgeMine(){ if(!S.me) return ""; const me=meId(), L=(S.nudges||[]).filter(n=>n.to===me && String(n.at).slice(0,10)===today()); if(!L.length) return "";
+  return `<div class="card tdngc"><h2>🔔 تذكير</h2>${L.map(n=>`<div class="item"><div class="what"><b>${esc(nameOf(n.by))}</b> يذكّر بما تأخر: ${esc(n.text||"بنود متأخرة")}<small style="display:block">${esc(t12(String(n.at).slice(11,16)))}</small></div></div>`).join("")}</div>`; }
+// البنود التي صاحبها المستخدم نفسه. مسئول اللجنة: ما يخصه هو فقط (وما يخص قسمًا بلا مسئول). المسئولة: كل ما عندها مرتبًا بالموعد
+function tdMine(P){ const it=[], adm=isAdmin(), t=today();
+  const add=(key,ic,title,n,due,body,sub)=>{ if(n) it.push({key,ic,title,n,due:due||0,body:body||"",sub:sub||""}); };
+  const mineDept = dp => adm ? !deptHead(dp) : S.me.dept===dp;
+  const mineMem = id => { if(!adm) return true; const m=memberOf(id); return m.role==="head" || !deptHead(m.dept); };
+  if(adm){
+    const fo=fwdOpen(); add("fwd","↗","تحويلات من مسئولي الأقسام بانتظار ردّك",fo.length,0,fwdCard(),fo.length?"أقدمها "+ckAgo(fo[0].at):"");
+    add("lr","✏️","تعديلات على المحاضرات بانتظار اعتمادك",lrPend().length,0,lrCard());
+    add("held","📌","مجالس محجوزة بلا موعد بداية",S.lectures.filter(l=>l.active!==false && l.hold===true).length,0,heldAdminCard());
+    const un=unassigned(); add("un","🎓","محاضرات بلا منظّم",un.length,0,`<div class="row" style="margin-top:8px"><a class="btn sm" href="#academy">فتح جدول الأكاديمية</a></div>`,un.slice(0,3).map(l=>l.name).join("، "));
+  } else {
+    add("fwdn","↩","ردود مسئول اللجنة على تحويلاتك",fwdNew().length,0,`<div class="row" style="margin-top:8px"><button class="btn sm" data-a="fwdSeen">عرض الردود</button></div>`);
+    add("lrn","✏️","قرارات جديدة في تعديلات المحاضرات التي أرسلتها",lrNew().length,0,`<div class="row" style="margin-top:8px"><button class="btn sm" data-a="lrSeen">عرض القرارات</button></div>`);
+    const tk=openTasks(S.me.id); add("task","📌","مهام مطلوبة منك",tk.length,tdMin(tk.map(x=>x.due?cairoEpoch(addDays(x.due,1),"00:00"):0)),`<div class="row" style="margin-top:8px"><a class="btn sm" href="#tasks">فتح المهام</a></div>`,tk.slice(0,3).map(x=>x.title).join("، "));
+    add("rdo","✓","قرارات اتُّخذت في طلبات قسمك",reqDecOther().length,0,reqDecCard());
+  }
+  const rq=P.reqs.filter(r=>mineMem(r.member)); add("req","📨","طلبات بانتظار قرارك",rq.length,tdMin(rq.map(r=>Number(r.at)?hdDue("req",Number(r.at)):0)),tdReqCard(rq));
+  const nr=P.needReply.filter(x=>mineMem(x.p.member)); add("ck","⚠️","مشاكل واستفسارات بانتظار ردّك",nr.length,tdMin(nr.map(x=>ckLast(x.p).at?hdDue("ck",ckLast(x.p).at):0)),tdReplyCard(nr));
+  const wc=ckTeam().filter(ckWaitClose).filter(p=>mineMem(p.member)); add("ckc","⏳","مشاكل بانتظار تأكيد القفل",wc.length,0,tdCloseCard());
+  const sr=sheikhReqs().filter(x=>mineMem(x.assignee)); add("rq","🗣","طلبات من المشايخ",sr.length,tdMin(sr.map(x=>tdRqAt(x)+864e5)),sheikhReqCard());
+  if(mineDept("org") && canAR()){
+    const ap=arPending(); add("ar","✅","مراجعات حضور بانتظار الاعتماد",ap.length,tdMin(ap.map(rv=>rv.date?cairoEpoch(addDays(rv.date,1),AR_DUE):0)),arInbox());
+    add("arfyi","👁","مراجعات حضور للعلم",arFyi().length,0,arFyiCard());
+    add("steps","📝","خطوات حضور ناقصة أمس",stepMiss().length,0,stepMissCard());
+    const wl=((S.sq||{}).wlog||[]).filter(w=>String(w.at).slice(0,10)>=addDays(t,-1));
+    add("wl","🗒","كتابات تلقائية في شيتات الحضور — للعلم",wl.length,0,wl.map(w=>`<div class="tdln"><b>${esc(w.name||"")}</b> — ${esc(w.cname||"")}: ${esc(w.value||"")} <small class="sub">(${esc(w.sheet||"")} · ${esc(w.cell||"")} · ${esc(nameOf(w.by))} · ${esc(String(w.at).slice(5))})</small></div>`).join("")); }
+  if(mineDept("sa") && canTFQ()){
+    const tf=tfqAttn(); add("tfq","📞","تفقدات بانتظار رأيك",tf.length,tdMin(tf.map(r=>{ const a=tdTfqAt(r); return a?a+864e5:0; })),tfqInbox());
+    const sp=sqPend(); add("sq","⚖️","قرارات وتصحيحات على طلاب بانتظار قرارك",sp.length,tdMin(sp.map(q=>{ const a=hdStr(q.at); return a?a+864e5:0; })),sqCard());
+    add("tg","🔗","حسابات تيليجرام بانتظار التأكيد",tgPend().length,0,tgCard());
+    const sf=seFlagsWaiting(); add("se","📋","استفسارات بانتظار رأيك",sf.length,tdMin(sf.map(q=>{ const a=hdStr(q.flagAt); return a?a+864e5:0; })),seHeadCard());
+    const lf=(S.sq||{}).left||[]; add("left","🚪","طلاب خرجوا من جروب الدورة — بانتظار السبب",lf.length,0,lf.map(x=>`<div class="tdln"><button class="lnk" data-a="stuOpenC" data-id="${esc(x.code)}"><b>${esc(x.name)}</b></button> — ${esc(x.cname||"")} <small class="sub">(${esc(nameOf(x.by))} · ${esc(String(x.at).slice(5))})</small></div>`).join("")); }
+  return it.sort((a,b)=>(a.due?0:1)-(b.due?0:1) || a.due-b.due); }
+const tdItem = x => `<details class="tditem" data-fold="td_${x.key}"${tdFold("td_"+x.key)?" open":""}><summary><span class="tdic" aria-hidden="true">${x.ic}</span><span class="what"><b>${x.title} (${x.n})</b>${x.sub?`<small>${esc(x.sub)}</small>`:""}</span>${tdDuePill(x.due)}<span class="btn sm tdopen">فتح</span></summary><div class="tdbody inbox">${x.body}</div></details>`;
+function tdDone(){ const t=today(), out=[], ids=new Set(team().map(m=>m.id).concat([S.me.id]));
+  hdHeads().forEach(h=>hdItems(h, addDays(t,-21), t).filter(x=>x.mine && x.doneAt && cDate(x.doneAt)===t).forEach(x=>out.push({who:h.name, txt:HD_K[x.k].l+": "+String(x.title||"").slice(0,80), at:x.doneAt})));
+  S.tasks.filter(x=>x.type==="assigned" && x.status==="done" && x.doneAt===t && ids.has(x.assignee)).forEach(x=>out.push({who:nameOf(x.assignee), txt:"مهمة: "+(x.title||""), at:0}));
+  if(canTFQ()) sqRows().filter(q=>String(q.decAt||"").slice(0,10)===t).forEach(q=>out.push({who:nameOf(q.decBy), txt:(q.status==="اتوافق"?"موافقة":"رفض")+": "+q.type+" — "+q.name, at:hdStr(q.decAt)}));
+  return out.sort((a,b)=>b.at-a.at); }
+function tdView(){ const d=today(); S._tdParts=true; let P; try { P=viewTeamDay(d); } finally { S._tdParts=false; }
+  const adm=isAdmin(), mine=tdMine(P), late=tdLatePeople(), done=tdDone(), nM=mine.reduce((a,x)=>a+x.n,0);
+  const k=(n,l,c)=>`<div class="kpi ${c}"><b>${n}</b><small>${l}</small></div>`, low=adm && S.mailLeft!=null && S.mailLeft<20;
+  return `<div class="row"><div class="grow"><h1>متابعة اليوم</h1><p class="sub">${adm?"ما يحتاج قرارك، وما تأخر عند الفريق":"المطلوب منك مرتبًا بالموعد، وما تأخر في قسمك"}</p></div><input type="date" data-a="day" value="${esc(d)}" style="width:auto"></div>
+  <div class="kpis tdk">${k(nM,adm?"يحتاج قرارك":"مطلوب منك",nM?"bad":"ok")}${k(late.length,adm?"متأخر عند الفريق (أشخاص)":"متأخر في قسمك (أشخاص)",late.length?"gold":"ok")}${k(done.length,"أُنجز اليوم","ok")}</div>
+  ${tdNudgeMine()}${riskCard()}
+  ${low?`<div class="banner" style="margin-bottom:12px">رصيد إرسال البريد اليوم منخفض (${esc(String(S.mailLeft))} رسالة). التذكيرات والرسائل قد تصل داخل المنظومة فقط حتى الغد.</div>`:""}
+  <div class="card"><h2>${adm?"يحتاج قرارك":"المطلوب منك"}${nM?` (${nM})`:""}</h2>${mine.length?mine.map(tdItem).join(""):`<div class="empty">✓ ${adm?"لا شيء يحتاج قرارك الآن.":"لا شيء مطلوب منك الآن."}</div>`}</div>
+  <div class="card"><h2>${adm?"متأخر عند الفريق":"متأخر في قسمك"}${late.length?` (${late.length})`:""}</h2><p class="sub" style="font-size:13px;margin-bottom:6px">يظهر هنا ما تجاوز مهلته فقط${adm?"، وتنفيذه عند صاحبه":""}. التذكير يصل داخل المنظومة وبالبريد، مرة واحدة في اليوم.</p>${late.length?late.map(tdLateRow).join(""):`<div class="empty">✓ لا يوجد تأخير الآن.</div>`}</div>
+  ${P.mineSl.length?`<div class="card"><h2>${S.me.role==="head"?"جدولي اليوم":"شغلي اليوم"}</h2>${P.mineSl.map(s=>slotRow(d,s,S.me.id,true)).join("")}</div>`:""}
+  <details class="card stufoldc" data-fold="td_done"${tdFold("td_done")?" open":""}><summary><b>أُنجز اليوم (${done.length})</b></summary>${done.length?done.map(x=>`<div class="tdln"><b>${esc(x.who)}</b> — ${esc(x.txt)}${x.at?` <small class="sub">${esc(t12(hmCairo(x.at)))}</small>`:""}</div>`).join(""):`<p class="sub">لم يُسجَّل إنجاز اليوم بعد.</p>`}</details>
+  ${nbCard()}
+  <details class="card stufoldc" data-fold="td_day"${tdFold("td_day")?" open":""}><summary><b>تفاصيل اليوم</b><small class="sub">المحاضرات، والجدول، وتفاصيل كل شخص، وكل المشاكل</small></summary>${daySummary(d)}${seFlagsWaiting().length?"":seHeadCard()}${dayTable(d)}<div class="card teamd"><h2>الفريق — تفاصيل كل شخص</h2>${teamRows(d, P.rows)}</div>${ckAllCard()}</details>`; }
+async function tdAct(a, el, id){
+  if(a==="tdNudge"){ const m=memberOf(id), L=m.id?tdLateOf(m):[]; if(!L.length) return true; const by=tdCats(L); el.disabled=true;
+    try { const d=await api("nudge",{to:id, cats:Object.keys(by).map(k=>({k, n:by[k]})), text:Object.keys(by).map(k=>TD_CAT[k]+": "+by[k]).join("، ")}); if(!d.ok) throw d; (S.nudges=S.nudges||[]).push(d.row);
+      toast(d.mailed?"أُرسل التذكير داخل المنظومة وبالبريد.":"أُرسل التذكير داخل المنظومة فقط؛ تعذّر إرسال البريد اليوم."); render(); }
+    catch(e){ el.disabled=false; toast(e.reason==="today"?"أُرسل تذكير بهذه البنود اليوم من قبل.":e.reason==="forbidden"?"ليست لديك صلاحية لهذا.":"تعذّر إرسال التذكير. حاول مرة أخرى."); } return true; }
+  return false; }
 function inboxCard(d, reqs, needReply){
-  const parts = [d===today()?lrCard()+fwdCard()+sysCard()+nbCard()+riskCard()+arInbox()+arFyiCard()+stepMissCard()+tfqInbox()+tgCard()+sqCard():"", reqs.length?`<div class="card"><h2>طلبات تنتظر قرارك (${reqs.length})</h2>${reqs.map(r=>`<div class="item"><div class="what"><b>${esc(nameOf(r.member))} · ${esc(REQ[r.kind]||"")}</b> ${atMem(r.member)}<small>${esc(reqDesc(r))}</small>${r.note?`<div class="prob">${esc(r.note)}</div>`:""}${fixPick(r)}<div class="row" style="margin-top:6px">${coverSelect(r)}<input id="q_${esc(r.id)}" placeholder="رد (اختياري)" class="grow" style="width:auto"><button class="btn sm" data-a="decide" data-v="accepted" data-id="${esc(r.id)}">قبول</button><button class="btn sm danger" data-a="decide" data-v="rejected" data-id="${esc(r.id)}">رفض</button>${fwdBtn("request",r.id,nameOf(r.member)+" · "+(REQ[r.kind]||"")+" — "+reqDesc(r),true)}</div></div></div>`).join("")}</div>`:"",
-  needReply.length?`<div class="card"><h2>يحتاج ردك (${needReply.length})</h2>${needReply.map(({p,m})=>{ const n=ckMsgs(p).length; return `<div class="item"><div class="what"><b>${n>1?"💬 رد جديد — ":"⚠️ "}${esc(m.name)}</b> ${atMem(m.id)}<small>${esc(fmtDay(p.date))} · ${esc(ckAgo(ckLast(p).at))}</small><div class="prob">${esc(p.note)}${n>1?`<span class="rep"><b>${esc(m.name)}:</b> ${esc(ckLastText(p))}</span>`:""}</div><div class="row" style="margin-top:6px"><input id="r_${esc(p.id)}" placeholder="اكتب ردك" class="grow" style="width:auto"><button class="btn sm" data-a="reply" data-id="${esc(p.id)}">إرسال</button><button class="btn sm ghost" data-a="ckOpen" data-id="${esc(p.id)}">💬 النقاش${n>1?" ("+n+")":""}</button></div></div></div>`; }).join("")}</div>`:"",
-  d===today()&&ckTeam().filter(ckWaitClose).length?`<div class="card"><h2>⏳ مستنية تأكيد القفل (${ckTeam().filter(ckWaitClose).length})</h2><p class="sub" style="font-size:13px">اتردّ عليها من أكتر من 3 أيام، وصاحبتها ما ردّتش ولا قفلتها.</p>${ckTeam().filter(ckWaitClose).map(ckRow).join("")}</div>`:"",
+  const parts = [d===today()?lrCard()+fwdCard()+sysCard()+nbCard()+riskCard()+arInbox()+arFyiCard()+stepMissCard()+tfqInbox()+tgCard()+sqCard():"", tdReqCard(reqs),
+  tdReplyCard(needReply),
+  tdCloseCard(d),
   d===today()?sheikhReqCard():"", d===today()?reqDecCard():""].join("").trim();
   const n = reqs.length + needReply.length + (d===today()?(isAdmin()?fwdOpen().length+lrPend().length:0)+sheikhReqs().length+arPending().length+ckTeam().filter(ckWaitClose).length+stepMiss().length+tfqAttn().length+reqDecOther().length+arFyi().length+sqPend().length+tgPend().length:0);
   return parts ? `<div class="card inbox"><h2>يحتاج تدخّلك${n?` (${n})`:""}</h2>${parts}</div>` : `<div class="card inbox"><h2>يحتاج تدخّلك</h2><div class="empty">✓ لا شيء يحتاج تدخّلك الآن.</div></div>`; }
@@ -1495,7 +1588,11 @@ const tfqPill = r => `<span class="pill ${TFQ_V[r.verdict]??""}">${esc(r.verdict
 function tfqWhy(r){ if(r.verdict==="ما اتبعتش") return "ما اتبعتلوش تفقد"+(r.slot?" — الخانة خلصت":"");
   if(r.verdict==="ناقص") return r.stop?"إجراءات التوقف ناقصة: "+r.stop:"ناقص";
   if(r.verdict==="خطأ") return r.late==="✗"?"اتبعت تفقد وهو كان معتذر":(r.note||"خطأ");
-  if(r.verdict==="محتاج مراجعة") return "رد الطالب مش واضح — مش متحسوب"; return r.note||""; }
+  if(r.verdict==="محتاج مراجعة") return tfqAsk(r) || "رد الطالب غير واضح — غير محسوب"; return tfqAsk(r) || r.note || ""; }
+// ملاحظة المراجعة (العمود S) بقت 6 سطور (قرار 27 نوفمبر): بتتعرض سطر تحت سطر، وسطر «المطلوب منك» بيظهر في القايمة
+const tfqLines = n => String(n||"").split(/\n+/).map(x=>x.trim()).filter(Boolean);
+const tfqAsk = r => { const l=tfqLines(r.note).find(x=>/^المطلوب منك\s*:/.test(x)); return l ? l.replace(/^المطلوب منك\s*:\s*/,"") : ""; };
+const tfqNoteHtml = n => tfqLines(n).map(l=>{ const i=l.indexOf(":"); return i>0&&i<40 ? `<p><b>${esc(l.slice(0,i+1))}</b>${esc(l.slice(i+1))}</p>` : `<p>${esc(l)}</p>`; }).join("");
 function tfqInbox(){ const L=tfqAttn(); if(!L.length) return "";
   return `<div class="card"><h2>📞 تفقدات محتاجة انتباهك (${L.length}) ${atHead("sa")}</h2>${L.slice(0,5).map(r=>`<div class="item"><div class="what"><b>${esc(r.student||"")} — ${esc(r.course||"")}</b><small>${esc(tfqWho(r.due))} · ${esc(tfqWhy(r))}</small></div>${tfqPill(r)}<button class="btn sm ghost" data-a="tfqOpen" data-id="${esc(r.id)}">تفاصيل</button></div>`).join("")}${L.length>5?`<div class="row" style="margin-top:6px"><a href="#tfq" class="btn sm ghost">كل التفقدات (${L.length})</a></div>`:""}</div>`; }
 const tfqDay = r => String(r.appr||"").slice(0,10);
@@ -1519,21 +1616,22 @@ function viewTfq(){
 function tfqModal(id){ const r=(S.tfq||[]).find(x=>x.id===id); if(!r) return `<h2>التفقد غير موجود</h2><div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`;
   const ic=v=>v==="✓"||v==="نعم"?"✅":v==="✗"||v==="لا"?"❌":"➖";
   const li=(i,t,x)=>`<li style="padding:4px 0;border-bottom:1px dashed #eee">${i} <b>${t}:</b> ${x}</li>`;
-  return `<h2>تفقد: ${esc(r.student||"")} — ${esc(r.course||"")}</h2><p><button class="lnk" data-a="stuOpenN" data-n="${esc(r.student||"")}">📄 ملف الطالب</button></p><p class="sub">${esc(r.id)} · ${esc(r.kind||"")}${r.n?" · العدد "+esc(r.n):""} ${tfqPill(r)}</p>
-  <ul style="list-style:none;padding:0;margin:8px 0">
-   ${li("📋","الغياب",`اتعتمد ${esc(r.appr||"—")}${r.rev?" ("+esc(r.rev)+")":""}`)}
-   ${li("🗓","الخانة المفروضة",`${esc(tfqWho(r.due))} · ${esc(tfqSlot(r.slot))}`)}
-   ${li(r.sentAt?ic(r.inSlot):"❌","اتبعت",r.sentAt?`${esc(r.sentAt)} — ${esc(tfqWho(r.sentBy))}${r.inSlot==="نعم"?" · جوه الخانة":r.inSlot==="لا"?" · برّه الخانة":""}`:"لأ")}
-   ${li(ic(r.form),"الصيغة",(r.form||"—")+"")}
-   ${li(ic(r.late),"الاعتذار المتأخر",(r.late||"—")+"")}
-   ${li("💬","رد الطالب",esc(r.reply||"—"))}
-   ${li(ic(r.fit),"الرد المناسب",(r.fit||"—")+"")}
-   ${r.stop?li(/✗/.test(r.stop)?"❌":"✅","إجراءات التوقف",esc(r.stop)):""}
-  </ul>${r.note?`<div class="banner">${esc(r.note)}</div>`:""}
-  <p class="sub" style="font-size:12.5px">مش بيتخزّن نص الرسائل. بيتخزّن بس النوع والوقت ومين بعت.</p>
+  return `<h2 style="margin-bottom:4px">${esc(r.student||"")}</h2><p class="sub" style="margin-bottom:8px">${esc(r.course||"")} · الحكم: ${tfqPill(r)} · <button class="lnk" data-a="stuOpenN" data-n="${esc(r.student||"")}">📄 ملف الطالب</button></p>
+  ${r.note?`<div class="tfqnote">${tfqNoteHtml(r.note)}</div>`:""}
   ${r.op?`<p><b>رأيك:</b> ${esc(r.op)} <small class="sub">${esc(r.opBy||"")} · ${esc(r.opAt||"")}</small>${r.opNote?`<br><b>السبب:</b> ${esc(r.opNote)}`:""}</p>`:""}
-  <label style="display:block;margin:6px 0">السبب أو التوضيح (اختياري — مهم مع «مش متفق»)<textarea id="tfqn_${esc(r.id)}" maxlength="300" rows="2" placeholder="مثال: الطالب منقطع، أو اتبعتله على الخاص، أو كان معتذر">${esc(r.opNote||"")}</textarea></label>
-  <div class="row"><button class="btn" data-a="tfqOp" data-id="${esc(r.id)}" data-v="متفق">✓ متفق مع الحكم</button><button class="btn ghost" data-a="tfqOp" data-id="${esc(r.id)}" data-v="مش متفق">✗ مش متفق</button>${r.op?`<button class="btn ghost" data-a="tfqOp" data-id="${esc(r.id)}" data-v="">مسح رأيي</button>`:""}${fwdBtn("tfq",r.id,"تفقد "+(r.student||"")+" — "+(r.course||""))}<button class="btn ghost" data-a="close">إغلاق</button></div>`; }
+  <label style="display:block;margin:6px 0">السبب أو التوضيح (اختياري — مهم مع «غير متفق»)<textarea id="tfqn_${esc(r.id)}" maxlength="300" rows="2" placeholder="مثال: الطالب منقطع، أو أُرسل له على الخاص، أو كان معتذرًا">${esc(r.opNote||"")}</textarea></label>
+  <div class="row"><button class="btn" data-a="tfqOp" data-id="${esc(r.id)}" data-v="متفق">✓ متفق مع الحكم</button><button class="btn ghost" data-a="tfqOp" data-id="${esc(r.id)}" data-v="مش متفق">✗ غير متفق</button>${r.op?`<button class="btn ghost" data-a="tfqOp" data-id="${esc(r.id)}" data-v="">مسح رأيي</button>`:""}${fwdBtn("tfq",r.id,"تفقد "+(r.student||"")+" — "+(r.course||""))}<button class="btn ghost" data-a="close">إغلاق</button></div>
+  <details class="tfqmore"><summary>تفاصيل</summary><p class="sub">${esc(r.id)} · ${esc(r.kind||"")}${r.n?" · العدد "+esc(r.n):""}</p>
+  <ul style="list-style:none;padding:0;margin:8px 0">
+   ${li("📋","الغياب",`اعتُمد ${esc(r.appr||"—")}${r.rev?" ("+esc(r.rev)+")":""}`)}
+   ${li("🗓","الخانة المفروضة",`${esc(tfqWho(r.due))} · ${esc(tfqSlot(r.slot))}`)}
+   ${li(r.sentAt?ic(r.inSlot):"❌","الإرسال",r.sentAt?`${esc(r.sentAt)} — ${esc(tfqWho(r.sentBy))}${r.inSlot==="نعم"?" · داخل الخانة":r.inSlot==="لا"?" · خارج الخانة":""}`:"لم يُرسل")}
+   ${li(ic(r.form),"الصيغة",esc(r.form||"—"))}
+   ${li(ic(r.late),"الاعتذار المتأخر",esc(r.late||"—"))}
+   ${li("💬","رد الطالب",esc(r.reply||"—"))}
+   ${li(ic(r.fit),"الرد المناسب",esc(r.fit||"—"))}
+   ${r.stop?li(/✗/.test(r.stop)?"❌":"✅","إجراءات التوقف",esc(r.stop)):""}
+  </ul><p class="sub" style="font-size:12.5px">لا يُخزَّن نص الرسائل. يُخزَّن النوع والوقت ومن أرسل فقط.</p></details>`; }
 // «تصحيح يوم سابق» لمحاضرة (18 نوفمبر): الخطوات الناقصة في اليوم ده، والمسئول يختار منها اللي اتطلب وهو بيقبل
 function fixSteps(r){ if(r.kind!=="fix" || !r.slot || !r.date || r.date<STEPS_SINCE || r.date>=today()) return null;
   const s=S.slots.find(x=>x.id===r.slot); if(!s || !isLecture(s) || adminLec(s) || slotOff(r.member,r.date,s.id)) return null;
@@ -2142,7 +2240,7 @@ function stuIdx(){ const D=S.stu; if(D._ix) return D._ix;
   const byC={}; D.students.forEach(s=>byC[s.c]=s); const sum={}; D.sums.forEach(x=>sum[x.c+"|"+x.k]=x);
   const fuBy={}; (D.fu||[]).forEach(f=>(fuBy[f.c]=fuBy[f.c]||[]).push(f)); Object.values(fuBy).forEach(a=>a.sort((x,y)=>y.at.localeCompare(x.at)));
   const rows=D.regs.map(r=>{ const s=byC[r.c]; if(!s) return null; const m=sum[r.c+"|"+r.k]||{}, co=D.courses[r.k]||{};
-    const row={c:r.c, name:s.n, k:r.k, kn:co.n||r.k, prog:co.t==="برنامج", sub:r.sub||"", n:m.n||0, h:m.h||0, pct:m.n?Math.round(100*((m.h||0)+(m.x||0)+(m.t||0))/m.n):null, last:m.last||"", gap:(m.gap===""||m.gap==null)?null:Number(m.gap), x:m.x||0, dots:m.dots||"", tr:(m.tr===""||m.tr==null)?null:Number(m.tr), rd:r.d||""};
+    const row={c:r.c, name:s.n, k:r.k, kn:co.n||r.k, prog:co.t==="برنامج", sub:r.sub||"", n:m.n||0, h:m.h||0, pct:m.n?Math.round(100*((m.h||0)+(m.x||0)+(m.t||0))/m.n):null, last:m.last||"", gap:(m.gap===""||m.gap==null)?null:Number(m.gap), x:m.x||0, dots:m.dots||"", tr:(m.tr===""||m.tr==null)?null:Number(m.tr), rd:r.d||"", rec:!!r.rec};
     row.st=stuSt(row); return row; }).filter(Boolean);
   return D._ix={byC, rows, fuBy}; }
 const stuGrant = r => r.sub==="منحة جزئية";
@@ -2153,16 +2251,7 @@ const stuOpSet = () => { const D=S.stu; if(!D) return new Set(); return D._op ||
 const stuHasOpen = c => stuOpSet().has(c);
 const stuOpenPill = c => stuHasOpen(c) ? ` <span class="pill gold">📞 تفقد مفتوح</span>` : "";
 const stuOpenT = cd => ((cd&&cd.tfq)||[]).filter(t=>t.open);
-function stuWhy(r){ const dd=stuDays(r.last);
-  if(r.gap>=2) return r.gap===2?"غاب آخر محاضرتين":"غاب آخر "+r.gap+" محاضرات";
-  if(stuGrant(r) && r.gap>=1) return "غاب المحاضرة الأخيرة";
-  if(dd!==null && dd>30) return "لا حضور منذ "+dd+" يومًا";
-  return "الالتزام "+r.pct+"%"; }
-const stuRecentFu = (c,k) => ((stuIdx().fuBy[c])||[]).find(f=>(!k||!f.k||f.k===k) && stuDays(f.at.slice(0,10))!==null && stuDays(f.at.slice(0,10))<=3);
-function stuNeed(){ return stuIdx().rows.filter(r=>r.n && (r.st.k==="gold" || r.st.k==="bad" || (stuGrant(r) && r.gap>=1)))
-  .sort((a,b)=>(stuGrant(b)-stuGrant(a)) || ((b.gap||0)-(a.gap||0)) || ((a.pct||0)-(b.pct||0))); }
 const stuSubPill = r => r.prog ? "" : r.sub==="منحة جزئية" ? `<span class="pill gold">منحة جزئية</span>` : r.sub==="كامل" ? `<span class="pill gray">كامل</span>` : `<span class="pill gray">غير معروف</span>`;
-const stuBar = p => p===null ? "—" : `<div class="row" style="gap:8px;flex-wrap:nowrap"><div class="bar" style="width:90px"><i style="width:${Math.max(0,Math.min(100,p))}%;background:${p>=75?"var(--ok)":p>=50?"var(--gold)":"var(--bad)"}"></i></div><span style="font-variant-numeric:tabular-nums">${p}%</span></div>`;
 // ===== تبويب «الطلاب» — التصميم الجديد (26 نوفمبر، بطلب المستخدم): بحث في كل الطلاب، وكروت الدورات، وإنذار مبكر، وملف الطالب. المتابعة نفسها في «التفقدات» =====
 const stuN = s => String(s||"").replace(/[ً-ْـ]/g,"").replace(/[إأآ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/[\s.،,:\-–()]+/g,"").trim();
 const STU_DOT = {g:["var(--ok)","حضر"], a:["var(--bad)","غاب"], e:["var(--gold)","اعتذر"], r:["#7C9CC0","تسجيل"]};
@@ -2192,6 +2281,7 @@ function viewStudents(){
   if(!canSTU()) return `<div class="card empty">ليست لديك صلاحية لهذه الصفحة.</div>`;
   if(!S.stu){ if(!S.stuLoading && !S.stuErr) loadStu();
     return S.stuErr ? `<div class="card empty">تعذّر تحميل بيانات الطلاب.<div class="row" style="justify-content:center;margin-top:12px"><button class="btn" data-a="stuReload">⟳ إعادة المحاولة</button></div></div>` : `<div class="card empty">جارٍ تحميل بيانات الطلاب…</div>`; }
+  if(S.stuPage) return stuPageHtml(S.stuPage);
   const D=S.stu, ix=stuIdx(), F=S.stuF=S.stuF||{q:"",k:"",all:false}, sup=stuIsSup(), fold=S.stuFold=S.stuFold||{};
   const mine=sup?stuMyToday():null, showAll=!sup||F.all||!Object.keys(mine).length;
   const by={}; ix.rows.forEach(r=>{ const o=by[r.k]=by[r.k]||{k:r.k,n:r.kn,cnt:0,p:[],t:[],bad:0,gr:0,prog:r.prog}; o.cnt++; if(r.pct!==null) o.p.push(r.pct); if(r.tr!==null) o.t.push(r.tr); if(r.st.k==="bad") o.bad++; if(stuGrant(r)) o.gr++; });
@@ -2214,23 +2304,96 @@ function viewStudents(){
   const cnt={ok:0,gold:0,bad:0,none:0}; D.students.forEach(s=>cnt[stuAllSt(s.st)]++);
   return `<div class="stuhero noprint"><h1>الطلاب</h1><label class="stubig"><span aria-hidden="true">🔍</span><input id="stuq_" type="search" value="${esc(F.q)}" placeholder="اكتب اسم الطالب${D.pii?" أو بريده":""}…" autocomplete="off" aria-label="ابحث عن طالب"></label><div id="stures_">${stuResHtml(F.q)}</div></div>
     <div class="stustack">${openCard}${fd("warn","إنذار مبكر ("+wl.length+")","حالات لا يلتقطها التفقد اليومي — للعلم",warnB)}${fd("courses",(showAll?"الدورات":"دوراتك اليوم")+" ("+cs.length+")","نسبة الالتزام وطلاب كل دورة",coursesB)}
-    <small class="sub">آخر تحديث للبيانات ${esc(D.at||"")} <button class="lnk" data-a="stuReload">⟳ تحديث</button> · الكل: ${[["ok","ملتزم"],["gold","بحاجة إلى متابعة"],["bad","منقطع"],["none","لم يبدأ الحضور"]].map(([k,l])=>`${l} ${cnt[k]}`).join(" · ")}. ${D.pii?"الهاتف والبريد في ملف الطالب.":"الهاتف والبريد والسن والدرجات لمسئولي الأقسام فقط."}</small></div>`;
+    <small class="sub">آخر تحديث للبيانات ${esc(D.at||"")} <button class="lnk" data-a="stuReload">⟳ تحديث</button> · الكل: ${[["ok","ملتزم"],["gold","بحاجة إلى متابعة"],["bad","منقطع"],["none","لم يبدأ الحضور"]].map(([k,l])=>`${l} ${cnt[k]}`).join(" · ")}. رقم الهاتف لا يُعرض في المنظومة.${D.full?"":" السن والإقامة والدرجات لمسئولي الأقسام فقط."}</small></div>`;
 }
-function stuCardHtml(code){ const D=S.stu, ix=stuIdx(), s=ix.byC[code]; if(!s) return `<h2>الطالب غير موجود</h2><div class="row"><button class="btn" data-a="close">إغلاق</button></div>`;
-  const mine=ix.rows.filter(r=>r.c===code), p=D.pii&&D.pii[code], cd=(S.stuCards||{})[code], fus=ix.fuBy[code]||[], k=stuAllSt(s.st);
-  const tfq=(cd&&cd.tfq)||[], openT=stuOpenT(cd), ready=cd&&!cd.err;
+// ===== صفحة الطالب (قرار المستخدم 27 نوفمبر): صفحة كاملة بدل النافذة — البريد فوق، وخمسة إجراءات مباشرة، والسجل مطوي. رقم الهاتف لا يُعرض لأحد =====
+const stuEmails = e => String(e||"").split(/\s*·\s*|[\s,;،]+/).filter(x=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x));
+const EX_LBL = {"اتكتب":"كُتب في شيت الحضور", "مستني العمود":"بانتظار ظهور عمود التاريخ في الشيت", "محتاج مراجعة":"أُحيل إلى مسئولة لجنة التنظيم للمراجعة", "اتلغى":"أُلغي", "لا محاضرات في المدة":"لا محاضرات في المدة"};
+const slStatus = x => /^اتلغى/.test(x||"") ? "أُلغي"+String(x).slice(5) : (x||"");
+function stuShow(code){ S.stuCards=S.stuCards||{};
+  if(S.view!=="stu"){ S.stuBack=S.view; S.view="stu"; try { history.replaceState(null,"","#stu"); } catch(e){} } else if(!S.stuPage) S.stuBack="stu";
+  if(S.stuPage!==code) S.stuForm=null; S.stuPage=code; S.stuOpenC=code; close(); render(); scrollTo(0,0);
+  if(!S.stuCards[code]) stuCardLoad(code); }
+function stuCardLoad(code){ api("stuCard",{code},45000).then(d=>{ S.stuCards[code]=d.ok?d:{err:1}; if(S.stuPage===code && S.view==="stu") render(); })
+  .catch(()=>{ S.stuCards[code]={err:1}; if(S.stuPage===code && S.view==="stu") render(); delete S.stuCards[code]; }); }
+function stuFormHtml(code, mine, emails){ const F=S.stuForm; if(!F) return ""; const act=isMgr();
+  const opts=mine.map(r=>`<option value="${esc(r.k)}">${esc(r.kn)}</option>`).join("");
+  const foot=l=>`<div class="row" style="margin-top:10px"><button class="btn" data-a="stuDo" data-id="${esc(code)}">${l}</button><button class="btn ghost" data-a="stuForm" data-k="">إلغاء</button></div>`;
+  const why=`<label>السبب (اختياري)<input id="sf_why" maxlength="150" placeholder="الظروف الصحية أو المالية أو الأسرية تُكتب «ظرف خاص» فقط"></label>`;
+  const auto=`<p class="sub">يُكتب «اعتذار» تلقائيًا في خانة الطالب في شيت الحضور إن كانت فارغة. وإن تعذّر ذلك أُحيل الأمر إلى مسئولة لجنة التنظيم للمراجعة.</p>`;
+  const T={
+    exc1:`<h3>اعتذار عن محاضرة أو أكثر</h3><label>الدورة أو المجلس<select id="sf_k">${opts}</select></label><label>تاريخ المحاضرة<span id="sf_dates" class="sfdates"><input type="date" class="sfd" value="${esc(today())}"></span></label><button class="lnk" data-a="stuAddDate">+ إضافة تاريخ آخر</button>${why}${auto}${foot("تسجيل الاعتذار")}`,
+    exc2:`<h3>اعتذار عن مدة</h3><div class="row" style="gap:10px"><label class="grow">من يوم<input type="date" id="sf_from" value="${esc(today())}"></label><label class="grow">إلى يوم<input type="date" id="sf_to" value="${esc(today())}"></label></div><p class="sub">ينطبق على كل دوراته الحالية (${mine.length}) في هذه المدة، وبحد أقصى 45 يومًا.</p>${why}${auto}${foot("تسجيل الاعتذار")}`,
+    left:`<h3>خرج من جروب تيليجرام الدورة</h3><label>الدورة أو المجلس<select id="sf_k">${opts}</select></label><label class="sfchk"><input type="checkbox" id="sf_sent"> أُرسل له تفقد</label><p class="sub">لا يُكتب شيء في شيت الحضور. يبقى ظاهرًا لمسئولة شئون الطلاب حتى يُكتب السبب بعد ردّ الطالب.</p>${foot("تسجيل")}`,
+    wd:`<h3>أبلغ بانسحابه من الدورة أو المجلس</h3><label>الدورة أو المجلس<select id="sf_k">${opts}</select></label><label>كيف أبلغ؟<select id="sf_how"><option value="private">على الخاص</option><option value="group">في الجروب</option></select></label><label>ملاحظة (اختيارية)<input id="sf_note" maxlength="150"></label><div class="banner">${act?"يُنفَّذ فورًا دون انتظار موافقة: تُسجَّل حالته «خرج من الدورة»، ويُنقل صفّه تحت «ملاحظات» في شيت الحضور، ويصل مسئولة لجنة التنظيم إشعار به. يمكن التراجع في اليوم نفسه من «السجل».":"يُرفع إلى المسئولة للموافقة، وبعد الموافقة يُنفَّذ تلقائيًا."}</div>${foot(act?"تسجيل الانسحاب":"رفع إلى المسئولة")}`,
+    upd:`<h3>تحديث بيانات</h3><label>ما المطلوب تحديثه؟<select id="sf_f"><option value="email">البريد الإلكتروني</option><option value="phone">رقم الهاتف</option><option value="tg">حساب تيليجرام (المعرّف الرقمي أو اسم المستخدم)</option></select></label><label>القيمة الجديدة<input id="sf_val" dir="ltr" maxlength="120" autocomplete="off"></label><p class="sub">${act?"يُطبَّق فورًا في قاعدة بيانات الطلاب دون انتظار موافقة.":"يُرفع إلى المسئولة للموافقة ثم يُطبَّق تلقائيًا."} البريد الجديد يُضاف إلى بريده الحالي ولا يحذفه. رقم الهاتف لا يظهر بعد حفظه. يمكن التراجع في اليوم نفسه من «السجل».</p>${foot(act?"حفظ التحديث":"رفع إلى المسئولة")}`,
+    mail:`<h3>بريد إلى الطالب</h3>${emails.length>1?`<label>إلى<select id="sf_to" dir="ltr">${emails.map((e,i)=>`<option${i===emails.length-1?" selected":""}>${esc(e)}</option>`).join("")}</select></label>`:`<p class="sub">إلى: <b dir="ltr">${esc(emails[0]||"")}</b></p>`}<label>الموضوع<input id="sf_sub" maxlength="150"></label><label>نص الرسالة<textarea id="sf_body" rows="6" maxlength="3000"></textarea></label><p class="sub">يُرسل من حساب شئون الطلاب. يُسجَّل في سجل الطالب الوقت والمرسل والموضوع فقط، دون نص الرسالة.</p>${foot("إرسال")}`};
+  return T[F.k] ? `<div class="card stuform" id="stuform_">${T[F.k]}</div>` : ""; }
+function stuPageHtml(code){ const D=S.stu, ix=stuIdx(), s=ix.byC[code];
+  const back=`<div class="row noprint" style="margin-bottom:10px"><button class="btn ghost" data-a="stuBack">→ رجوع</button></div>`;
+  if(!s) return back+`<div class="card empty">الطالب غير موجود.</div>`;
+  const mine=ix.rows.filter(r=>r.c===code), p=(D.pii||{})[code]||{}, cd=(S.stuCards||{})[code], fus=ix.fuBy[code]||[], k=stuAllSt(s.st), F=S.stuForm;
+  const tfq=(cd&&cd.tfq)||[], openT=stuOpenT(cd), ready=cd&&!cd.err, emails=stuEmails(p.e);
+  const gone=(D.left||[]).filter(x=>x.c===code).map(x=>(D.courses[x.k]||{}).n||x.k);
+  const courses=mine.map(r=>`<div class="item"><div class="what"><b>${esc(r.kn)}</b> ${stuSubPill(r)}</div><span class="pill ${r.rec?"gray":"ok"}">${r.rec?"متابعة بالتسجيلات":"مشترك"}</span></div>`).join("")+gone.map(n=>`<div class="item"><div class="what"><b>${esc(n)}</b></div><span class="pill bad">خرج من الدورة</span></div>`).join("");
+  const acts=[["exc1","📝","اعتذار عن محاضرة أو أكثر"],["exc2","🗓","اعتذار عن مدة"],["left","🚪","خرج من جروب تيليجرام الدورة"],["wd","⛔","أبلغ بانسحابه من الدورة"],["upd","✏️","تحديث بيانات"]];
+  const pendL=((cd&&cd.log)||[]).filter(x=>x.kind==="خرج من الجروب" && x.status==="بانتظار السبب");
+  const mylog=(cd&&cd.log)||[], canU=x=>x.can && String(x.at).slice(0,10)===today() && !/^اتلغى/.test(x.status||"") && (x.by===S.me.id || isMgr());
   const log=`<h3>الدورات الحالية</h3>${mine.map(r=>`<div class="item"><div class="what"><b>${esc(r.kn)}</b> ${stuSubPill(r)}<small>${r.n?`حضر ${r.h} من ${r.n} محاضرة${r.x?` · اعتذر ${r.x}`:""}`:"لم يبدأ الحضور"}${r.gap?` · غياب متتالٍ ${r.gap}`:""}</small><div>${stuDots(r.dots)}</div></div><div class="stur2"><span>${r.pct===null?"—":r.pct+"%"} ${stuTr(r.tr)}</span><span class="pill ${r.st.c}">${esc(r.st.l)}</span></div></div>`).join("")||`<p class="sub">لا توجد دورات حالية.</p>`}
     <small class="sub">النقاط: آخر المحاضرات، والأحدث يمينًا — <i class="studot" style="background:var(--ok)"></i> حضر <i class="studot" style="background:var(--bad)"></i> غاب <i class="studot" style="background:var(--gold)"></i> اعتذر <i class="studot" style="background:#7C9CC0"></i> تسجيل. السهم: آخر 3 أسابيع مقارنةً بما قبلها.</small>
-    <h3>التفقدات السابقة</h3>${!cd?`<p class="sub">جارٍ التحميل…</p>`:cd.err?`<p class="sub">تعذّر التحميل.</p>`:tfq.length?tfq.slice(0,12).map(t=>`<div class="item"><div class="what"><b>${esc(t.id)} · ${esc(t.kind||"")}${t.course?" · "+esc(t.course):""}</b><small>${t.due&&nameOf(t.due)?"خانة "+esc(nameOf(t.due))+" · ":""}${D.pii?"الحكم":"الحالة"}: ${esc(t.verdict||"—")}${t.reply?" · رد الطالب: "+esc(t.reply):""}${t.sr?" · سجّلت المشرفة: "+esc(srL(t.sr)):""}</small>${t.opNote?`<small style="display:block">سبب المسئولة: ${esc(t.opNote)}</small>`:""}</div>${t.op?`<span class="pill ${t.op==="متفق"?"ok":"bad"}">${esc(t.op)}</span>`:t.open?`<span class="pill gold">مفتوح</span>`:""}</div>`).join(""):`<p class="sub">لا توجد تفقدات سابقة له.</p>`}
+    <h3>ما سُجّل من هذه الصفحة</h3>${!cd?`<p class="sub">جارٍ التحميل…</p>`:mylog.length?mylog.map(x=>`<div class="item"><div class="what"><b>${esc(x.kind)}${x.cname?" · "+esc(x.cname):""}</b><small>${esc(x.at)} · ${esc(nameOf(x.by))}${x.detail?" · "+esc(x.detail):""}</small></div><span class="pill ${/^اتلغى/.test(x.status||"")?"gray":""}">${esc(slStatus(x.status))}</span>${canU(x)?`<button class="btn sm ghost" data-a="stuUndo" data-id="${esc(x.id)}" data-c="${esc(code)}">تراجع</button>`:""}</div>`).join(""):`<p class="sub">لا شيء مسجَّل بعد.</p>`}
+    ${cd&&(cd.exc||[]).length?`<h3>الاعتذارات المسجّلة</h3>${cd.exc.map(x=>`<div class="item"><div class="what"><b>${esc(x.cname||"")}</b><small>${esc(x.from===x.to?x.from:"من "+x.from+" إلى "+x.to)}${x.reason?" · "+esc(x.reason):""}${x.note?" · "+esc(x.note):""}</small></div><span class="pill ${x.status==="اتكتب"?"ok":x.status==="محتاج مراجعة"?"gold":"gray"}">${esc(EX_LBL[x.status]||x.status)}</span></div>`).join("")}`:""}
+    <h3>التفقدات السابقة</h3>${!cd?`<p class="sub">جارٍ التحميل…</p>`:cd.err?`<p class="sub">تعذّر التحميل.</p>`:tfq.length?tfq.slice(0,12).map(t=>`<div class="item"><div class="what"><b>${esc(t.kind||"")}${t.course?" · "+esc(t.course):""}</b><small>${t.due&&nameOf(t.due)!=="—"?"خانة "+esc(nameOf(t.due))+" · ":""}${D.full?"الحكم":"الحالة"}: ${esc(t.verdict||"—")}${t.reply?" · رد الطالب: "+esc(t.reply):""}${t.sr?" · سجّلت المشرفة: "+esc(srL(t.sr)):""}</small>${t.opNote?`<small style="display:block">سبب المسئولة: ${esc(t.opNote)}</small>`:""}</div>${t.op?`<span class="pill ${t.op==="متفق"?"ok":"bad"}">${esc(t.op)}</span>`:t.open?`<span class="pill gold">مفتوح</span>`:""}</div>`).join(""):`<p class="sub">لا توجد تفقدات سابقة له.</p>`}
     ${cd&&(cd.grades||[]).length?`<h3>الدرجات</h3>${cd.grades.map(g=>`<div class="item"><div class="what">${esc(g.s)} · ${esc(g.t)}</div><b>${esc(g.g)} / ${esc(g.m)}</b></div>`).join("")}`:""}
     ${stuSqHtml(code)}
     ${fus.length?`<h3>متابعات قديمة («تواصلت»)</h3>${fus.slice(0,6).map(f=>`<div class="item"><div class="what"><b>${esc(STU_RES_LBL[f.r]||f.r)}</b><small>${esc(f.at)} · ${esc(nameOf(f.by))}${f.k?" · "+esc((D.courses[f.k]||{}).n||f.k):""}</small>${f.note?`<small style="display:block">${esc(f.note)}</small>`:""}</div></div>`).join("")}`:""}`;
-  return `<h2 style="margin-bottom:6px">${esc(s.n)}</h2>${stuSummary(code, mine, cd)}<span class="pill ${k==="none"?"gray":k}">${esc((s.st||"").replace(/^\S+\s/,""))}</span>${cd&&cd.tg?` <span class="pill ${/مؤكد/.test(cd.tg)?"ok":"gray"}">تيليجرام: ${esc(/مؤكد/.test(cd.tg)?"مربوط":cd.tg)}</span>`:ready?` <span class="pill gray">تيليجرام: غير مربوط</span>`:""}
-    ${p?`<div class="stupii" style="margin-top:10px"><div>الهاتف: <b dir="ltr">${esc(p.ph||"—")}</b></div><div>البريد: <b dir="ltr">${esc(p.e||"—")}</b></div><div>السن: ${esc(p.age||"—")} · الإقامة: ${esc(p.res||"—")}</div></div>`:""}
-    ${stuNowHtml(code, cd, mine)}
-    <details class="stufold"${ready&&!openT.length?" open":""}><summary>السجل <small class="sub">الحضور، والتفقدات السابقة، والقرارات، والمتابعات القديمة</small></summary>${log}</details>
-    <details class="stufold"><summary>خيارات أخرى <small class="sub">اقتراح قرار، أو تصحيح بيانات</small></summary><div class="row" style="margin-top:8px">${mine.length?`<button class="btn ghost" data-a="stuProp" data-id="${esc(code)}" data-k="قرار">⚖️ اقتراح قرار</button>`:""}<button class="btn ghost" data-a="stuProp" data-id="${esc(code)}" data-k="تصحيح">✏️ تصحيح خطأ في بياناته</button></div></details>
-    <div class="row" style="margin-top:14px"><button class="btn ghost" data-a="close">إغلاق</button></div>`; }
+  return `${back}<div class="card stuhead"><h1 style="margin:0 0 6px">${esc(s.n)}</h1>
+      <div><span class="pill ${k==="none"?"gray":k}">${esc((s.st||"").replace(/^\S+\s/,""))}</span>${cd&&cd.tg?` <span class="pill ${/مؤكد/.test(cd.tg)?"ok":"gray"}">تيليجرام: ${esc(/مؤكد/.test(cd.tg)?"مربوط":cd.tg)}</span>`:ready?` <span class="pill gray">تيليجرام: غير مربوط</span>`:""}</div>
+      ${courses||`<p class="sub" style="margin-top:8px">لا توجد دورات حالية.</p>`}
+      <div class="stupii" style="margin-top:10px"><div>البريد: ${emails.length?emails.map(e=>`<b dir="ltr">${esc(e)}</b>`).join(" · "):"—"}</div>${D.full?`<div>السن: ${esc(p.age||"—")} · الإقامة: ${esc(p.res||"—")}</div>`:""}
+        <div class="row" style="gap:8px;margin-top:6px">${emails.length?`<button class="btn sm" data-a="stuForm" data-k="mail">✉ إرسال بريد</button>`:""}</div>
+        <small class="sub" style="display:block;margin-top:4px">رقم الهاتف لا يُعرض في المنظومة، ويمكن تحديثه من «تحديث بيانات».</small></div>
+      ${stuSummary(code, mine, cd)}</div>
+    <div class="stuacts">${acts.map(([key,ic,l])=>`<button class="stuact${F&&F.k===key?" on":""}" data-a="stuForm" data-k="${key}"${key!=="upd"&&!mine.length?" disabled":""}><span aria-hidden="true">${ic}</span>${l}</button>`).join("")}</div>
+    ${stuFormHtml(code, mine, emails)}
+    ${openT.length?stuNowHtml(code, cd, mine):""}
+    ${pendL.map(x=>`<div class="card stuform"><b>🚪 خرج من جروب «${esc(x.cname||"")}» — بانتظار السبب</b><small class="sub" style="display:block">${esc(x.at)} · ${esc(nameOf(x.by))} · ${esc(x.detail||"")}</small><div class="row" style="margin-top:8px"><input id="sf_lw_${esc(x.id)}" class="grow" style="width:auto" maxlength="150" placeholder="السبب بعد ردّ الطالب (الظروف الخاصة تُكتب «ظرف خاص»)"><button class="btn sm" data-a="stuLeftWhy" data-id="${esc(x.id)}" data-c="${esc(code)}">حفظ السبب</button></div></div>`).join("")}
+    <details class="card stufoldc" data-fold="stu_log"${tdFold("stu_log")?" open":""}><summary><b>السجل</b><small class="sub">الحضور، والتفقدات، وما سُجّل من قبل، والرسائل المرسلة</small></summary>${log}</details>
+    <details class="card stufoldc" data-fold="stu_more"${tdFold("stu_more")?" open":""}><summary><b>خيارات أخرى</b><small class="sub">اقتراح قرار، أو تصحيح بيانات أخرى</small></summary><div class="row" style="margin-top:8px">${mine.length?`<button class="btn ghost" data-a="stuProp" data-id="${esc(code)}" data-k="قرار">⚖️ اقتراح قرار</button>`:""}<button class="btn ghost" data-a="stuProp" data-id="${esc(code)}" data-k="تصحيح">✏️ تصحيح خطأ في بياناته</button></div></details>`; }
+const STU_ERR = {forbidden:"ليست لديك صلاحية لهذا.", quota:"لم يُرسل البريد: انتهت حصة الإرسال اليوم. حاول غدًا.", noemail:"لا يوجد بريد مسجَّل لهذا الطالب.", bad_dates:"التواريخ غير صحيحة، أو المدة أطول من المسموح.", bad_value:"القيمة غير صحيحة. راجع الصيغة.", exists:"يوجد طلب مماثل بانتظار القرار.", late:"التراجع متاح في اليوم نفسه فقط.", done:"أُلغي من قبل.", no_course:"لا توجد دورات حالية له."};
+function stuAfter(code, reloadBase){ S.stuForm=null; if(S.stuCards) delete S.stuCards[code]; if(reloadBase){ S.stu=null; S.stuErr=""; } render(); stuCardLoad(code); }
+// بعد قرار وُوفق عليه: مهمة التنفيذ لصاحبة الاقتراح (كما في «قرارات وتصحيحات على طلاب»)
+async function stuSqTask(q, note){ const by=memberOf(q.by); if(q.kind!=="قرار" || !by.id || by.role==="committee") return false;
+  await save("tasks","sq_"+q.id,{title:q.type+" — "+q.name+(q.cname?" ("+q.cname+")":""), type:"assigned", status:"todo", assignee:q.by, assigner:meId(), due:today(), output:(SQ_TASK[q.type]||"")+(note?" — ملاحظة: "+note:""), createdAt:Date.now()}, false); return true; }
+async function stuPageAct(a, el, id){
+  if(a==="stuBack"){ S.stuPage=null; S.stuForm=null; const b=S.stuBack||"stu"; S.stuBack=null; if(b!==S.view){ S.view=b; try { history.replaceState(null,"","#"+b); } catch(e){} } render(); return true; }
+  if(a==="stuForm"){ S.stuForm=el.dataset.k?{k:el.dataset.k}:null; render(); const f=document.getElementById("stuform_"); if(f) f.scrollIntoView({block:"center",behavior:"smooth"}); return true; }
+  if(a==="stuAddDate"){ const box=document.getElementById("sf_dates"); if(box && box.querySelectorAll("input").length<8){ const i=document.createElement("input"); i.type="date"; i.className="sfd"; box.appendChild(i); i.focus(); } return true; }
+  if(a==="stuLeftWhy"){ const c=el.dataset.c, why=v("sf_lw_"+id); if(!why){ toast("اكتب السبب أولًا."); return true; } el.disabled=true;
+    try { const d=await api("stuDo",{op:"leftWhy", code:c, id, why}); if(!d.ok) throw d; if(S.sq&&S.sq.left) S.sq.left=S.sq.left.filter(x=>x.id!==id); toast("حُفظ السبب."); stuAfter(c,false); }
+    catch(e){ el.disabled=false; toast(STU_ERR[e.reason]||"تعذّر الحفظ. حاول مرة أخرى."); } return true; }
+  if(a==="stuUndo"){ const c=el.dataset.c; if(!el.dataset.sure){ el.dataset.sure="1"; el.textContent="تأكيد التراجع"; return true; } el.disabled=true;
+    try { const d=await api("stuDo",{op:"undo", code:c, id},60000); if(!d.ok) throw d; toast("تم التراجع"+(d.msg?": "+d.msg:".")); stuAfter(c,true); }
+    catch(e){ el.disabled=false; toast(STU_ERR[e.reason]||"تعذّر التراجع. حاول مرة أخرى."); } return true; }
+  if(a==="stuDo"){ const F=S.stuForm; if(!F) return true; const c=id, sel=x=>(document.getElementById(x)||{}).value||""; let p=null;
+    if(F.k==="exc1"){ const ds=[...document.querySelectorAll("#sf_dates input")].map(x=>x.value).filter(Boolean); if(!ds.length){ toast("اختر تاريخ المحاضرة."); return true; } p={op:"excuse", course:sel("sf_k"), dates:ds, reason:v("sf_why")}; }
+    else if(F.k==="exc2"){ const f=sel("sf_from"), t=sel("sf_to"); if(!f || !t || t<f){ toast("اختر بداية المدة ونهايتها."); return true; } p={op:"excuse", mode:"range", from:f, to:t, reason:v("sf_why")}; }
+    else if(F.k==="left") p={op:"left", course:sel("sf_k"), sent:!!(document.getElementById("sf_sent")||{}).checked};
+    else if(F.k==="wd") p={op:"withdraw", course:sel("sf_k"), how:sel("sf_how"), note:v("sf_note")};
+    else if(F.k==="upd"){ if(!v("sf_val")){ toast("اكتب القيمة الجديدة."); return true; } p={op:"update", field:sel("sf_f"), value:v("sf_val")}; }
+    else if(F.k==="mail"){ if(!v("sf_sub") || v("sf_body").length<5){ toast("اكتب الموضوع ونص الرسالة."); return true; } p={op:"mail", to:sel("sf_to"), subject:v("sf_sub"), body:(document.getElementById("sf_body")||{}).value||""}; }
+    if(!p) return true; p.code=c; el.disabled=true;
+    try { const d=await api("stuDo",p,90000); if(!d.ok) throw d; let msg="تم التسجيل.", base=false;
+      if(p.op==="excuse"){ const r=d.res||{}; msg="سُجّل الاعتذار."+(r.written?" كُتب في شيت الحضور: "+r.written+".":"")+(r.pending?" بانتظار ظهور عمود التاريخ: "+r.pending+".":"")+(r.review?" أُحيل إلى مسئولة لجنة التنظيم للمراجعة: "+r.review+".":""); }
+      else if(p.op==="mail") msg="أُرسل البريد.";
+      else if(p.op==="left"){ if(S.sq) loadSQ(); }
+      else if(d.q){ if(S.sq) S.sq.rows=sqRows().concat([d.q]); const ap=d.applied, done=d.q.status==="اتوافق";
+        if(!done) msg="رُفع إلى المسئولة ("+d.q.id+").";
+        else { base=true; if(p.op==="withdraw"){ await stuSqTask(d.q,""); msg="سُجّل «خرج من الدورة»."+(ap&&ap.moved?" نُقل صفّه في شيت الحضور.":"")+(ap&&ap.why?" لم يكتمل التنفيذ التلقائي، وأُحيل إلى مسئولة لجنة التنظيم.":""); }
+          else msg=ap&&ap.why?"لم يُطبَّق التحديث: "+ap.why:"طُبِّق التحديث."; } }
+      toast(msg); stuAfter(c, base); }
+    catch(e){ el.disabled=false; toast(STU_ERR[e.reason]||"تعذّر التنفيذ. حاول مرة أخرى."); } return true; }
+  return false; }
 // ===== ملف الطالب في كل مكان (26 نوفمبر 11 م): بحث ثابت فوق، ورد الطالب والصيغ الجاهزة، واقتراح قرار وتصحيح، وطابور القرارات في «يحتاج تدخّلك» =====
 const SR_TYPES = ["ظروف","الميعاد أو التسجيلات","هتوقف","كان معتذر","ما ردّش","ظرف خاص"];
 const SQ_TYPES = {"قرار":["تتشال من المنحة","خرج من الدورة","يتنقل للتسجيلات","استثناء في الميعاد"], "تصحيح":["الاسم","نوع الاشتراك","حساب تيليجرام","دورة ناقصة أو زيادة"]};
@@ -2251,7 +2414,7 @@ function stuTplBox(key, s, cname){ if(!key) return `<p class="sub">لا يلزم
 function stuSummary(code, mine, cd){ const s=stuIdx().byC[code], bits=[];
   mine.forEach(r=>{ if(stuGrant(r)) bits.push(r.gap>=1?`<span class="pill bad">منحة جزئية في ${esc(r.kn)} وغاب عن آخر ${r.gap===1?"محاضرة":r.gap+" محاضرات"}${r.gap>=2?" — تجاوز الشرط":" — على الحد"}</span>`:`منحة جزئية في ${esc(r.kn)}`); else if(r.gap>=2) bits.push(`غاب عن آخر ${r.gap} محاضرات في ${esc(r.kn)}`); });
   const x=mine.reduce((a,r)=>a+(r.x||0),0); if(x) bits.push(`اعتذر ${x} مرة`);
-  const op=stuOpenT(cd); if(op.length) bits.push(`عليه تفقد مفتوح ${esc(op.map(t=>t.id).join("، "))}`);
+  const op=stuOpenT(cd); if(op.length) bits.push(op.length>1?`عليه ${op.length} تفقدات مفتوحة`:"عليه تفقد مفتوح");
   const pq=sqRows().filter(q=>q.code===code && q.status==="مستني"); if(pq.length) bits.push(`بانتظار قرار: ${esc(pq.map(q=>q.type).join("، "))}`);
   if(cd&&!cd.err) bits.push(/مؤكد/.test(cd.tg||"")?"تيليجرام مربوط":"تيليجرام غير مربوط");
   return bits.length?`<div class="stusum"><b>الخلاصة:</b> ${bits.join(" · ")}</div>`:""; }
@@ -2264,7 +2427,7 @@ function stuNowHtml(code, cd, mine){ const s=stuIdx().byC[code], op=stuOpenT(cd)
   const sel=S.stuSR||{};
   return op.map(t=>{ const ty=sel[t.id], oth=!stuTfqMine(t), row=(mine||[]).find(r=>stuN(r.kn)===stuN(t.course)), grant=!!row&&stuGrant(row);
     const rec = ty==="الميعاد أو التسجيلات" ? `<details class="sturec"><summary class="sub">صيغ التسجيلات (بعد موافقة المسئولة)</summary>${grant?`<p class="sub">الطالب على منحة جزئية، ونظام التسجيلات غير متاح له.</p>`:stuTplBox("غياب: نظام التسجيلات", s, t.course)}${stuTplBox("تسجيلات: متابعة", s, t.course)}</details>` : "";
-    return `<div class="stunow"><div class="stunowh">📞 المطلوب الآن <small>${esc(t.id)} · ${esc(t.kind||"")}${t.course?" · "+esc(t.course):""}</small></div>
+    return `<div class="stunow"><div class="stunowh">📞 المطلوب الآن <small>${esc(t.kind||"")}${t.course?" · "+esc(t.course):""}</small></div>
     ${oth?`<p class="stuoth">هذا التفقد من خانة ${esc(nameOf(t.due)||"مشرفة أخرى")}. إن كان الطالب هو من تواصل، فيمكنك إكماله وتسجيل ردّه.</p>`:""}
     <ol class="stusteps">
       <li><b>إرسال الرسالة</b>${oth?`<small class="sub" style="display:block">إن كان الطالب هو من بدأ التواصل، فلا حاجة إلى هذه الخطوة.</small><details><summary class="sub">نص الرسالة</summary>${stuTplBox(stuTplKey(t,""), s, t.course)}</details>`:stuTplBox(stuTplKey(t,""), s, t.course)}</li>
@@ -2274,37 +2437,38 @@ function stuNowHtml(code, cd, mine){ const s=stuIdx().byC[code], op=stuOpenT(cd)
 function stuSqHtml(code){ const L=sqRows().filter(q=>q.code===code); if(!L.length) return "";
   return `<h3>القرارات والتصحيحات</h3>${L.map(q=>`<div class="item"><div class="what"><b>${esc(q.id)} · ${esc(q.kind)}: ${esc(q.type)}${q.to?" ← "+esc(q.to):""}</b><small>${esc(q.at)} · ${esc(nameOf(q.by))}${q.cname?" · "+esc(q.cname):""} · ${esc(q.note)}</small>${q.done?`<small style="display:block">${esc(q.done)}</small>`:""}</div><span class="pill ${q.status==="اتوافق"?"ok":q.status==="اترفض"?"gray":"gold"}">${esc(q.status)}</span></div>`).join("")}`; }
 function stuPropForm(code, kind){ const ix=stuIdx(), s=ix.byC[code]; if(!s) return ""; const mine=ix.rows.filter(r=>r.c===code);
-  return `<h2>${kind==="قرار"?"⚖️ اقتراح قرار":"✏️ تصحيح بيانات"}: ${esc(s.n)}</h2><p class="sub">${kind==="قرار"?"بيروح للمسئولة توافق أو ترفض، وبعد الموافقة بتوصلك مهمة بخطوات التنفيذ.":"بيروح للمسئولة توافق، وبعدها المراجعة اليومية بتصلّحه في قاعدة بيانات الطلاب ومصدرها."}</p>
+  return `<h2>${kind==="قرار"?"⚖️ اقتراح قرار":"✏️ تصحيح بيانات"}: ${esc(s.n)}</h2><p class="sub">${isMgr()?(kind==="قرار"?"يُنفَّذ فورًا دون انتظار موافقة، وتُنشأ مهمة بخطوات التنفيذ.":"يُسجَّل معتمدًا فورًا، وتطبّقه المراجعة اليومية في قاعدة بيانات الطلاب ومصدرها."):(kind==="قرار"?"يُرفع إلى المسئولة للموافقة أو الرفض، وبعد الموافقة تصلك مهمة بخطوات التنفيذ.":"يُرفع إلى المسئولة للموافقة، ثم تطبّقه المراجعة اليومية في قاعدة بيانات الطلاب ومصدرها.")}</p>
     <label>${kind==="قرار"?"القرار":"إيه الغلط؟"}<select id="sqt">${SQ_TYPES[kind].map(x=>`<option>${esc(x)}</option>`).join("")}</select></label>
     <label>الدورة<select id="sqk">${mine.map(r=>`<option value="${esc(r.k)}">${esc(r.kn)}</option>`).join("")}${kind==="تصحيح"?`<option value="">عام (مش دورة معيّنة)</option>`:""}</select></label>
     ${kind==="تصحيح"?`<label>المكتوب دلوقتي<input id="sqc" maxlength="100"></label><label>الصح<input id="sqto" maxlength="100"></label>`:""}
     <label>${kind==="قرار"?"السبب (إجباري)":"الدليل (إجباري): منين عرفتي؟"}<textarea id="sqn" maxlength="300" rows="3"></textarea></label>
-    <div class="row"><button class="btn" data-a="stuPropSave" data-id="${esc(code)}" data-k="${esc(kind)}">ابعتي للمسئولة</button><button class="btn ghost" data-a="stuOpen" data-id="${esc(code)}">رجوع</button></div>`; }
+    <div class="row"><button class="btn" data-a="stuPropSave" data-id="${esc(code)}" data-k="${esc(kind)}">${isMgr()?"تنفيذ":"رفع إلى المسئولة"}</button><button class="btn ghost" data-a="stuOpen" data-id="${esc(code)}">رجوع</button></div>`; }
 function sqCard(){ const L=sqPend(); if(!L.length) return ""; const old=q=>stuDays(q.at.slice(0,10))>=1;
   return `<div class="card"><h2>⚖️ قرارات وتصحيحات على طلاب (${L.length}) ${atHead("sa")}</h2>${L.map(q=>`<div class="item"><div class="what"><b><button class="lnk" data-a="stuOpenC" data-id="${esc(q.code)}">${esc(q.name)}</button> · ${esc(q.kind)}: ${esc(q.type)}${q.cur||q.to?` (${esc(q.cur||"—")} ← ${esc(q.to||"—")})`:""}</b><small>${esc(q.cname||"")}${q.cname?" · ":""}${esc(nameOf(q.by))} · ${esc(q.at)}${q.src?" · من "+esc(q.src):""}${old(q)?` · <span class="late">من أكتر من يوم</span>`:""}</small><small style="display:block">${esc(q.note)}</small></div><div class="row emgx" style="gap:6px"><button class="btn sm" data-a="sqDec" data-id="${esc(q.id)}" data-v="اتوافق">موافقة</button><button class="btn sm ghost" data-a="sqDec" data-id="${esc(q.id)}" data-v="اترفض">رفض</button></div></div>`).join("")}</div>`; }
-const SQ_TASK = {"تتشال من المنحة":"بلّغي الطالب بقرار إلغاء المنحة الجزئية، وبلّغي الماليات", "خرج من الدورة":"إجراءات التوقف: رد 3، وإخراجه من الجروب، وإبلاغ الماليات، وتبلّغي منظّمة الدورة تنقل صفه تحت «ملاحظات»", "يتنقل للتسجيلات":"بلّغي الطالب بنظام التسجيلات، وبلّغي منظّمة الدورة تكتبه «تسجيل»", "استثناء في الميعاد":"بلّغي الطالب بقرار الاستثناء"};
+const SQ_TASK = {"تتشال من المنحة":"بلّغي الطالب بقرار إلغاء المنحة الجزئية، وبلّغي الماليات", "خرج من الدورة":"إجراءات التوقف: الرد 3، وإخراجه من الجروب، وإبلاغ الماليات. نقل صفه تحت «ملاحظات» في شيت الحضور يتم تلقائيًا، ويصل مسئولة لجنة التنظيم إشعار به", "يتنقل للتسجيلات":"إبلاغ الطالب بنظام التسجيلات. كتابة «تسجيل» في شيت الحضور أُحيلت إلى مسئولة لجنة التنظيم", "استثناء في الميعاد":"بلّغي الطالب بقرار الاستثناء"};
 async function sqAct(a, el, id){
   if(a==="stuCopy"){ try { await navigator.clipboard.writeText(el.dataset.t||""); toast("تم النسخ."); } catch(e){ toast("تعذّر النسخ. حدّد النص وانسخه يدويًا."); } return true; }
   if(a==="stuOpenC"){ return false; }
-  if(a==="stuSRPick"){ S.stuSR=S.stuSR||{}; S.stuSR[id]=el.dataset.v; open(stuCardHtml(el.dataset.c)); return true; }
+  if(a==="stuSRPick"){ S.stuSR=S.stuSR||{}; S.stuSR[id]=el.dataset.v; render(); return true; }
   if(a==="stuSRSave"){ const vv=(S.stuSR||{})[id], c=el.dataset.c; if(!vv) return true; el.disabled=true;
     try { const d=await api("tfqSupReply",{id, v:vv}); if(!d.ok) throw d; const cd=(S.stuCards||{})[c]; if(cd&&cd.tfq){ const t=cd.tfq.find(x=>x.id===id); if(t){ t.sr=vv; t.srBy=S.me.name; t.open=false; } if(!stuOpenT(cd).some(stuTfqMine)) stuOpSet().delete(c); }
-      if(d.q && S.sq) S.sq.rows=sqRows().concat([d.q]); S.tfq=null; toast("سُجّل ردّه"+(d.q?"، ورُفع اقتراح «"+d.q.type+"» إلى المسئولة.":".")); open(stuCardHtml(c)); render(); }
+      if(d.q && S.sq) S.sq.rows=sqRows().concat([d.q]); S.tfq=null; toast("سُجّل ردّه"+(d.q?(d.q.status==="اتوافق"?"، ونُفِّذ قرار «"+d.q.type+"».":"، ورُفع اقتراح «"+d.q.type+"» إلى المسئولة."):".")); if(d.q && d.q.status==="اتوافق"){ await stuSqTask(d.q,""); stuAfter(c,true); } else render(); }
     catch(e){ el.disabled=false; if(e.reason==="exists"){ if(S.stuCards) delete S.stuCards[c]; S.stu=null; close(); toast("سُجّل الرد من قبل بواسطة "+(e.by||"مشرفة أخرى")+"."); render(); return true; } toast(e.reason==="forbidden"?"ليست لديك صلاحية لهذا.":"ما اتسجّلش، حاول تاني."); } return true; }
   if(a==="stuProp"){ S.stuOpenC=null; open(stuPropForm(id, el.dataset.k)); return true; }
   if(a==="stuPropSave"){ const kind=el.dataset.k, type=($("#sqt")||{}).value||"", course=($("#sqk")||{}).value||"", note=(($("#sqn")||{}).value||"").trim(), cur=(($("#sqc")||{}).value||"").trim(), to=(($("#sqto")||{}).value||"").trim();
     if(!note){ toast(kind==="قرار"?"اكتبي السبب الأول.":"اكتبي الدليل الأول."); return true; } if(kind==="تصحيح" && !to){ toast("اكتبي الصح."); return true; } el.disabled=true;
-    try { const d=await api("stuPropose",{code:id, course, kind, type, cur, to, note}); if(!d.ok) throw d; if(S.sq) S.sq.rows=sqRows().concat([d.q]); else loadSQ(); toast("اتبعت للمسئولة ("+d.q.id+")."); S.stuOpenC=id; open(stuCardHtml(id)); render(); }
+    try { const d=await api("stuPropose",{code:id, course, kind, type, cur, to, note}); if(!d.ok) throw d; if(S.sq) S.sq.rows=sqRows().concat([d.q]); else loadSQ(); const dn=d.q.status==="اتوافق"; if(dn) await stuSqTask(d.q,""); toast(dn?(kind==="قرار"?"نُفِّذ القرار.":"سُجّل التصحيح.")+(d.applied&&d.applied.why?" لم يكتمل التنفيذ التلقائي: "+d.applied.why:""):"رُفع إلى المسئولة ("+d.q.id+")."); close(); stuAfter(id, dn); }
     catch(e){ el.disabled=false; toast(e.reason==="exists"?"في اقتراح مستني بالفعل: "+(e.id||""):e.reason==="forbidden"?"ليست لديك صلاحية لهذا.":"ما اتبعتش، حاول تاني."); } return true; }
   if(a==="sqDec"){ const vv=el.dataset.v, q=sqRows().find(x=>x.id===id); if(!q) return true;
     if(!el.dataset.sure){ open(`<h2>${vv==="اتوافق"?"موافقة":"رفض"}: ${esc(q.type)} — ${esc(q.name)}</h2><p class="sub">${esc(q.note)}</p>${vv==="اتوافق"&&q.kind==="قرار"?`<p class="sub">هتتعمل مهمة لـ${esc(nameOf(q.by))}: ${esc(SQ_TASK[q.type]||"")}.</p>`:vv==="اتوافق"?`<p class="sub">المراجعة اليومية هتطبّق التصحيح في قاعدة بيانات الطلاب الصبح.</p>`:""}<label>ملاحظة (اختيارية)<textarea id="sqdn" maxlength="300" rows="2"></textarea></label><div class="row"><button class="btn" data-a="sqDec" data-id="${esc(id)}" data-v="${esc(vv)}" data-sure="1">تأكيد</button><button class="btn ghost" data-a="close">إلغاء</button></div>`); return true; }
     el.disabled=true; const note=(($("#sqdn")||{}).value||"").trim();
     try { const d=await api("stuDecide",{id, v:vv, note}); if(!d.ok) throw d; Object.assign(q, d.q);
       if(vv==="اتوافق" && q.kind==="قرار" && q.by && memberOf(q.by).id && memberOf(q.by).role!=="committee"){ await save("tasks","sq_"+q.id,{title:q.type+" — "+q.name+(q.cname?" ("+q.cname+")":""), type:"assigned", status:"todo", assignee:q.by, assigner:meId(), due:today(), output:(SQ_TASK[q.type]||"")+(note?" — ملاحظة: "+note:""), createdAt:Date.now()}, false); }
-      close(); toast(vv==="اتوافق"?"اتوافق"+(q.kind==="قرار"&&memberOf(q.by).role!=="committee"?"، واتعملت مهمة لـ"+nameOf(q.by)+".":"."):"اترفض."); render(); }
+      close(); toast(vv==="اتوافق"?"اتوافق"+(q.kind==="قرار"&&memberOf(q.by).role!=="committee"?"، واتعملت مهمة لـ"+nameOf(q.by)+".":".")+(d.applied&&d.applied.why?" لم يكتمل التنفيذ التلقائي، وأُحيل إلى مسئولة لجنة التنظيم.":""):"اترفض."); if(d.applied){ S.stu=null; S.stuCards={}; } render(); }
     catch(e){ el.disabled=false; toast(e.reason==="decided"?"القرار اتاخد قبل كده.":e.reason==="forbidden"?"ليست لديك صلاحية لهذا.":"ما اتسجّلش، حاول تاني."); if(e.q){ Object.assign(q,e.q); render(); } } return true; }
   return false; }
 async function stuAct(a, el, id){
+  if(await stuPageAct(a, el, id)) return true;
   if(await sqAct(a, el, id)) return true;
   if((a==="stuOpen"||a==="stuOpenC"||a==="stuOpenN") && !S.stu){ S.pendOpen={a, id, n:el.dataset.n||""}; loadStu(); open(`<h2>ملف الطالب</h2><p class="sub">جارٍ تحميل بيانات الطلاب…</p>`); return true; }
   if(a==="stuOpenN"){ const c=stuCodeByName(el.dataset.n||""); if(!c){ open(`<h2>ملف الطالب</h2><p class="sub">لم يُعثر على «${esc(el.dataset.n||"")}» في قاعدة بيانات الطلاب. جرّب البحث في تبويب «الطلاب».</p><div class="row"><button class="btn ghost" data-a="close">إغلاق</button></div>`); return true; } id=c; a="stuOpen"; }
@@ -2317,9 +2481,7 @@ async function stuAct(a, el, id){
   if(a==="stuAll"){ S.stuF=Object.assign(S.stuF||{}, {all:!(S.stuF||{}).all, k:""}); render(); return true; }
   if(a==="stuWarnAll"){ S.stuWarnAll=true; render(); return true; }
   if(a==="stuOpenAll"){ S.stuOpenAll=true; render(); return true; }
-  if(a==="stuOpen"){ S.stuCards=S.stuCards||{}; S.stuOpenC=id; open(stuCardHtml(id));
-    if(!S.stuCards[id]) api("stuCard",{code:id},45000).then(d=>{ S.stuCards[id]=d.ok?d:{err:1}; if(S.stuOpenC===id && $("#modal").innerHTML) open(stuCardHtml(id)); }).catch(()=>{ S.stuCards[id]={err:1}; if(S.stuOpenC===id && $("#modal").innerHTML) open(stuCardHtml(id)); delete S.stuCards[id]; });
-    return true; }
+  if(a==="stuOpen"){ stuShow(id); return true; }
   return false; }
 
 document.addEventListener("click", async e=>{
@@ -2337,6 +2499,7 @@ document.addEventListener("click", async e=>{
   if(a==="close") return close();
   if(/^se[A-Z]/.test(a)){ e.preventDefault(); if(await seAct(a,el,id)) return; }
   if(a==="sqDec"){ e.preventDefault(); if(await sqAct(a,el,id)) return; }
+  if(/^td[A-Z]/.test(a)){ e.preventDefault(); if(await tdAct(a,el,id)) return; }
   if(/^stu[A-Z]/.test(a)){ if(a!=="stuSum") e.preventDefault(); if(await stuAct(a,el,id)) return; }
   if(a==="slot"){ const s=S.slots.find(x=>x.id===id); const tid=slotDoneId(d,id);
     if(isSlotDone(d,id)){ saveFast("tasks", tid, {status:"todo", doneAt:null}); return; }
@@ -2626,7 +2789,8 @@ document.addEventListener("toggle", e=>{ const k=e.target&&e.target.dataset&&e.t
 document.addEventListener("input", e=>{ if(e.target.id==="stuq_"){ (S.stuF=S.stuF||{q:"",k:"",all:false}).q=e.target.value; const b=$("#stures_"); if(b) b.innerHTML=stuResHtml(e.target.value); return; } if(e.target.classList&&e.target.classList.contains("trmini")) e.target.classList.toggle("filled", !!e.target.value); const c=e.target.dataset&&e.target.dataset.cnt; if(c){ const s=document.getElementById(c); if(s) s.textContent=e.target.value.length+" / "+e.target.maxLength; } });
 document.addEventListener("keydown", e=>{ if(e.key==="Escape") close();
   const t=e.target; if((e.key==="Enter"||e.key===" ") && t && t.getAttribute && t.getAttribute("role")==="button" && t.dataset.a){ e.preventDefault(); t.click(); } });
-window.addEventListener("hashchange", ()=>{ S.view=location.hash.slice(1)||"today"; render(); });
+window.addEventListener("hashchange", ()=>{ S.view=location.hash.slice(1)||"today"; S.stuPage=null; S.stuForm=null; render(); });
+document.addEventListener("click", e=>{ const t=e.target.closest&&e.target.closest("#tabs a"); if(t && S.stuPage){ S.stuPage=null; S.stuForm=null; if(t.getAttribute("href")==="#"+S.view) render(); } }, true);
 
 (async function boot(){
   S.view=location.hash.slice(1)||"today";
