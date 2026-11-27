@@ -671,7 +671,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="a7d5f103a878"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="324c9fb9586c"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -2316,7 +2316,7 @@ function viewStudents(){
   const cnt={ok:0,gold:0,bad:0,none:0}; D.students.forEach(s=>cnt[stuAllSt(s.st)]++);
   return `<div class="stuhero noprint"><h1>الطلاب</h1><label class="stubig"><span aria-hidden="true">🔍</span><input id="stuq_" type="search" value="${esc(F.q)}" placeholder="اكتب اسم الطالب${D.pii?" أو بريده":""}…" autocomplete="off" aria-label="ابحث عن طالب"></label><div id="stures_">${stuResHtml(F.q)}</div></div>
     <div class="stustack">${openCard}${fd("warn","إنذار مبكر ("+wl.length+")","حالات لا يلتقطها التفقد اليومي — للعلم",warnB)}${fd("courses",(showAll?"الدورات":"دوراتك اليوم")+" ("+cs.length+")","نسبة الالتزام وطلاب كل دورة",coursesB)}
-    <small class="sub">آخر تحديث للبيانات ${esc(D.at||"")} <button class="lnk" data-a="stuReload">⟳ تحديث</button> · الكل: ${[["ok","ملتزم"],["gold","بحاجة إلى متابعة"],["bad","منقطع"],["none","لم يبدأ الحضور"]].map(([k,l])=>`${l} ${cnt[k]}`).join(" · ")}. رقم الهاتف لا يُعرض في المنظومة.${D.full?"":" السن والإقامة والدرجات لمسئولي الأقسام فقط."}</small></div>`;
+    <small class="sub">آخر تحديث للبيانات ${esc(D.at||"")} <button class="lnk" data-a="stuReload">⟳ تحديث</button> · الكل: ${[["ok","ملتزم"],["gold","بحاجة إلى متابعة"],["bad","منقطع"],["none","لم يبدأ الحضور"]].map(([k,l])=>`${l} ${cnt[k]}`).join(" · ")}. رقم الهاتف لا يُعرض في المنظومة.${D.full?"":" الدرجات لمسئولي الأقسام فقط."}</small></div>`;
 }
 // ===== صفحة الطالب (قرار المستخدم 27 نوفمبر): صفحة كاملة بدل النافذة — البريد فوق، وخمسة إجراءات مباشرة، والسجل مطوي. رقم الهاتف لا يُعرض لأحد =====
 const stuEmails = e => String(e||"").split(/\s*·\s*|[\s,;،]+/).filter(x=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(x));
@@ -2362,7 +2362,7 @@ function stuPageHtml(code){ const D=S.stu, ix=stuIdx(), s=ix.byC[code];
     <small class="sub">النقاط: آخر المحاضرات، والأحدث يمينًا — <i class="studot" style="background:var(--ok)"></i> حضر <i class="studot" style="background:var(--bad)"></i> غاب <i class="studot" style="background:var(--gold)"></i> اعتذر <i class="studot" style="background:#7C9CC0"></i> تسجيل. السهم: آخر 3 أسابيع مقارنةً بما قبلها.</small>
     <h3>ما سُجّل من هذه الصفحة</h3>${!cd?`<p class="sub">جارٍ التحميل…</p>`:mylog.length?mylog.map(x=>`<div class="item"><div class="what"><b>${esc(x.kind)}${x.cname?" · "+esc(x.cname):""}</b><small>${esc(x.at)} · ${esc(nameOf(x.by))}${x.detail?" · "+esc(x.detail):""}</small></div><span class="pill ${/^اتلغى/.test(x.status||"")?"gray":""}">${esc(slStatus(x.status))}</span>${canU(x)?`<button class="btn sm ghost" data-a="stuUndo" data-id="${esc(x.id)}" data-c="${esc(code)}">تراجع</button>`:""}</div>`).join(""):`<p class="sub">لا شيء مسجَّل بعد.</p>`}
     ${cd&&(cd.exc||[]).length?`<h3>الاعتذارات المسجّلة</h3>${cd.exc.map(x=>`<div class="item"><div class="what"><b>${esc(x.cname||"")}</b><small>${esc(x.from===x.to?x.from:"من "+x.from+" إلى "+x.to)}${x.reason?" · "+esc(x.reason):""}${x.note?" · "+esc(x.note):""}</small></div><span class="pill ${x.status==="اتكتب"?"ok":x.status==="محتاج مراجعة"?"gold":"gray"}">${esc(EX_LBL[x.status]||x.status)}</span></div>`).join("")}`:""}
-    <h3>التفقدات السابقة</h3>${!cd?`<p class="sub">جارٍ التحميل…</p>`:cd.err?`<p class="sub">تعذّر التحميل.</p>`:tfq.length?tfq.slice(0,12).map(t=>`<div class="item"><div class="what"><b>${esc(t.kind||"")}${t.course?" · "+esc(t.course):""}</b><small>${t.due&&nameOf(t.due)!=="—"?"خانة "+esc(nameOf(t.due))+" · ":""}${D.full?"الحكم":"الحالة"}: ${esc(t.verdict||"—")}${t.reply?" · رد الطالب: "+esc(t.reply):""}${t.sr?" · سجّلت المشرفة: "+esc(srL(t.sr)):""}</small>${t.opNote?`<small style="display:block">سبب المسئولة: ${esc(t.opNote)}</small>`:""}</div>${t.op?`<span class="pill ${t.op==="متفق"?"ok":"bad"}">${esc(t.op)}</span>`:t.open?`<span class="pill gold">مفتوح</span>`:""}</div>`).join(""):`<p class="sub">لا توجد تفقدات سابقة له.</p>`}
+    <h3>التفقدات السابقة</h3>${!cd?`<p class="sub">جارٍ التحميل…</p>`:cd.err?`<p class="sub">تعذّر التحميل.</p>`:tfq.length?tfq.slice(0,12).map(t=>`<div class="item"><div class="what"><b>${esc(t.kind||"")}${t.course?" · "+esc(t.course):""}</b><small>${t.ld?"محاضرة "+esc(tfqD(t.ld))+" · ":""}${t.due&&nameOf(t.due)!=="—"?"خانة "+esc(nameOf(t.due))+" · ":""}${D.full?"الحكم":"الحالة"}: ${esc(t.verdict||"—")}${t.reply?" · رد الطالب: "+esc(t.reply):""}${t.sr?" · سجّلت المشرفة: "+esc(srL(t.sr)):""}</small>${t.opNote?`<small style="display:block">سبب المسئولة: ${esc(t.opNote)}</small>`:""}</div>${t.op?`<span class="pill ${t.op==="متفق"?"ok":"bad"}">${esc(t.op)}</span>`:t.open?`<span class="pill gold">مفتوح</span>`:t.sup?`<span class="pill gray">حلّ محله تفقد أحدث</span>`:""}</div>`).join(""):`<p class="sub">لا توجد تفقدات سابقة له.</p>`}
     ${cd&&(cd.grades||[]).length?`<h3>الدرجات</h3>${cd.grades.map(g=>`<div class="item"><div class="what">${esc(g.s)} · ${esc(g.t)}</div><b>${esc(g.g)} / ${esc(g.m)}</b></div>`).join("")}`:""}
     ${stuSqHtml(code)}
     ${fus.length?`<h3>متابعات قديمة («تواصلت»)</h3>${fus.slice(0,6).map(f=>`<div class="item"><div class="what"><b>${esc(STU_RES_LBL[f.r]||f.r)}</b><small>${esc(f.at)} · ${esc(nameOf(f.by))}${f.k?" · "+esc((D.courses[f.k]||{}).n||f.k):""}</small>${f.note?`<small style="display:block">${esc(f.note)}</small>`:""}</div></div>`).join("")}`:""}`;
@@ -2445,6 +2445,8 @@ function stuSummary(code, mine, cd){ const s=stuIdx().byC[code], bits=[];
   return bits.length?`<div class="stusum"><b>الخلاصة:</b> ${bits.join(" · ")}</div>`:""; }
 const SR_LBL = {"الميعاد أو التسجيلات":"الموعد أو التسجيلات", "هتوقف":"سيتوقف", "كان معتذر":"كان معتذرًا", "ما ردّش":"لم يردّ"}; const srL = x => SR_LBL[x]||x; // العرض بالفصحى، والمخزَّن كما هو
 const SR_DEC = {"هتوقف":"خرج من الدورة", "الميعاد أو التسجيلات":"استثناء في الميعاد"};
+const tfqD = d => /^\d{4}-\d\d-\d\d$/.test(d||"") ? fmtDay(d) : (d||"");
+const tfqWhen = t => [t.ld?"محاضرة "+esc(tfqD(t.ld)):"", t.appr?"صدر التفقد "+esc(tfqD(t.appr)):"", t.n?"الغياب رقم "+esc(t.n):""].filter(Boolean).join(" · ");
 function stuNowHtml(code, cd, mine){ const s=stuIdx().byC[code], op=stuOpenT(cd);
   if(!cd) return `<div class="stunow"><div class="stunowh">📞 المطلوب الآن</div><p class="sub">جارٍ التحميل…</p></div>`;
   if(cd.err) return "";
@@ -2452,7 +2454,7 @@ function stuNowHtml(code, cd, mine){ const s=stuIdx().byC[code], op=stuOpenT(cd)
   const sel=S.stuSR||{};
   return op.map(t=>{ const ty=sel[t.id], oth=!stuTfqMine(t), row=(mine||[]).find(r=>stuN(r.kn)===stuN(t.course)), grant=!!row&&stuGrant(row);
     const rec = ty==="الميعاد أو التسجيلات" ? `<details class="sturec"><summary class="sub">صيغ التسجيلات (بعد موافقة المسئولة)</summary>${grant?`<p class="sub">الطالب على منحة جزئية، ونظام التسجيلات غير متاح له.</p>`:stuTplBox("غياب: نظام التسجيلات", s, t.course)}${stuTplBox("تسجيلات: متابعة", s, t.course)}</details>` : "";
-    return `<div class="stunow"><div class="stunowh">📞 المطلوب الآن <small>${esc(t.kind||"")}${t.course?" · "+esc(t.course):""}</small></div>
+    return `<div class="stunow"><div class="stunowh">📞 المطلوب الآن <small>${esc(t.kind||"")}${t.course?" · "+esc(t.course):""}</small></div>${tfqWhen(t)?`<p class="sub" style="margin:2px 0 6px">${tfqWhen(t)}</p>`:""}
     ${oth?`<p class="stuoth">هذا التفقد من خانة ${esc(nameOf(t.due)||"مشرفة أخرى")}. إن كان الطالب هو من تواصل، فيمكنك إكماله وتسجيل ردّه.</p>`:""}
     <ol class="stusteps">
       <li><b>إرسال الرسالة</b>${oth?`<small class="sub" style="display:block">إن كان الطالب هو من بدأ التواصل، فلا حاجة إلى هذه الخطوة.</small><details><summary class="sub">نص الرسالة</summary>${stuTplBox(stuTplKey(t,""), s, t.course)}</details>`:stuTplBox(stuTplKey(t,""), s, t.course)}</li>
