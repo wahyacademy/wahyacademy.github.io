@@ -671,7 +671,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="4ab5df2e0213"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="a7d5f103a878"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -2369,7 +2369,7 @@ function stuPageHtml(code){ const D=S.stu, ix=stuIdx(), s=ix.byC[code];
   return `${back}<div class="card stuhead"><h1 style="margin:0 0 6px">${esc(s.n)}</h1>
       <div><span class="pill ${k==="none"?"gray":k}">${esc((s.st||"").replace(/^\S+\s/,""))}</span>${cd&&cd.tg?` <span class="pill ${/مؤكد/.test(cd.tg)?"ok":"gray"}">تيليجرام: ${esc(/مؤكد/.test(cd.tg)?"مربوط":cd.tg)}</span>`:ready?` <span class="pill gray">تيليجرام: غير مربوط</span>`:""}</div>
       ${courses||`<p class="sub" style="margin-top:8px">لا توجد دورات حالية.</p>`}
-      <div class="stupii" style="margin-top:10px"><div>البريد: ${emails.length?emails.map(e=>`<b dir="ltr">${esc(e)}</b>`).join(" · "):"—"}</div>${D.full?`<div>السن: ${esc(p.age||"—")} · الإقامة: ${esc(p.res||"—")}</div>`:""}
+      <div class="stupii" style="margin-top:10px"><div>البريد: ${emails.length?emails.map(e=>`<b dir="ltr">${esc(e)}</b>`).join(" · "):"—"}</div><div>السن: ${esc(p.age||"—")} · الإقامة: ${esc(p.res||"—")}</div><div>المؤهل: ${esc(p.edu||"—")} · الوظيفة: ${esc(p.job||"—")}</div>
         <div class="row" style="gap:8px;margin-top:6px">${emails.length?`<button class="btn sm" data-a="stuForm" data-k="mail">✉ إرسال بريد</button>`:""}</div>
         <small class="sub" style="display:block;margin-top:4px">رقم الهاتف لا يُعرض في المنظومة، ويمكن تحديثه من «تحديث بيانات».</small></div>
       ${stuSummary(code, mine, cd)}</div>
