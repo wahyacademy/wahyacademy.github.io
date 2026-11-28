@@ -672,7 +672,7 @@ function logout(msg){ store.set("wahy_sup_session", null); S.session=null; S.me=
 // ---------- التحديث التلقائي للصفحة (وافق المستخدم 13 نوفمبر) ----------
 // الصفحة تسأل GitHub كل 10 دقائق (طلب HEAD خفيف) هل نُشرت نسخة أحدث؛ فإن وُجدت أعادت التحميل في لحظة آمنة
 // (لا نافذة مفتوحة، لا حفظ جارٍ، لا كتابة في خانة). لا يُخزَّن شيء على الجهاز؛ الجلسة تبقى كما هي.
-const BUILD="f74335471dc5"; const UPD={lm:null, nb:null, at:0, told:false};
+const BUILD="d28810a1bced"; const UPD={lm:null, nb:null, at:0, told:false};
 async function checkUpdate(force){ if(location.protocol==="file:" || (!force && Date.now()-UPD.at<120000)) return applyUpdate(); UPD.at=Date.now();
   try { const u=location.pathname, h=await fetch(u+"?_="+Date.now(),{method:"HEAD",cache:"no-store"}), lm=h.headers.get("last-modified")||h.headers.get("etag")||"";
     if(!lm || lm!==UPD.lm){ const tx=await fetch(u+"?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.text():""), m=new RegExp("const BUILD="+'"([0-9a-f]{6,})"').exec(tx);
@@ -2247,23 +2247,32 @@ function loadStu(){ if(!canSTU() || S.stuLoading) return; S.stuLoading=true;
     if(d.ok && S.pendOpen){ const p=S.pendOpen; S.pendOpen=null; const b=document.createElement("button"); b.dataset.n=p.n; stuAct(p.a==="stuOpenN"?"stuOpenN":"stuOpen", b, p.id); } })
     .catch(()=>{ S.stuLoading=false; S.stuErr="network"; render(); }); }
 const stuDays = d => d && /^\d{4}-\d{2}-\d{2}$/.test(d) ? Math.round((Date.parse(today())-Date.parse(d))/864e5) : null;
-function stuSt(r){ if(!r.n) return {k:"none", l:"لم يبدأ الحضور", c:"gray"}; const dd=stuDays(r.last);
-  if(dd===null || dd>30) return {k:"bad", l:"منقطع", c:"bad"};
+function stuSt(r){ if(!r.n) return {k:"none", l:"لم يبدأ الحضور", c:"gray"};
+  const gap=r.last ? (r.lk ? Math.round((Date.parse(r.lk)-Date.parse(r.last))/864e5) : 0) : null, since=r.rd ? stuDays(r.rd) : null;
+  if(!r.rec && !/r/.test(r.dots||"") && (r.last ? gap>30 : (since!==null && since>30))) return {k:"bad", l:"منقطع", c:"bad"};
   if(r.pct<50) return {k:"weak", l:"ضعيف الالتزام", c:"bad"};
   if(r.pct<75 || r.gap>=2) return {k:"gold", l:"بحاجة إلى متابعة", c:"gold"};
   return {k:"ok", l:"ملتزم", c:"ok"}; }
 const stuUp = r => r.tr!==null && r.tr>=5; // السهم ▲
 const stuRet = r => /^ga{2,}/.test(r.dots||""); // حضر آخر محاضرة بعد غيابين متتاليين أو أكثر
-// الحالة العامة مخزّنة في القاعدة كما هي؛ «منقطع» تُعرض «ضعيف الالتزام» إن كان الطالب ما زال يحضر في دورة حالية
-const stuAllL = s => { const t=(s.st||"").replace(/^\S+\s/,"")||"—"; if(stuAllSt(s.st)!=="bad") return t; return stuIdx().rows.some(r=>r.c===s.c && r.st.k!=="bad" && r.st.k!=="none") ? "ضعيف الالتزام" : t; };
+// الحالة العامة مخزّنة في القاعدة كما هي؛ لو بتقول «منقطع» بتتحسب من دوراته الحالية بقاعدة «منقطع» الجديدة
+const GEN_L = {"محتاج متابعة":"بحاجة إلى متابعة", "مفيش حضور مسجل":"لا يوجد حضور مسجَّل"}; // تسمية فصحى للقيمة المخزّنة
+function stuGen(s){ const k=stuAllSt(s.st), t0=(s.st||"").replace(/^\S+\s/,"")||"—", t=GEN_L[t0]||t0; if(k!=="bad") return {k, l:t};
+  const rs=stuIdx().rsBy[s.c]||[]; if(!rs.length) return {k, l:t};
+  if(rs.every(r=>r.st.k==="bad"||r.st.k==="none")) return {k:"bad", l:"منقطع"};
+  if(rs.some(r=>r.st.k==="weak"||r.st.k==="bad")) return {k:"bad", l:"ضعيف الالتزام"};
+  return {k:"gold", l:"بحاجة إلى متابعة"}; }
+const stuAllL = s => stuGen(s).l;
 const stuAllSt = s => /ملتزم/.test(s||"") ? "ok" : /متابعة/.test(s||"") ? "gold" : /منقطع/.test(s||"") ? "bad" : "none";
 function stuIdx(){ const D=S.stu; if(D._ix) return D._ix;
   const byC={}; D.students.forEach(s=>byC[s.c]=s); const sum={}; D.sums.forEach(x=>sum[x.c+"|"+x.k]=x);
   const fuBy={}; (D.fu||[]).forEach(f=>(fuBy[f.c]=fuBy[f.c]||[]).push(f)); Object.values(fuBy).forEach(a=>a.sort((x,y)=>y.at.localeCompare(x.at)));
   const rows=D.regs.map(r=>{ const s=byC[r.c]; if(!s) return null; const m=sum[r.c+"|"+r.k]||{}, co=D.courses[r.k]||{};
     const row={c:r.c, name:s.n, k:r.k, kn:co.n||r.k, prog:co.t==="برنامج", sub:r.sub||"", n:m.n||0, h:m.h||0, pct:m.n?Math.round(100*((m.h||0)+(m.x||0)+(m.t||0))/m.n):null, last:m.last||"", gap:(m.gap===""||m.gap==null)?null:Number(m.gap), x:m.x||0, dots:m.dots||"", tr:(m.tr===""||m.tr==null)?null:Number(m.tr), rd:r.d||"", rec:!!r.rec};
-    row.st=stuSt(row); return row; }).filter(Boolean);
-  return D._ix={byC, rows, fuBy}; }
+    return row; }).filter(Boolean);
+  const lk={}, rsBy={}; rows.forEach(r=>{ if(r.last && (!lk[r.k] || r.last>lk[r.k])) lk[r.k]=r.last; (rsBy[r.c]=rsBy[r.c]||[]).push(r); }); // آخر محاضرة فيها حضور في كل دورة
+  rows.forEach(r=>{ r.lk=lk[r.k]||""; r.st=stuSt(r); });
+  return D._ix={byC, rows, fuBy, rsBy}; }
 const stuGrant = r => r.sub==="منحة جزئية";
 // التفقد المفتوح (النشر الواحد): الخادم بيحدده (حكمه «مستني» أو «ما اتبعتش» أو «محتاج مراجعة» ومفيش رد متسجّل) وبيبعت [كود الطالب، المشرفة المفروضة، الخانة] بس
 const stuMyKeys = () => { const mid=stuMid(), k=new Set(); S.slots.forEach(s=>{ if(s.owner===mid){ k.add(s.id); if(s.cover) k.add(s.cover); } }); return k; };
@@ -2293,7 +2302,7 @@ function stuWarn(rows){ const out=[];
     else if(r.n && r.tr!==null && r.tr<=-15) out.push({r, w:"انخفض الالتزام "+(-r.tr)+"% في آخر 3 أسابيع عمّا قبلها", c:"gold", l:"للمراقبة", o:1});
     else if(!r.n && r.rd && stuDays(r.rd)!==null && stuDays(r.rd)>=7) out.push({r, w:"مسجّل منذ "+stuDays(r.rd)+" يومًا ولم يحضر أي محاضرة", c:"gray", l:"للتأكد", o:2}); });
   return out.sort((a,b)=>a.o-b.o || a.r.name.localeCompare(b.r.name,"ar")); }
-const stuRowHtml = s => { const ks=stuIdx().rows.filter(r=>r.c===s.c), k=stuAllSt(s.st);
+const stuRowHtml = s => { const ks=stuIdx().rows.filter(r=>r.c===s.c), k=stuGen(s).k;
   return `<div class="item"><div class="what"><button class="lnk" data-a="stuOpen" data-id="${esc(s.c)}"><b>${esc(s.n)}</b></button>${stuOpenPill(s.c)}<small style="display:block">${ks.map(r=>esc(r.kn)).join(" · ")||"غير مشترك في دورة حالية"}</small>${stuMailLine(s.c)}</div><span class="pill ${k==="none"?"gray":k}">${esc(stuAllL(s))}</span></div>`; };
 const stuMailLine = c => { const e=(((S.stu||{}).pii||{})[c]||{}).e; return e ? `<small style="display:block"><span dir="ltr">${esc(e)}</span></small>` : ""; };
 function stuResHtml(q){ const D=S.stu, n=stuN(q); if(!D || n.length<2) return ""; const ql=String(q).trim().toLowerCase();
@@ -2314,7 +2323,7 @@ function viewStudents(){
   const inCs=r=>cs.some(o=>o.k===r.k), W=D.wins||null, tq=new Set((W&&W.tq)||[]);
   const bar=(parts,cls)=>{ const t=parts.reduce((a,p)=>a+p[0],0)||1; return `<span class="stubar${cls||""}" role="img" aria-label="${esc(parts.map(p=>p[2]+" "+p[0]).join("، "))}">${parts.map(p=>p[0]?`<i style="background:${p[1]};width:${(100*p[0]/t).toFixed(1)}%" title="${esc(p[2])} ${p[0]}"></i>`:"").join("")}</span>`; };
   // «صورة الطلاب»: الإنجاز أولًا
-  const cnt={ok:0,gold:0,bad:0,none:0}; D.students.forEach(s=>cnt[stuAllSt(s.st)]++); const tot=D.students.length;
+  const cnt={ok:0,gold:0,bad:0,none:0}; D.students.forEach(s=>cnt[stuGen(s).k]++); const tot=D.students.length;
   const upC=new Set(), retC=new Set(); ix.rows.forEach(r=>{ if(stuUp(r)) upC.add(r.c); if(stuRet(r)) retC.add(r.c); });
   const wl=stuWarn(ix.rows.filter(inCs)), urg=wl.filter(x=>x.o===0), rest=wl.filter(x=>x.o!==0), wn=S.stuWarnAll?rest.length:Math.min(10,rest.length);
   const retT=[...retC].filter(c=>tq.has(c)).length;
@@ -2384,7 +2393,7 @@ function stuPageHtml(code){ const D=S.stu, ix=stuIdx(), s=ix.byC[code];
   const back=`<div class="row noprint" style="margin-bottom:10px"><button class="btn ghost" data-a="stuBack">→ رجوع</button></div>`;
   if(!s) return back+`<div class="card empty">الطالب غير موجود.</div>`;
   // الترتيب (قرار المستخدم 28 نوفمبر): الاسم والحالة، ثم البيانات في سطر، ثم شريط العاجل، ثم الإجراءات، ثم الدورات، ثم السجل مرتبًا بالأهمية
-  const mine=ix.rows.filter(r=>r.c===code), p=(D.pii||{})[code]||{}, cd=(S.stuCards||{})[code], fus=ix.fuBy[code]||[], k=stuAllSt(s.st), F=S.stuForm;
+  const mine=ix.rows.filter(r=>r.c===code), p=(D.pii||{})[code]||{}, cd=(S.stuCards||{})[code], fus=ix.fuBy[code]||[], k=stuGen(s).k, F=S.stuForm;
   const tfq=(cd&&cd.tfq)||[], openT=stuOpenT(cd), ready=cd&&!cd.err, emails=stuEmails(p.e);
   const gone=(D.left||[]).filter(x=>x.c===code).map(x=>(D.courses[x.k]||{}).n||x.k);
   const acts=[["exc1","📝","اعتذار عن محاضرة أو أكثر"],["exc2","🗓","اعتذار عن مدة"],["left","🚪","خرج من جروب تيليجرام الدورة"],["wd","⛔","أبلغ بانسحابه من الدورة"],["upd","✏️","تحديث بيانات"],["ren","✏️","تعديل الاسم"],["note","🗒","ملاحظة متابعة"],["rec","🎧","اقتراح متابعة بالتسجيلات"],["warn","⚠️","إنذار أخير"],["dis","🚫","اعتذار الإدارة للطالب"]];
